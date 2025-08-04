@@ -5,6 +5,8 @@
 	include vcs.h
 	org $F000
 
+;Variables ------
+
 YPosFromBot = $80;
 VisiblePlayerLine = $81;
 PICS = $82;
@@ -12,6 +14,15 @@ ROLLING_COUNTER = $83;
 Graphics_Buffer = $84
 YPosFromBotE1 = $85;
 VisibleEnemyLine = $86;
+Enemy_Graphics_Buffer = $87;
+EGB = $88;
+PGB = $89;
+
+
+; Constants ------
+playerheight       ds 8;
+
+
 
 ;generic start up stuff...
 Start
@@ -126,6 +137,7 @@ SkipMoveDown
 	BNE SkipMoveUp
 	DEC YPosFromBot
 	DEC YPosFromBotE1
+	DEC YPosFromBotE1
 SkipMoveUp
 
 ; for left and right, we're gonna 
@@ -207,67 +219,71 @@ WaitForVblankEnd
 PreScanLoop
 
 
-ScanLoop 
+ScanLoop ;start of kernal
+
+	LDA #8
 
 CheckActivatePlayer
 	CPY YPosFromBot
 	BNE SkipActivatePlayer
-	LDA #8
 	STA VisiblePlayerLine 
 SkipActivatePlayer
 
-
-	LDA VisiblePlayerLine		;Transfers the byte in the X Register to the Accumulator
+CheckActivateEnemy
+	CPY YPosFromBotE1
+	BNE SkipActivateEnemy
+	STA VisibleEnemyLine 
+SkipActivateEnemy
 	CLC		;Carry must be cleared or ADC will add carry as well
+
+
+	LDA VisibleEnemyLine	;check the visible player line...
+	BEQ FinishEnemy		;skip the drawing if its zero...
+IsEnemyOn	
 	ADC PICS	;add value of pics to Accumulator 
-	STA Graphics_Buffer	;Transfers the byte in the Accumulator to the X Register
-
-	LDA #0		;set Acc to 0 for clearing graphics
-
-	STA WSYNC 	
-
-; here the idea is that VisiblePlayerLine
-; is zero if the line isn't being drawn now,
-; otherwise it's however many lines we have to go
+	TAX
+	LDA EnemyGraphics-1,x
+	DEC VisibleEnemyLine	
+FinishEnemy
+	STA GRP1	; put player 1 into grp1
+AfterEnemyDraw
 
 
-;if the VisiblePlayerLine is non zero,
-;we're drawing it now!
-
-	LDX VisiblePlayerLine	;check the visible player line...
+	LDA VisiblePlayerLine	;check the visible player line...
 	BEQ FinishPlayer	;skip the drawing if its zero...
 IsPlayerOn	
-
-	LDX Graphics_Buffer
+	ADC PICS	;add value of pics to Accumulator 
+	TAX
 	LDA MainPlayerGraphics-1,x	;shift to change which pic were showing
 ;	ORA #1		;creates a shield
-	STA GRP0		;put that line as player graphic 0
-	LDA EnemyGraphics-1,x
-	STA GRP1		;put that line as player graphic 1
-
-
-	DEC VisiblePlayerLine 	;and decrement the line count
-	JMP AFTERPLAYERDRAW
+	DEC VisiblePlayerLine	
 FinishPlayer
-	STA GRP0  	;clear player graphics
-	STA GRP1	;clear player graphics 
+	STA GRP0	;put that line as player graphic 0
 AFTERPLAYERDRAW
 
 
+	
+
+	STA WSYNC 	
 
 
 
+	DEY		;count down number of scan lines
 
-	DEY		
+	BNE ScanLoop	;end of kernal
 
-	BNE ScanLoop	
-
-
-	LDA #2	
 
 	STA WSYNC  	
 	STA VBLANK 	
 	LDX #24		
+
+;set graphics to blank for next line -----
+	LDA #0		;set Acc to 0 for clearing graphics
+	STA EGB		;enemy graphics buffer
+;set graphics to blank for next line -----
+
+
+
 
 
 
