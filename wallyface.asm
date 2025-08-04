@@ -203,7 +203,13 @@ PICSET6	STA HMP1	; of HMP1 sets it to moving the enemy
 	LDA #0
 	STA VSYNC 	
 
-;-------------------------
+;------------------------- setup backgrounds 20 pixels accross
+	LDA #%00010001		; 2 cycles
+	STA PF0			; 3 cycles
+	LDA #%00010001		; 2 cycles
+	STA PF1			; 3 cycles
+	LDA #%00010001		; 2 cycles
+	STA PF2			; 3 cycles
 ;-------------------------
 
 
@@ -233,59 +239,52 @@ ScanLoop ;start of kernal +++++++++++++++++++++++
 
 
 
-;	LDA EnemyLineBuffer						 ;2 cycles
-	STA GRP1	; put player 1 into grp1 2 cycles
+	STA GRP1	; put player 1 into grp1 3 cycles
 AfterEnemyDraw
 
-	LDA VisiblePlayerLine	;check the visible player line... 2 cycles
-	BEQ FinishPlayer	;skip the drawing if its zero...  2 cycles
+	LDA VisiblePlayerLine	;check the visible player line... 3 cycles
+	BEQ FinishPlayer	;skip the drawing if its zero...  2+1 cycles
 IsPlayerOn	
-	LDX VisiblePlayerLineCurrent				 ;2 cycles
-	LDA MainPlayerGraphics-1,x	;shift to change which pic were showing 2 cycles
+	LDX VisiblePlayerLineCurrent				 ;3 cycles
+	LDA MainPlayerGraphics-1,x	;shift to change which pic were showing 4 cycles
 ;	ORA #1		;creates a shield
-	DEC VisiblePlayerLineCurrent				 ;2 cycles
-	DEC VisiblePlayerLine					 ;2 cycles
+	DEC VisiblePlayerLineCurrent				 ;5 cycles
+	DEC VisiblePlayerLine					 ;5 cycles
 FinishPlayer
 
 
-	STA GRP0	;put that line as player graphic 0	 ;2 cycles
+	STA GRP0	;put that line as player graphic 0	 ;3 cycles
 AFTERPLAYERDRAW
-
-
 
 
 	LDA #8							;2 cycles
 
 CheckActivatePlayer
-	CPY YPosFromBot		;2 cycles
-	BNE SkipActivatePlayer	;2 cycles
-	STA VisiblePlayerLine 	;2 cycles
+	CPY YPosFromBot		;3 cycles
+	BNE SkipActivatePlayer	;2+1 cycles
+	STA VisiblePlayerLine 	;3 cycles
 SkipActivatePlayer
 
 CheckActivateEnemy
-	CPY YPosFromBotE1	;2 cycles
-	BNE SkipActivateEnemy	;2 cycles
-	STA VisibleEnemyLine 	;2 cycles
+	CPY YPosFromBotE1	;3 cycles
+	BNE SkipActivateEnemy	;2+1 cycles
+	STA VisibleEnemyLine 	;3 cycles
 SkipActivateEnemy
 
 
 	LDA VisibleEnemyLine	;check the visible enemy line... 2 cycles
-	BEQ ClearEnemy		;skip the drawing if its zero... 2 cycles
+	BEQ ClearEnemy		;skip the drawing if its zero... 2+1 cycles
 IsEnemyOn	
-	LDX VisibleEnemyLineCurrent		;2 cycles
-	LDA EnemyGraphics-1,x			;2 cycles
-	DEC VisibleEnemyLine			;2 cycles
-	DEC VisibleEnemyLineCurrent		;2 cycles
+	LDX VisibleEnemyLineCurrent		;3 cycles
+	LDA EnemyGraphics-1,x			;4 cycles
+	DEC VisibleEnemyLine			;5 cycles
+	DEC VisibleEnemyLineCurrent		;5 cycles
 ClearEnemy
-;	STA EnemyLineBuffer 			;2 cycles
 FinishEnemy
 
 
-
-
-
-	DEY		;count down number of scan lines	  1 cycles
-	STA WSYNC 						 ;2 cycles
+	DEY		;count down number of scan lines	  2 cycles
+	STA WSYNC 						 ;3 cycles
 	BNE ScanLoop		 				 ;2 cycles
 EndScanLoop ;end of kernal +++++++++++++++++
 
