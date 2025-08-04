@@ -14,13 +14,14 @@ ROLLING_COUNTER = $83;
 Graphics_Buffer = $84
 YPosFromBotE1 = $85;
 VisibleEnemyLine = $86;
-Enemy_Graphics_Buffer = $87;
-EGB = $88;
-PGB = $89;
+VisibleEnemyLineCurrent = $87;
+EnemyLineBuffer = $88;
+VisiblePlayerLineCurrent = $90;
+
 
 
 ; Constants ------
-playerheight       ds 8;
+playerheight      ds #8;
 
 
 
@@ -33,6 +34,7 @@ Start
 	LDA #0	
 	STA ROLLING_COUNTER
 	STA PICS
+	STA EnemyLineBuffer
 	
 ClearMem 
 	STA 0,X		
@@ -61,7 +63,7 @@ ClearMem
 	LDA #$10	
 	STA NUSIZ1	;make it quadwidth (not so thin, that)
 
-	LDA #%11111111	; -1 in the left nibble
+	LDA #%00000000	; set to not move
 	STA HMM1	; of HMM1 sets it to moving
 
 
@@ -71,55 +73,7 @@ MainLoop
 	LDA #2
 	STA VSYNC	
 	STA WSYNC	
-	STA WSYNC 
 
-
-;setup pic animations ----------------------------------------------
-	INC ROLLING_COUNTER
-
-	LDA ROLLING_COUNTER
-	AND #15		;every 8th screen swap to next image of player
-	CMP #8
-	BEQ PICSET4
-	JMP PICSET3
-PICSET4	LDA  PICS
-	CMP  #8
-	BEQ PICSET
-	LDA  #8
-	JMP PICSET2
-PICSET	LDA  #0
-PICSET2	STA PICS
-PICSET3
-
-
-	LDA ROLLING_COUNTER
-	AND #25		;how often to move enemy, larger number is slower
-	CMP #8
-	BEQ PICSET5
-	LDA #%00001111	; +1 in the left nibble
-	JMP PICSET6
-PICSET5	LDA #%00011111	; 0 in the left nibble
-PICSET6	STA HMP1	; of HMM1 sets it to moving the enemy
-
-
-;setup pic animations ----------------------------------------------
-	
-	STA WSYNC	
-	LDA #43	
-	STA TIM64T	
-	LDA #0
-	STA VSYNC 	
-
-
-;Main Computations; check down, up, left, right
-;general idea is to do a BIT compare to see if 
-;a certain direction is pressed, and skip the value
-;change if so
-
-;
-;Not the most effecient code, but gets the job done,
-;including diagonal movement
-;
 
 ; for up and down, we INC or DEC
 ; the Y Position
@@ -200,6 +154,60 @@ NoCollision
 
 
 
+	STA WSYNC ;//////////////////////////////////////////////
+
+;setup pic animations ----------------------------------------------
+	INC ROLLING_COUNTER
+
+	LDA ROLLING_COUNTER
+	AND #15		;every 8th screen swap to next image of player
+	CMP #8
+	BEQ PICSET4
+	JMP PICSET3
+PICSET4	LDA  PICS
+	CMP  #8
+	BEQ PICSET
+	LDA  #8
+	JMP PICSET2
+PICSET	LDA  #0
+PICSET2	STA PICS
+PICSET3
+
+
+	LDA ROLLING_COUNTER
+	AND #25		;how often to move enemy, larger number is slower
+	CMP #8
+	BEQ PICSET5
+	LDA #%00001111	; +1 in the left nibble
+	JMP PICSET6
+PICSET5	LDA #%00011111	; 0 in the left nibble
+PICSET6	STA HMP1	; of HMP1 sets it to moving the enemy
+
+	
+
+	LDA #8
+	CLC
+	ADC PICS	;add value of pics to Accumulator 
+	STA VisibleEnemyLineCurrent	
+	
+	LDA #8
+	CLC
+	ADC PICS	;add value of pics to Accumulator 
+	STA VisiblePlayerLineCurrent
+
+;setup pic animations ----------------------------------------------
+	
+	STA WSYNC ;//////////////////////////////////////////////	
+	LDA #43	
+	STA TIM64T	
+	LDA #0
+	STA VSYNC 	
+
+;-------------------------
+;-------------------------
+
+
+
 WaitForVblankEnd
 	LDA INTIM	
 	BNE WaitForVblankEnd	
@@ -219,71 +227,71 @@ WaitForVblankEnd
 PreScanLoop
 
 
-ScanLoop ;start of kernal
+	LDA #0
 
-	LDA #8
-
-CheckActivatePlayer
-	CPY YPosFromBot
-	BNE SkipActivatePlayer
-	STA VisiblePlayerLine 
-SkipActivatePlayer
-
-CheckActivateEnemy
-	CPY YPosFromBotE1
-	BNE SkipActivateEnemy
-	STA VisibleEnemyLine 
-SkipActivateEnemy
-	CLC		;Carry must be cleared or ADC will add carry as well
+ScanLoop ;start of kernal +++++++++++++++++++++++
 
 
-	LDA VisibleEnemyLine	;check the visible player line...
-	BEQ FinishEnemy		;skip the drawing if its zero...
-IsEnemyOn	
-	ADC PICS	;add value of pics to Accumulator 
-	TAX
-	LDA EnemyGraphics-1,x
-	DEC VisibleEnemyLine	
-FinishEnemy
-	STA GRP1	; put player 1 into grp1
+
+;	LDA EnemyLineBuffer						 ;2 cycles
+	STA GRP1	; put player 1 into grp1 2 cycles
 AfterEnemyDraw
 
-
-	LDA VisiblePlayerLine	;check the visible player line...
-	BEQ FinishPlayer	;skip the drawing if its zero...
+	LDA VisiblePlayerLine	;check the visible player line... 2 cycles
+	BEQ FinishPlayer	;skip the drawing if its zero...  2 cycles
 IsPlayerOn	
-	ADC PICS	;add value of pics to Accumulator 
-	TAX
-	LDA MainPlayerGraphics-1,x	;shift to change which pic were showing
+	LDX VisiblePlayerLineCurrent				 ;2 cycles
+	LDA MainPlayerGraphics-1,x	;shift to change which pic were showing 2 cycles
 ;	ORA #1		;creates a shield
-	DEC VisiblePlayerLine	
+	DEC VisiblePlayerLineCurrent				 ;2 cycles
+	DEC VisiblePlayerLine					 ;2 cycles
 FinishPlayer
-	STA GRP0	;put that line as player graphic 0
+
+
+	STA GRP0	;put that line as player graphic 0	 ;2 cycles
 AFTERPLAYERDRAW
 
 
-	
-
-	STA WSYNC 	
 
 
+	LDA #8							;2 cycles
 
-	DEY		;count down number of scan lines
+CheckActivatePlayer
+	CPY YPosFromBot		;2 cycles
+	BNE SkipActivatePlayer	;2 cycles
+	STA VisiblePlayerLine 	;2 cycles
+SkipActivatePlayer
 
-	BNE ScanLoop	;end of kernal
+CheckActivateEnemy
+	CPY YPosFromBotE1	;2 cycles
+	BNE SkipActivateEnemy	;2 cycles
+	STA VisibleEnemyLine 	;2 cycles
+SkipActivateEnemy
 
+
+	LDA VisibleEnemyLine	;check the visible enemy line... 2 cycles
+	BEQ ClearEnemy		;skip the drawing if its zero... 2 cycles
+IsEnemyOn	
+	LDX VisibleEnemyLineCurrent		;2 cycles
+	LDA EnemyGraphics-1,x			;2 cycles
+	DEC VisibleEnemyLine			;2 cycles
+	DEC VisibleEnemyLineCurrent		;2 cycles
+ClearEnemy
+;	STA EnemyLineBuffer 			;2 cycles
+FinishEnemy
+
+
+
+
+
+	DEY		;count down number of scan lines	  1 cycles
+	STA WSYNC 						 ;2 cycles
+	BNE ScanLoop		 				 ;2 cycles
+EndScanLoop ;end of kernal +++++++++++++++++
 
 	STA WSYNC  	
 	STA VBLANK 	
 	LDX #24		
-
-;set graphics to blank for next line -----
-	LDA #0		;set Acc to 0 for clearing graphics
-	STA EGB		;enemy graphics buffer
-;set graphics to blank for next line -----
-
-
-
 
 
 
