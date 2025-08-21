@@ -14,7 +14,9 @@
 ;straddles several lines, so it's like this -----
 ;                                               -----
 ;                                                    -----
-;Using hmove, not sure how to leave active, use player active?
+;Using hmove, not sure how to leave active, use player active? Maybe use ball instead of missle
+;make level 1 will o wisp.  All 8 lines get a monster, only one is real.
+;maybe monsters shouldn't attack when on fire
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
@@ -25,7 +27,7 @@
 ;NAGA, can summon snakes
 ;Gargoyle
 ;Griffon
-;Vampire, summon undead???, drain life, resurrect helpers in same spot they died, bats
+;Vampire, summon undead???, drain life, resurrect helpers in same spot they died, but as next more powerfull?, bats
 ;Saytr, summon goats
 ;Giant, can create craters that move accross screen
 ;Mummy
@@ -35,7 +37,7 @@
 ;Gorgon, causes player death if on same level facing her
 ;Fairy, can teleport, teleports past you, you must hit her from behind.
 ;--------------------------------------------------------------
-
+;
 
 	processor 6502
 	include vcs.h
@@ -65,6 +67,7 @@ Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
 Min_Eye_Trigger		= 6
+LVL1BOSS		= 14
 
 ;Variables ------
 
@@ -451,9 +454,7 @@ dontmovepit
 	AND Direction
 	BNE FORWARD
 	DEC E0_XPos-1,x
-
 	LDA onhorse
-;	cmp #1
 	beq DONEMOVE
 	DEC E0_XPos-1,x
 	JMP DONEMOVE
@@ -463,7 +464,6 @@ FORWARD
 	BCC DONEMOVE
 	INC E0_XPos-1,x
 	LDA onhorse
-;	cmp #1
 	beq DONEMOVE
 	INC E0_XPos-1,x
 DONEMOVE
@@ -590,15 +590,15 @@ Type5
 dontpause
 	DEC E0_Health-1,x
 	BMI ExtraDead
+	LDA E0_Type-1,x
+	CMP #LVL1BOSS
+	BEQ BOSS1
 	BNE NoCollisionP0
 ExtraDead
 	lda E0_Type-1,x
 	sty PF_TEMP
 	adc PF_TEMP
 	ldy BADDIEVALUE,x
-;	tay
-;	LDA #200
-;	STA Pit0_XPos-1,x ;You can kill pits????
 	LDA Mask-1,x
 	AND Enemy_Life
 	STA Enemy_Life
@@ -621,11 +621,37 @@ ExtraDead
 
 NoCollisionP0
 	lda E0_Type-1,x
-	cmp #1 ;Not hurt by horse
-	Beq notsmacked
+;	cmp #1 ;Not hurt by horse
+;	Beq notsmacked
+
+
 	cmp #Min_Eye_Trigger
 	bcc nosnakepause
 	JMP notsnake
+
+BOSS1
+	stx Multi_Temp
+	lda E0_Health-1,x
+	sta PF_TEMP
+	lda #0
+	sta E0_Health-1,x
+	sta E0_Type-1,x
+	LDA Mask-1,x
+	AND Enemy_Life
+	STA Enemy_Life
+	lda RNG
+	and #%00000111
+	tax
+	LDA Multiplexer-1,x
+	ORA Enemy_Life
+	STA Enemy_Life
+	lda PF_TEMP
+	sta E0_Health-1,x
+	lda #14
+	sta E0_Type-1,x
+	ldx Multi_Temp
+	JMP NoCollisionP0
+
 RedMandrakeMan
 	SEC
 	ROR Player_Health
@@ -1497,7 +1523,9 @@ new_E1_line3     STA WSYNC
 	lda  Graphics_Buffer_2
 	cpy Hero_Sword_Pos  ;3
  	php	;2
+	INY
 	stx COLUP1
+
 EndLine1   STA WSYNC  
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .600: SUBROUTINE
@@ -1516,8 +1544,6 @@ EndLine1   STA WSYNC
 	sta RESP0 
 
 
-	INY
-
 ;sword php style	
 EndLine2        STA WSYNC                                                ;3 cycles =
 	STA HMOVE
@@ -1526,20 +1552,25 @@ EndLine2        STA WSYNC                                                ;3 cycl
 
 ;This is not a loop, this is a one time set position for the eneamy E2
 
+	pla ;this is to reset sword
+
 
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta	COLUP1
+
+
 	ldx 	Graphics_Buffer  ;3
 	stx	GRP1	;3
-	pla ;this is to reset sword
+
+
+
 
 	DEY
-
-
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
 	php			;3
+
 
 	pla ;4 Set the top of the stack to ENAM1+1
 
@@ -2297,6 +2328,25 @@ MainPlayerGraphics6b
         .byte #%00110001;$1A
         .byte #%00111000;$74
 
+MainPlayerGraphics30
+	.byte #%00000000
+	.byte #%00111000
+	.byte #%01111100
+	.byte #%01111100
+	.byte #%01111100
+	.byte #%00111000
+	.byte #%00000000
+	.byte #%00000000
+
+	.byte #%00000000
+	.byte #%00000000
+	.byte #%00111000
+	.byte #%01111100
+	.byte #%01111100
+	.byte #%01111100
+	.byte #%00111000
+	.byte #%00000000
+
 SwordSongc ;10 bytes each section
 	.byte #0
 	.byte #10
@@ -2363,9 +2413,10 @@ horseknife
 	asl
 	asl
 	asl
-	cmp #%00110000
+	asl
+	cmp #%0110000
 	bne nobonus	
-	lda #%01000000
+	lda #%10000000
 nobonus
 	ora Potion
 	sta Potion
@@ -3160,6 +3211,7 @@ HeroGraphics1
         .byte #%00110000;$22
 
 
+
 MainPlayerGraphics0
 
 	.byte #%00000000
@@ -3180,8 +3232,6 @@ MainPlayerGraphics0
 	.byte #%00010000
 	.byte #%00111000
 	.byte #%00111000
-
-
 
 
 MainPlayerGraphics1
@@ -3207,13 +3257,15 @@ MainPlayerGraphics1
 	.byte #%00111000
 
 
+
+
 NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%00000111
      .byte #%00100001
      .byte #%01000010
      .byte #%01100011
      .byte #%10000100
-     .byte #%10100011
+     .byte #%01101110
      .byte #%11000100
      .byte #%11100100
      .byte #%00001000
@@ -3231,7 +3283,7 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%10000111
      .byte #%10101000
      .byte #%11001001
-     .byte #%11001010
+     .byte #%11001110
      .byte #255 ;This is to reset to beginning
 
 
@@ -3410,6 +3462,9 @@ MainPlayerGraphics3
 
 
 
+
+
+
 LEFTAUD     
      .byte     #%10000100
      .byte     #%10000100
@@ -3527,7 +3582,7 @@ GraphicsTableLow
 
      .byte #<MainPlayerGraphics3 ;13
 
-     .byte #<TreeGraphics ;14
+     .byte #<MainPlayerGraphics30 ;14
 
      .byte #<TreeGraphics ;15
 
@@ -3542,35 +3597,35 @@ GraphicsTableLow
 
 
 GraphicsTableHigh
-     .byte #>TreeGraphics
+     .byte #>TreeGraphics ;0
 
-     .byte #>PonyGraphics
+     .byte #>PonyGraphics ;1
 
-     .byte #>MainPlayerGraphics2
+     .byte #>MainPlayerGraphics2 ;2
 
-     .byte #>MainPlayerGraphics8
+     .byte #>MainPlayerGraphics8 ;3
 
-     .byte #>MainPlayerGraphics8
+     .byte #>MainPlayerGraphics8 ;4
 
-     .byte #>MainPlayerGraphics5
+     .byte #>MainPlayerGraphics5 ;5
 
-     .byte #>MainPlayerGraphics5
+     .byte #>MainPlayerGraphics5 ;6
 
-     .byte #>MainPlayerGraphics7
+     .byte #>MainPlayerGraphics7 ;7
 
-     .byte #>MainPlayerGraphics6
+     .byte #>MainPlayerGraphics6 ;8
 
-     .byte #>MainPlayerGraphics5
+     .byte #>MainPlayerGraphics5 ;9
 
-     .byte #>MainPlayerGraphics4
+     .byte #>MainPlayerGraphics4 ;10
 
-     .byte #>MainPlayerGraphics3
+     .byte #>MainPlayerGraphics3 ;11
 
-     .byte #>MainPlayerGraphics3
+     .byte #>MainPlayerGraphics3 ;12
 
-     .byte #>MainPlayerGraphics3
+     .byte #>MainPlayerGraphics3 ;13
 
-     .byte #>TreeGraphics ;14
+     .byte #>MainPlayerGraphics30 ;14
 
      .byte #>TreeGraphics ;15
 
@@ -3583,92 +3638,76 @@ GraphicsTableHigh
      .byte #>TreeGraphics ;19
 
 GraphicsColorTableLow
-     .byte #<TreeGraphicsColor
 
-     .byte #<PonyGraphicsColor
+     .byte #<TreeGraphicsColor ;1
 
-     .byte #<EnemyGraphicsColor2
+     .byte #<PonyGraphicsColor ;2
 
-     .byte #<EnemyGraphicsColor8
+     .byte #<EnemyGraphicsColor2 ;3 light green
 
-     .byte #<EnemyGraphicsColor8b
+     .byte #<EnemyGraphicsColor8 ;4 dark green
 
-     .byte #<EnemyGraphicsColor9
+     .byte #<EnemyGraphicsColor8b ;5 dark green
 
-     .byte #<EnemyGraphicsColor9b
+     .byte #<EnemyGraphicsColor9 ;6 green-brown matches background
 
-     .byte #<EnemyGraphicsColor7
+     .byte #<EnemyGraphicsColor9b ;7 green-brown matches background
 
-     .byte #<EnemyGraphicsColor6
+     .byte #<EnemyGraphicsColor7 ;8 ghost white
 
-     .byte #<EnemyGraphicsColor5
+     .byte #<EnemyGraphicsColor6 ;9 green
 
-     .byte #<EnemyGraphicsColor4
+     .byte #<EnemyGraphicsColor5 ;10 green
 
-     .byte #<EnemyGraphicsColor3
+     .byte #<EnemyGraphicsColor4 ;11 green
 
-     .byte #<EnemyGraphicsColor1
+     .byte #<EnemyGraphicsColor3 ;12 red/tan
 
-     .byte #<EnemyGraphicsColor0
+     .byte #<EnemyGraphicsColor1 ;13 red/tan
 
-     .byte #<EnemyHitColor
+     .byte #<EnemyGraphicsColor0 ;14 blue/white
 
-     .byte #<EnemyFireColor
+     .byte #<EnemyGraphicsColor5 ;15 blue
+
+     .byte #<EnemyFireColor ;16
+
+     .byte #<TreeGraphicsColor ;17
+
+     .byte #<TreeGraphicsColor ;18
+
+     .byte #<TreeGraphicsColor ;19
+
+     .byte #<TreeGraphicsColor ;20
+
+     .byte #<TreeGraphicsColor ;21
+
+     .byte #<TreeGraphicsColor ;22
+
+     .byte #<TreeGraphicsColor ;23
+
+     .byte #<TreeGraphicsColor ;24
+
+     .byte #<TreeGraphicsColor ;25
+
+     .byte #<TreeGraphicsColor ;26
+
+     .byte #<TreeGraphicsColor ;27
+
+     .byte #<TreeGraphicsColor ;28
+
+     .byte #<TreeGraphicsColor ;29
+
+     .byte #<TreeGraphicsColor ;30
+
+     .byte #<TreeGraphicsColor ;31
+
+     .byte #<TreeGraphicsColor ;32
 
 GraphicsColorTableHigh
+
      .byte #>TreeGraphicsColor
 
-     .byte #>PonyGraphicsColor
 
-     .byte #>EnemyGraphicsColor2
-
-     .byte #>EnemyGraphicsColor8
-
-     .byte #>EnemyGraphicsColor8b
-
-     .byte #>EnemyGraphicsColor9
-
-     .byte #>EnemyGraphicsColor9b
-
-     .byte #>EnemyGraphicsColor7
-
-     .byte #>EnemyGraphicsColor7
-
-     .byte #>EnemyGraphicsColor6
-
-     .byte #>EnemyGraphicsColor5
-
-     .byte #>EnemyGraphicsColor4
-
-     .byte #>EnemyGraphicsColor3
-
-     .byte #>EnemyGraphicsColor1
-
-     .byte #>EnemyGraphicsColor0
-
-     .byte #>EnemyHitColor
-
-     .byte #>EnemyFireColor
-
-
-Switch
-	.byte #3
-	.byte #5
-	.byte #7
-	.byte #2
-	.byte #1
-	.byte #0
-	.byte #4
-	.byte #6
-
-	.byte #11
-	.byte #9
-	.byte #13
-	.byte #10
-	.byte #12
-	.byte #8
-	.byte #14
-	.byte #15
 
 
 	org #$FDC0 ;HeroGraphicsColor + #512
@@ -3748,14 +3787,14 @@ EnemyGraphicsColor4
         .byte #$22;
 
 EnemyGraphicsColor5
-        .byte #$D2;
-        .byte #$D2;
-        .byte #$D2;
-        .byte #$C2;
-        .byte #$C4;
-        .byte #$D2;
-        .byte #$C4;
-        .byte #$30;
+        .byte #$80;
+        .byte #$80;
+        .byte #$82;
+        .byte #$84;
+        .byte #$84;
+        .byte #$82;
+        .byte #$80;
+        .byte #$80;
 
 EnemyGraphicsColor6
         .byte #$D2;
