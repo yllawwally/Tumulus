@@ -12,12 +12,12 @@
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 8	;height of sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
-Far_Left		= 10	
+Far_Left		= 5	
 Far_Right		= 150
-Far_Right_Hero		= 147
+Far_Right_Hero		= 140
 Far_Up_Hero		= 182
 Far_Down_Hero		= 10
-Enemy_Far_Left		= 10
+Enemy_Far_Left		= 1
 Enemy_Row_0		= 185
 Enemy_Row_E0		= 150
 Enemy_Row_E1		= 115
@@ -360,10 +360,11 @@ PICSET3
 	AND #3		;every 8th screen move
 	CMP #2
 	BNE MOVESET1
-	;DEC E0_XPos
-	INC E1_XPos
-	;DEC E2_XPos
+	DEC E0_XPos
+	DEC E1_XPos
+	DEC E2_XPos
 	DEC E3_XPos
+	DEC E4_XPos
 MOVESET1
 
 	DEC E0_XPos
@@ -979,15 +980,17 @@ PreScanLoop
 			;the second 2 bits control missle size
 	STA NUSIZ0
 	STA NUSIZ1
+	STA HMCLR
 
 	DEC Hero_Y ;Hero always is decremented, because he travels the whole screen
-	lda Hero_XPos ;3
 
 	STA WSYNC 						 ;3 cycles
 	
 	
 
 ScanLoopHero ;start of kernal +++++++++++++++++++++++ for Hero positioning
+	lda Hero_XPos ;3
+
 
 .Div15Hero   
 	sbc #15      ; 2      
@@ -996,10 +999,10 @@ ScanLoopHero ;start of kernal +++++++++++++++++++++++ for Hero positioning
 	tax
 	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
 	sta HMP1 ;,x
-	sta HMM1
 	
 	sta RESP1 ;,x	;the x must be a 0 for player 0  or 1 player 1
 	sta RESM1 ;reset where the sword is
+	sta HMM1
 
 
         DEY             ;count down number of scan lines          2 cycles = 
@@ -1010,25 +1013,27 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 ;this is to align sword
 	DEC E0_Y
 	DEC Hero_Y
+        DEY             ;count down number of scan lines          2 cycles = 
+	DEC E0_Y ;He is decremented because he's within his domain
 	DEY
+	STA HMCLR
 	LDA MOV_STAT
 	CMP #1
 	BCS MLEFT
+	STA HMCLR
 	LDA #0
 	JMP MRIGHT
-MLEFT	LDA #%01100000
+MLEFT	LDA #%01001111 ;Atari only looks at 4 most significant bits in 2's compliment
 MRIGHT	STA HMM1
-	LDA #0
-	STA HMP1
 
-	lda E0_XPos						 ;3
 	STA CXCLR	;reset the collision detection for next time
 	STA WSYNC
 ;	STA HMOVE
-;this is to align sword
 
 ScanLoopa ;start of kernal +++++++++++++++++++++++ for player 0 positioning
-	DEC E0_Y ;He is decremented because he's within his domain
+	nop
+	nop
+	lda E1_XPos						 ;3
 .Div15a   
 	sbc #15      ; 2         
 	bcs .Div15a   ; 3(2)
@@ -1036,29 +1041,25 @@ ScanLoopa ;start of kernal +++++++++++++++++++++++ for player 0 positioning
 	tax		;2
 	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
 	sta HMP0 ;	;3
+	sta RESP0 ;	
 
-	sta RESP0 ;	;the x must be a 0 for player 0  or 1 player 1
-
-
-        DEY             ;count down number of scan lines          2 cycles = 
-	Lda #0
-	Ldx #0
 	;Can't get LAX to work here
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 EndScanLoopa ;end of kernal +++++++++++++++++ for player 0 positioning
+	Lda #0
+	Ldx #0
 
 ;-------------------------Enemy number E0 start---------------------------
 ScanLoop 
 	sta	GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
-;	ldx	Graphics_Buffer ;3
 	stx	GRP0	
 
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
-  ldx #ENAM0+1		
-  txs                    ; Set the top of the stack to ENAM1+1
+  	ldx #ENAM0+1		
+  	txs                    ; Set the top of the stack to ENAM1+1
 ;sword php style 
 
 ;skipDraw
@@ -1094,7 +1095,7 @@ EndScanLoop ;end of kernal +++++++++++++++++ for player 0
 	
 ;-------------------------Enemy number E1 Start---------------------------
 ScanLoop_E1_a
-	sta	GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
+	sta	GRP1 ;3 
 	lda	Graphics_Buffer ;3
 	sta	GRP0
 	
@@ -1139,21 +1140,25 @@ ScanLoop_E1_a
 
 	LDA CXM1P
 	STA E0_Hit  ;this line must refer to previous enemy
+	txa
+;sword php style
+	cpy Hero_Sword_Pos
+	php
+  	ldx #ENAM0+1		
+;sword php style
+
+;sword php style
+  	txs                    ; Set the top of the stack to ENAM1+1
+;sword php style 
 
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E1_a
 ;------------------------------------------------
 	
 ScanLoop_E1_b
-	stx	GRP1
-
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-
-;sword php style 
+	sta.w	GRP1
 	lda E1_XPos
-	
+
 .Div15_E1_a   
 	sbc #15      ; 2         
 	bcs .Div15_E1_a   ; 3(2)
@@ -1164,12 +1169,9 @@ ScanLoop_E1_b
 	sta RESP0 ;,x	;the x must be a 0 for player 0  or 1 player 1
 
 	
-
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 EndScanLoop_E1_b 
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
 	DEY
 	lda	Graphics_Buffer_2
 
@@ -1220,7 +1222,7 @@ EndScanLoop_E1_c
 
 ;-------------------------Enemy number E1 End---------------------------
 
-	
+
 ;-------------------------Enemy number E2 Start---------------------------
 ScanLoop_E2_a
 	sta	GRP1 ;3 
@@ -1268,24 +1270,25 @@ ScanLoop_E2_a
 
 	LDA CXM1P
 	STA E1_Hit  ;this line must refer to previous enemy
+	txa
+;sword php style
+	cpy Hero_Sword_Pos
+	php
+  	ldx #ENAM0+1		
+;sword php style
+
+;sword php style
+  	txs                    ; Set the top of the stack to ENAM1+1
+;sword php style 
 
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E2_a
 ;------------------------------------------------
 	
 ScanLoop_E2_b
-	stx	GRP1
-
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-
-
-;sword php style 
+	sta.w	GRP1
 	lda E2_XPos
-	
+
 .Div15_E2_a   
 	sbc #15      ; 2         
 	bcs .Div15_E2_a   ; 3(2)
@@ -1296,10 +1299,10 @@ ScanLoop_E2_b
 	sta RESP0 ;,x	;the x must be a 0 for player 0  or 1 player 1
 
 	
-	DEY
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 EndScanLoop_E2_b 
+	DEY
 	lda	Graphics_Buffer_2
 
 ScanLoop_E2_c 
@@ -1348,8 +1351,6 @@ ScanLoop_E2_c
 EndScanLoop_E2_c
 
 ;-------------------------Enemy number E2 End---------------------------
-
-	
 ;-------------------------Enemy number E3 Start---------------------------
 ScanLoop_E3_a
 	sta	GRP1 ;3 
@@ -1396,25 +1397,26 @@ ScanLoop_E3_a
 	sta Graphics_Buffer_2
 
 	LDA CXM1P
-	STA E1_Hit  ;this line must refer to previous enemy
+	STA E2_Hit  ;this line must refer to previous enemy
+	txa
+;sword php style
+	cpy Hero_Sword_Pos
+	php
+  	ldx #ENAM0+1		
+;sword php style
+
+;sword php style
+  	txs                    ; Set the top of the stack to ENAM1+1
+;sword php style 
 
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E3_a
 ;------------------------------------------------
 	
 ScanLoop_E3_b
-	stx	GRP1
-
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-
-
-;sword php style 
+	sta.w	GRP1
 	lda E3_XPos
-	
+
 .Div15_E3_a   
 	sbc #15      ; 2         
 	bcs .Div15_E3_a   ; 3(2)
@@ -1425,10 +1427,10 @@ ScanLoop_E3_b
 	sta RESP0 ;,x	;the x must be a 0 for player 0  or 1 player 1
 
 	
-	DEY
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 EndScanLoop_E3_b 
+	DEY
 	lda	Graphics_Buffer_2
 
 ScanLoop_E3_c 
@@ -1477,6 +1479,7 @@ ScanLoop_E3_c
 EndScanLoop_E3_c
 
 ;-------------------------Enemy number E3 End---------------------------
+
 	
 	
 ;-------------------------Enemy number E4 Start---------------------------
@@ -1525,25 +1528,26 @@ ScanLoop_E4_a
 	sta Graphics_Buffer_2
 
 	LDA CXM1P
-	STA E1_Hit  ;this line must refer to previous enemy
+	STA E3_Hit  ;this line must refer to previous enemy
+	txa
+;sword php style
+	cpy Hero_Sword_Pos
+	php
+  	ldx #ENAM0+1		
+;sword php style
+
+;sword php style
+  	txs                    ; Set the top of the stack to ENAM1+1
+;sword php style 
 
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E4_a
 ;------------------------------------------------
 	
 ScanLoop_E4_b
-	stx	GRP1
-
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-
-
-;sword php style 
+	sta.w	GRP1
 	lda E4_XPos
-	
+
 .Div15_E4_a   
 	sbc #15      ; 2         
 	bcs .Div15_E4_a   ; 3(2)
@@ -1554,10 +1558,10 @@ ScanLoop_E4_b
 	sta RESP0 ;,x	;the x must be a 0 for player 0  or 1 player 1
 
 	
-	DEY
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 EndScanLoop_E4_b 
+	DEY
 	lda	Graphics_Buffer_2
 
 ScanLoop_E4_c 
@@ -1604,7 +1608,6 @@ ScanLoop_E4_c
         STA WSYNC                                                ;3 cycles =
         BNE ScanLoop_E4_c  ;BNE instead of BCS on last one ;2 cycles =
 EndScanLoop_E4_c
-
 ;-------------------------Enemy number E4 End---------------------------
 
 ;php sword stuff
