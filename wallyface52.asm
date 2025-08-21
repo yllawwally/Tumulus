@@ -1,5 +1,4 @@
 ;--------------------------------------------------------------
-;his sword shifts on left edge
 ;top rolls incorrectly
 ;sword does funny things during hmove lines
 ;--------------------------------------------------------------
@@ -12,9 +11,9 @@
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 8	;height of sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
-Far_Left		= 24	
-Far_Right		= 150
-Far_Right_Hero		= 140
+Far_Left		= 4
+Far_Right		= 140
+Far_Right_Hero		= 148
 Far_Up_Hero		= 182
 Far_Down_Hero		= 10
 Enemy_Far_Left		= 1
@@ -676,7 +675,6 @@ alive4
 	STA E4_Y
 alive5
 
-
 	LDA ROLLING_COUNTER
 	ROR
 	ROR
@@ -687,23 +685,22 @@ alive5
 	
 	LDA PFData0		; 4 cycles
 	STA PF0_L1 ;B
-	STA PF1_L1 ;B
 	LDA PFData1		; 4 cycles
-	STA PF2_L1 ;C
+	STA PF1_L1 ;B
 	LDA PFData2		; 4 cycles
-	STA PF3_L1 ;d
+	STA PF2_L1 ;C
 	LDA PFData3		; 4 cycles
-	STA PF3_L1 ;E
+	STA PF3_L1 ;d
 	LDA PFData4		; 4 cycles
-	STA PF4_L1 ;F
+	STA PF4_L1 ;E
 	LDA PFData5		; 4 cycles
 	STA PF5_L1 ;F
 
 
-;	CLC
-;	ADC #$4
-;	TAY
+;while shift > 0 do
+;load shift into Y
 	LDY Pos
+	
 ROTATE1
 	ROL PF5_L1
 	ROL PF4_L1
@@ -711,186 +708,54 @@ ROTATE1
 	ROL PF2_L1
 	ROL PF1_L1
 	ROL PF0_L1
- 	DEY
-	BNE ROTATE1	
+	DEY
+	BNE ROTATE1 
 
+	LDY #4
 
-	ROR PF0_L1
-	ROR PF0_L1
-	ROR PF0_L1
-	ROR PF0_L1
+	LDA PF0_L1
+	STA PF_TEMP
+
+ROTATE2
+	ROR PF_TEMP
+	ROR PF1_L1
+	ROR PF2_L1
+	ROR PF3_L1
+	ROR PF4_L1
 	ROR PF5_L1
+	DEY
+	BNE ROTATE2
+
+	LDA PF4_L1
+	STA PF_TEMP
+
+	LDY #4
+ROTATE3	
+	ROR PF_TEMP
+	ROR PF4_L1
 	ROR PF5_L1
-	ROR PF5_L1
-	ROR PF5_L1
+	DEY
+	BNE ROTATE3
 
+	LDY #7
+LOOPMEM1
+	ROL PF1_L1
+	ROR PF_TEMP
+	DEY
+	BNE LOOPMEM1
 
-
-;NEED to reverse pf1
-
-	ldx PF1_L1
-	lda SwapTable,x
+	LDA PF_TEMP
 	STA PF1_L1
 
-	ldx PF4_L1
-	lda SwapTable,x
+	LDY #7
+LOOPMEM2
+	ROL PF4_L1
+	ROR PF_TEMP
+	DEY
+	BNE LOOPMEM2
+
+	LDA PF_TEMP
 	STA PF4_L1
-
-	LDX #1
-
-	LDA PFData0 ,x		; 4 cycles
-	STA PF0_L2 ;B
-	STA PF1_L2 ;B
-	LDA PFData1 ,x		; 4 cycles
-	STA PF2_L2 ;C
-	LDA PFData2,x		; 4 cycles
-	STA PF3_L2 ;d
-	LDA PFData3 ,x		; 4 cycles
-	STA PF3_L2 ;E
-	LDA PFData4 ,x		; 4 cycles
-	STA PF4_L2 ;F
-	LDA PFData5 ,x		; 4 cycles
-	STA PF5_L2 ;F
-
-;	CLC
-;	ADC #$4
-;	TAY
-	LDY Pos
-ROTATE2
-	ROL PF5_L2
-	ROL PF4_L2
-	ROL PF3_L2
-	ROL PF2_L2
-	ROL PF1_L2
-	ROL PF0_L2
- 	DEY
-	BNE ROTATE2	
-	
-
-
-;NEED to reverse pf1
-
-	ldx PF1_L2
-	lda SwapTable,x
-	STA PF1_L2
-
-	ldx PF4_L2
-	lda SwapTable,x
-	STA PF4_L2
-
-
-	ROR PF0_L2
-	ROR PF0_L2
-	ROR PF0_L2
-	ROR PF0_L2
-	ROR PF5_L2
-	ROR PF5_L2
-	ROR PF5_L2
-	ROR PF5_L2
-	
-	ldx #2
-
-
-	LDA PFData0 ,x		; 4 cycles
-	STA PF0_L3 ;B
-	STA PF1_L3 ;B
-	LDA PFData1 ,x		; 4 cycles
-	STA PF2_L3 ;C
-	LDA PFData2 ,x		; 4 cycles
-	STA PF3_L3 ;d
-	LDA PFData3 ,x		; 4 cycles
-	STA PF3_L3 ;E
-	LDA PFData4 ,x		; 4 cycles
-	STA PF4_L3 ;F
-	LDA PFData5 ,x		; 4 cycles
-	STA PF5_L3 ;F
-
-
-;	CLC
-;	ADC #$4
-;	TAY
-	LDY Pos
-ROTATE3
-	ROL PF5_L3
-	ROL PF4_L3
-	ROL PF3_L3
-	ROL PF2_L3
-	ROL PF1_L3
-	ROL PF0_L3
- 	DEY
-	BNE ROTATE3	
-	
-
-
-;NEED to reverse pf2
-
-	ldx PF1_L3
-	lda SwapTable,x
-	STA PF1_L3
-
-	ldx PF4_L3
-	lda SwapTable,x
-	STA PF4_L3
-
-	ROR PF0_L3
-	ROR PF0_L3
-	ROR PF0_L3
-	ROR PF0_L3
-	ROR PF5_L3
-	ROR PF5_L3
-	ROR PF5_L3
-	ROR PF5_L3
-
-
-	ldx #3
-
-	LDA PFData0,x		; 4 cycles
-	STA PF0_L4 ;B
-	STA PF1_L4 ;B
-	LDA PFData1,x		; 4 cycles
-	STA PF2_L4 ;C
-	LDA PFData2,x		; 4 cycles
-	STA PF3_L4 ;d
-	LDA PFData3,x		; 4 cycles
-	STA PF3_L4 ;E
-	LDA PFData5,x		; 4 cycles
-	STA PF5_L4 ;F
-
-
-;	CLC
-;	ADC #$4
-;	TAY
-	LDY Pos
-ROTATE4
-	ROL PF5_L4
-	ROL PF4_L4
-	ROL PF3_L4
-	ROL PF2_L4
-	ROL PF1_L4
-	ROL PF0_L4
- 	DEY
-	BNE ROTATE4	
-	
-
-
-;NEED to reverse pf2
-
-	ldx PF1_L4
-	lda SwapTable,x
-	STA PF1_L4
-
-	ldx PF4_L4
-	lda SwapTable,x
-	STA PF4_L4
-
-	ROR PF0_L4
-	ROR PF0_L4
-	ROR PF0_L4
-	ROR PF0_L4
-	ROR PF5_L4
-	ROR PF5_L4
-	ROR PF5_L4
-	ROR PF5_L4
 
 
 	
@@ -910,8 +775,6 @@ WaitForVblankEnd
 
 
 	STA WSYNC	
-;	STA HMOVE 	
-	
 	STA VBLANK  	
 
 
@@ -934,12 +797,14 @@ PreScanLoop
 	STA PF2			; 3 cycles
 	NOP
 	NOP
+
 	NOP
 	NOP
 	NOP
 	NOP
 	NOP
-	NOP	
+	NOP
+
 	LDA PF3_L1		; 4 cycles 
 	STA PF0			; 3 cycles
 	LDA PF4_L1		; 4 cycles
@@ -947,6 +812,8 @@ PreScanLoop
 	LDA PF5_L1		; 4 cycles
 	STA PF2			; 3 cycles
 	
+
+
 	STA WSYNC 						 ;3 cycles =74
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 ;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
@@ -1068,14 +935,12 @@ ScanLoopHero ;start of kernal +++++++++++++++++++++++ for Hero positioning
 
 	tax
 	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
-	sta HMP1 ;,x
-	
-	sta RESP1 ;,x	;the x must be a 0 for player 0  or 1 player 1
+	sta HMP1 ;reset amount to fine adjust player
+	sta RESP1 ;reset where the player is
 	sta RESM1 ;reset where the sword is
-	sta HMM1
+	sta HMM1 ;reset amount to fine adjust sword
 
 
-        DEY             ;count down number of scan lines          2 cycles = 
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE						 ;3
 EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
@@ -1083,6 +948,7 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 ;this is to align sword
 	DEC E0_Y
 	DEC Hero_Y
+        DEY             ;count down number of scan lines          2 cycles = 
         DEY             ;count down number of scan lines          2 cycles = 
 	DEC E0_Y ;He is decremented because he's within his domain
 	DEY
@@ -1217,8 +1083,11 @@ EndScanLoop_E0_c
 
 	LDX Graphics_Buffer
 
-	STA HMCLR	
+;	STA HMCLR	
+	lda #0
+	sta Graphics_Buffer
 	STA CXCLR
+
         STA WSYNC                                                ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------
@@ -1240,12 +1109,20 @@ EndScanLoop_E0_c
 	STA HMOVE
 ;This is not a loop, this is a one time set position for the eneamy E1
 
-	ldx 	Graphics_Buffer_2 
+	lda 	Graphics_Buffer_2 
 
 
 ScanLoop_E1_c 
-	stx	GRP1	
-	
+	sta	GRP1	;3
+	lda	Graphics_Buffer
+	sta	GRP0	; 3
+
+;sword php style
+	cpy Hero_Sword_Pos  ;3
+	php			;3
+  	ldx #ENAM0+1		;2
+  	txs                    ;2 Set the top of the stack to ENAM1+1
+;sword php style 
 
 ;skipDraw
 ; draw player sprite 0:
@@ -1257,8 +1134,8 @@ ScanLoop_E1_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E1_b:
 	lda     (E1_Ptr),y      ; 5
-	sta     GRP0 ; This allows us to do the calculation early, but must move dey to before routine
-
+;	sta     GRP0 ; This allows us to do the calculation early
+	sta 	Graphics_Buffer
 
 
 ;skipDraw
@@ -1270,31 +1147,19 @@ ScanLoop_E1_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E1_e:
 	lda     (Hero_Ptr),y      ; 5
-
-
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-;sword php style 
-
-
-
-
-	tax
-
-        DEY             ;count down number of scan lines          2 cycles
+;This allows us to do the calculation early, but must move dey to before routine
+        DEY             ;2 count down number of scan lines          2 cycles
 	
 
-	CPY #Enemy_Row_E1-#1
+	CPY #Enemy_Row_E1-#1 ;3
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E1_c                                             ;2 cycles =
 EndScanLoop_E1_c
 
-;-------------------------Enemy number E1 End---------------------------;-------------------------Enemy number E2 Start---------------------------
+;-------------------------Enemy number E1 End---------------------------
+;-------------------------Enemy number E2 Start---------------------------
 ;NOT A LOOP
-	stx GRP1
+	sta GRP1
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
@@ -1334,9 +1199,11 @@ EndScanLoop_E1_c
 
 	LDX Graphics_Buffer
 
-	STA HMCLR	
-	
+;	STA HMCLR	
+	lda #0
+	sta Graphics_Buffer
 	STA CXCLR
+
         STA WSYNC                                                ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------
@@ -1358,12 +1225,20 @@ EndScanLoop_E1_c
 	STA HMOVE
 ;This is not a loop, this is a one time set position for the eneamy E2
 
-	ldx 	Graphics_Buffer_2 
+	lda 	Graphics_Buffer_2 
 
 
 ScanLoop_E2_c 
-	stx	GRP1	
-	
+	sta	GRP1	;3
+	lda	Graphics_Buffer
+	sta	GRP0	; 3
+
+;sword php style
+	cpy Hero_Sword_Pos  ;3
+	php			;3
+  	ldx #ENAM0+1		;2
+  	txs                    ;2 Set the top of the stack to ENAM1+1
+;sword php style 
 
 ;skipDraw
 ; draw player sprite 0:
@@ -1375,13 +1250,9 @@ ScanLoop_E2_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E2_b:
 	lda     (E2_Ptr),y      ; 5
-	sta     GRP0 ; This allows us to do the calculation early, but must move dey to before routine
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-;sword php style 
+;	sta     GRP0 ; This allows us to do the calculation early
+	sta 	Graphics_Buffer
+
 
 ;skipDraw
 ; draw Hero sprite:
@@ -1392,20 +1263,18 @@ ScanLoop_E2_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E2_e:
 	lda     (Hero_Ptr),y      ; 5
-	tax
-
-        DEY             ;count down number of scan lines          2 cycles
+;This allows us to do the calculation early, but must move dey to before routine
+        DEY             ;2 count down number of scan lines          2 cycles
 	
 
-	CPY #Enemy_Row_E2-#1
+	CPY #Enemy_Row_E2-#1 ;3
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E2_c                                             ;2 cycles =
 EndScanLoop_E2_c
-
 ;-------------------------Enemy number E2 End---------------------------
 ;-------------------------Enemy number E3 Start---------------------------
 ;NOT A LOOP
-	stx GRP1
+	sta GRP1
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
@@ -1443,8 +1312,9 @@ EndScanLoop_E2_c
 
 
 	LDX Graphics_Buffer
-
-	STA HMCLR	
+;	STA HMCLR	
+	lda #0
+	sta Graphics_Buffer
 
 	STA CXCLR
         STA WSYNC                                                ;3 cycles =
@@ -1468,12 +1338,19 @@ EndScanLoop_E2_c
 	STA HMOVE
 ;This is not a loop, this is a one time set position for the eneamy E3
 
-	ldx 	Graphics_Buffer_2 
-
+	lda 	Graphics_Buffer_2 
 
 ScanLoop_E3_c 
-	stx	GRP1	
-	
+	sta	GRP1	;3
+	lda	Graphics_Buffer
+	sta	GRP0	; 3
+
+;sword php style
+	cpy Hero_Sword_Pos  ;3
+	php			;3
+  	ldx #ENAM0+1		;2
+  	txs                    ;2 Set the top of the stack to ENAM1+1
+;sword php style 
 
 ;skipDraw
 ; draw player sprite 0:
@@ -1485,13 +1362,9 @@ ScanLoop_E3_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E3_b:
 	lda     (E3_Ptr),y      ; 5
-	sta     GRP0 ; This allows us to do the calculation early, but must move dey to before routine
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-;sword php style 
+;	sta     GRP0 ; This allows us to do the calculation early
+	sta 	Graphics_Buffer
+
 
 ;skipDraw
 ; draw Hero sprite:
@@ -1502,12 +1375,11 @@ ScanLoop_E3_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E3_e:
 	lda     (Hero_Ptr),y      ; 5
-	tax
-
-        DEY             ;count down number of scan lines          2 cycles
+;This allows us to do the calculation early, but must move dey to before routine
+        DEY             ;2 count down number of scan lines          2 cycles
 	
 
-	CPY #Enemy_Row_E3-#1
+	CPY #Enemy_Row_E3-#1 ;3
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E3_c                                             ;2 cycles =
 EndScanLoop_E3_c
@@ -1515,7 +1387,7 @@ EndScanLoop_E3_c
 ;-------------------------Enemy number E3 End---------------------------
 ;-------------------------Enemy number E4 Start---------------------------
 ;NOT A LOOP
-	stx GRP1
+	sta GRP1
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
@@ -1554,8 +1426,9 @@ EndScanLoop_E3_c
 
 
 	LDX Graphics_Buffer
-	STA HMCLR	
-	
+;	STA HMCLR	
+	lda #0
+	sta Graphics_Buffer
 	STA CXCLR
         STA WSYNC                                                ;3 cycles =
 ;NOT A LOOP
@@ -1578,12 +1451,19 @@ EndScanLoop_E3_c
 	STA HMOVE
 ;This is not a loop, this is a one time set position for the eneamy E4
 
-	ldx 	Graphics_Buffer_2 
+	lda 	Graphics_Buffer_2 
 
 
 ScanLoop_E4_c 
-	stx	GRP1	
-	
+	sta	GRP1	
+	lda	Graphics_Buffer
+	sta	GRP0
+;sword php style
+	cpy Hero_Sword_Pos
+	php
+  	ldx #ENAM0+1		
+  	txs                    ; Set the top of the stack to ENAM1+1
+;sword php style 
 
 ;skipDraw
 ; draw player sprite 0:
@@ -1595,13 +1475,8 @@ ScanLoop_E4_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E4_b:
 	lda     (E4_Ptr),y      ; 5
-	sta     GRP0 ; This allows us to do the calculation early, but must move dey to before routine
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-;sword php style 
+	sta	Graphics_Buffer
+;	sta     GRP0 ; This allows us to do the calculation early, but must move dey to before routine
 
 ;skipDraw
 ; draw Hero sprite:
@@ -1612,7 +1487,6 @@ ScanLoop_E4_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E4_e:
 	lda     (Hero_Ptr),y      ; 5
-	tax
 
         DEY             ;count down number of scan lines          2 cycles
 	
