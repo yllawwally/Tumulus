@@ -13,12 +13,14 @@
 ;Non distributed future
 ;make players as large pits, that can't be jumped by horse
 
+
 ;FUTURE FEATURES
-;make giant ogre as level 2 boss
 ;Need to add grappling
 ;differentiate levels more
 ;add more creatures
 ;maybe monsters shouldn't attack when on fire
+;slide ceratures up and down
+;allow creatures to move to a different lane if overeyes > 0
 
 
 ;BUGS
@@ -26,7 +28,8 @@
 ;1 line of player is discolored
 ;snakes don't damage player
 ;tree doesn't damage player
-;Mummy has moving middle section
+;Mummy can split in half
+;weird player graphic corruption, when touching mummy
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -113,6 +116,8 @@ Enemy_Row_E7		= 23   ;35
 Min_Eye_Trigger		= 8
 LVL1BOSS			= 14
 Mummy_Num		= %01111
+
+LVL2BOSS			= 15
 ;Variables ------
 
 
@@ -161,6 +166,7 @@ EnemyGraphicsColorPtr_E5	ds 1
 EnemyGraphicsColorPtr_E6	ds 1
 ;EnemyGraphicsColorPtr_E7	ds 1
 TempGraphicsColor		ds 2
+MidSectionColorPtr		ds 2
 
 E0_XPos 		ds 1	;horizontal position
 E1_XPos 		ds 1	;horizontal position
@@ -585,11 +591,15 @@ Collision
 
 	LDA Multiplexer-1,x
 	AND Other_Hit
-	BEQ NoCollisionP0	;skip if not hitting...		
+	BNE NoCollJMP
+	JMP NoCollisionP0	;skip if not hitting...		
+NoCollJMP
 	LDA Multiplexer-1,x
 	AND Enemy_Life	
-	BEQ NoCollisionP0	;skip if not alive
+	BNE NoCoPo
+	JMP NoCollisionP0	;skip if not alive
 
+NoCoPo
 	lda E0_Type-1,x
 	cmp #5
 	bcc dontpause
@@ -601,6 +611,9 @@ Collision
 	CMP #7
 	BEQ Type5
 
+	CMP #LVL2BOSS
+	BNE Type2
+	jmp dontpause
 
 Type2
 	LDA Direction ;make baddie change dir if hit
@@ -645,6 +658,8 @@ ExtraDead
 	STA Enemy_Life
 	LDA E0_Type-1,x
 	BEQ ITSZERO
+
+
 
 	CMP #6
 	BEQ RedMandrakeMan
@@ -905,8 +920,18 @@ Enemies_Alive
 	adc #C_P1_HEIGHT - #1
 	adc onhorse	
 	STA HeroGraphicsColorPtr
-	
 
+
+
+;	ldx Mummy_Num
+;	lda GraphicsTableLow,x 	;low byte of ptr is graphic
+;	CLC	;clear carry
+;	ADC PICS
+;	sta MidSectionColorPtr
+
+;	lda GraphicsTableHigh,x ;high byte of graphic location
+
+;	sta MidSectionColorPtr+1
 
 ;setup pic animations ----------------------------------------------
 
@@ -1103,7 +1128,7 @@ resetx
 	lda #24
 	jmp nozero
 leftdif	
-	lda #0
+;	lda #0
 nozero
 ;	sta onhorse
 
@@ -1128,7 +1153,7 @@ TESTPOINTG
 	LDA #$FF
 
 NOEyesYet	
-	LDY #4
+	;LDY #4
 NOBIGEYES
 	sta GRP0
 
@@ -1168,12 +1193,21 @@ ScanLoopHero ;start of kernal +++++++++++++++++++++++ for Hero positioning
 EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 .100:
 ;this is to align sword
-	nop.w ;these 2 nops allow the hero to do fine positioning???? I don't know why.....prob the hmclr
 	DEC Hero_Y
-        DEY             ;count down number of scan lines          2 cycles = 
-        DEY             ;count down number of scan lines          2 cycles = 
-	nop.w
-	DEY
+
+	ldx Mummy_Num
+	lda GraphicsTableLow+3,x 	;low byte of ptr is graphic
+	sec
+	sbc DistFromBottom-1
+	sta MidSectionColorPtr
+
+	lda GraphicsTableHigh+3,x ;high byte of graphic location
+
+	sta MidSectionColorPtr+1
+
+
+
+
 	STA HMCLR
 	LDA MOV_STAT
 	CMP #1
@@ -1323,6 +1357,9 @@ MTNRANGE2
 	AND #%00000111
 	BEQ NOQUAKE
 	STA WSYNC
+
+
+
 	STA WSYNC
 	
 NOQUAKE
@@ -1881,16 +1918,20 @@ pitposition
 
 
 
+	lda (MidSectionColorPtr),y
+	sta COLUP0
+
+
 	lda TempPit_XPos ;3
 	clc	;2
 
 
-.Div15_Pit   
-	sbc #15      ; 2         
-	bcs .Div15_Pit   ; 3(2)
-
-	tax
-	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
+;.Div15_Pit   
+;	sbc #15      ; 2         
+;	bcs .Div15_Pit   ; 3(2)
+;
+;	tax
+;	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
 	lda #0
 	sta HMP0 
 ;	sta RESP0 ;Disabling pit movement, because no longer use pits.
@@ -2381,6 +2422,7 @@ LINEF
 
 	STA WSYNC
 
+
 rand_8
 	LDA	RNG		; get seed
 	BNE Not_Zero
@@ -2399,7 +2441,6 @@ no_eor
  ;EnemyGraphicsColorPtr_E2
 	LDY #5
 	STA WSYNC
-
 
 	JMP CalcScore
 
@@ -2954,10 +2995,6 @@ PreOverScanWait
 ;Can put stuff here --------------------------------------------------
 
 
-
-
-
-
 OverScanWait
 	STA WSYNC
 	DEY
@@ -3080,7 +3117,6 @@ CalcScore
 
 	NOP
 	NOP
-
 
 
 
