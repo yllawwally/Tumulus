@@ -9,7 +9,11 @@
 ;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
 ;player monster collisions add a line
 ;color is not delayed by vdel
-;top line of baddie is wrong because it needs to be loaded in prior line
+;top line of baddie is wrong because it needs to be loaded in prior line, but not the color
+;player minor corruption far right, corruption is more severe on horse
+;can I make pit color selectable, to make giant ogre, out of several pieces
+;moving on horse to the right wioth sword out, causes extra line
+;endline1 doesn't have dey till later, which causes player knife to be off position.
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
@@ -40,7 +44,7 @@ C_P1_HEIGHT 		= 12	;height of hero sprite
 C_KERNAL_HEIGHT 	= 182	;height of kernal/actually the largest line on the screen ;was 186
 Far_Left		= 8
 Far_Right		= 140
-Far_Right_Hero		= 130
+Far_Right_Hero		= 128
 Far_Up_Hero		= 180
 Far_Down_Hero		= 21+C_P1_HEIGHT
 Enemy_Far_Left		= 4
@@ -1556,7 +1560,7 @@ new_E1_line3     STA WSYNC
 ;skipDraw
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
-	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
+	dcp     Hero_Y            ; 5 (DEC)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E0_eb21ZZ       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
@@ -1571,7 +1575,7 @@ new_E1_line3     STA WSYNC
 ;skipDraw
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
-	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
+	dcp     Hero_Y            ; 5 (DEC)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E0_eb22ZZ       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
@@ -1581,18 +1585,21 @@ new_E1_line3     STA WSYNC
 	sta Graphics_Buffer
 
 
-;	NOP
-	NOP
+
+	NOP 
+
+
 	lda  Graphics_Buffer_2
 	cpy Hero_Sword_Pos  ;3
-	sta GRP1		
+ 	php	;2
 	stx COLUP1
 EndLine1   STA WSYNC  
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .600: SUBROUTINE
 ;This is not a loop, this is a one time set position for the eneamy
- 	php	;2
+
 	clc
+	sta GRP1
 	lda Temp_XPos ;3
 .Div15_E2_a   
 	sbc #15      ; 2         
@@ -1734,9 +1741,9 @@ Draw_Enemy_E2
 	JMP Draw_Enemy_E2
 EndLine4 
 	  	
-	sta 	COLUP1 ;3
 EndLin4b STA WSYNC 
 ;-----------------------this needs to run for 8 lines, the size of an enemy
+	sta 	COLUP1 ;3
 
 ;---------------------line for setting up pits-----------------------------------------
 ;sword php style
@@ -1782,33 +1789,40 @@ Hit_Baddie
 .doDrawHero_E0_eb21az:
 	lax     (Hero_Ptr),y      ; 5
 	
+	lda 	#$0      ;2
+	sta 	GRP0    ;3
+	sta 	COLUP0
+
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	dey
 
 
 
+;sword php style
+
 
 	NOP
-	NOP 
+	NOP
+	NOP
+
 
 
 	cpy Hero_Sword_Pos  ;3
 	php			;3
-	sta 	COLUP1 ;3
 
 
 
 
 
-;sword php style
 
-	lda 	#$0      ;2
-	sta 	GRP0    ;3
-	stx	GRP1	;3
 EndLine5 	sta WSYNC
 
 ;---------------------line for setting up pits-----------------------------------------
-	sta 	COLUP0
+
+	sta 	COLUP1 ;3
+	stx	GRP1	;3
+
+
 	pla
 
 
@@ -1822,7 +1836,7 @@ EndLine5 	sta WSYNC
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E0_eb21a       ; 2/3 ; should be bcs
-	lda.w     #0              ; 2
+	lda     #0              ; 3
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E0_eb21a:
 	lda     (Hero_Ptr),y      ; 5
@@ -1840,8 +1854,7 @@ midline6
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E0_eb22a       ; 2/3 ; should be bcs
-	lda.w     #0              ; 2
-	NOP
+	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E0_eb22a:
 	lda     (Hero_Ptr),y      ; 5
@@ -1850,20 +1863,25 @@ midline6
 
 	lda  Graphics_Buffer_2
 
-	nop
-	nop
+
+	NOP
+	NOP
+	NOP
+
+
 
 	cpy Hero_Sword_Pos  ;3          
  	php	;2
-	sta GRP1		
+	stx COLUP1
 Endline6 	sta WSYNC 
 
 
 
 pitposition
+	sta GRP1		
 
 
-	stx COLUP1
+
 	lda TempPit_XPos ;3
 	clc	;2
 
@@ -2527,14 +2545,16 @@ SkipMoveLeft
 	BMI SkipMoveRight
 
 
-	clc
 	lda Hero_XPos
+	CMP #Far_Right_Hero
+	BCS TOOFARTOMOVE
+	clc
 	adc #<HERO_SPEED_HOR
 	sta Hero_XPos
 	lda Hero_XPos+1
 	adc #>HERO_SPEED_HOR
 	sta Hero_XPos+1
-
+TOOFARTOMOVE
 ;; moving right, cancel any mirrorimage
 	LDA #%00000000
 	STA REFP0
@@ -2544,17 +2564,14 @@ SkipMoveLeft
 
 
 ;Don't allow Hero too far right
-	LDA #Far_Right_Hero
-	CMP Hero_XPos
-	BCS HeroRight
-	STA Hero_XPos
+;	LDA #Far_Right_Hero
+;	CMP Hero_XPos
+;	BCS HeroRight
+;	STA Hero_XPos
 HeroRight
 
 
 SkipMoveRight
-
-
-
 
 
 
