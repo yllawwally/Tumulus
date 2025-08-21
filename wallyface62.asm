@@ -1,7 +1,10 @@
 ;--------------------------------------------------------------
 ;top rolls incorrectly
-;attempting to shift enemies into using vdel
 ;attempting to add color to player character messed up at hmoves
+;could probably color bad guys easily, hero has problem with hmove only
+;if you know a creature will be displayed, could it be displayed in only 8 cycles,
+;if you replace picture with a blank picture when dead
+;trying to make hero size 10 instead of 8
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -10,12 +13,12 @@
 
 ; Constants ------
 C_P0_HEIGHT 		= 8	;height of sprite
-C_P1_HEIGHT 		= 8	;height of sprite
+C_P1_HEIGHT 		= 10	;height of hero sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
-Far_Left		= 10
+Far_Left		= 1 ;0
 Far_Right		= 150
 Far_Right_Hero		= 148
-Far_Up_Hero		= 182
+Far_Up_Hero		= 190 - C_P1_HEIGHT
 Far_Down_Hero		= 10
 Enemy_Far_Left		= 10
 Enemy_Row_0		= 185
@@ -73,6 +76,12 @@ Hero_Y 			ds 1	;needed for skipdraw
 Hero_Ptr 		ds 2	;ptr to current graphic
 Hero_Sword_Pos		ds 1
 HeroGraphicsColorPtr	ds 2
+EnemyGraphicsColorPtr_E0	ds 2
+EnemyGraphicsColorPtr_E1	ds 2
+EnemyGraphicsColorPtr_E2	ds 2
+EnemyGraphicsColorPtr_E3	ds 2
+EnemyGraphicsColorPtr_E4	ds 2
+
 
 Graphics_Buffer		ds 1	;buffer for graphics
 Graphics_Buffer_2	ds 1	;buffer for graphics
@@ -420,10 +429,21 @@ MOVESET1
 
 ;setup pic animations ----------------------------------------------
 
+	lda ROLLING_COUNTER
+	and #%00001000
+	cmp #0
+	bne RCP_1
 	lda #<HeroGraphics0 	;low byte of ptr is graphic
 	CLC	;clear carry
-	ADC PICS
+	ADC #10
 	sta Hero_Ptr		;(high byte already set)
+	JMP RCP_2
+RCP_1
+
+	lda #<HeroGraphics0 	;low byte of ptr is graphic
+RCP_2
+	sta Hero_Ptr		;(high byte already set)
+
 
 	lda #>HeroGraphics0 ;high byte of graphic location
 	sta Hero_Ptr+1	;store in high byte of graphic pointer
@@ -434,7 +454,7 @@ MOVESET1
 	;to Vertical Position (0 = top) + height of sprite - 1.
 	;we're storing distance from bottom, not top, so we have
 	;to start with the kernal height and YPosFromBot...
-	lda #C_KERNAL_HEIGHT + #C_P0_HEIGHT - #1
+	lda #C_KERNAL_HEIGHT + #C_P1_HEIGHT - #1
 	sec
 	sbc Hero_YPosFromBot ;subtract integer byte of distance from bottom
 	sta Hero_Y
@@ -451,7 +471,7 @@ MOVESET1
 	sec
 	sbc Hero_YPosFromBot	;integer part of distance from bottom
 	clc
-	adc #C_P0_HEIGHT - #1 
+	adc #C_P1_HEIGHT - #1 
 	sta Hero_Ptr	;2 byte
 
 	LDA #<HeroGraphicsColor
@@ -463,9 +483,11 @@ MOVESET1
 	sec
 	sbc Hero_YPosFromBot
 	clc
-	adc #C_P0_HEIGHT - #1	
+	adc #C_P1_HEIGHT - #1	
 	STA HeroGraphicsColorPtr
 	
+
+
 
 ;setup pic animations ----------------------------------------------
 
@@ -492,6 +514,17 @@ MOVESET1
 	adc #C_P0_HEIGHT - #1
 	sta E0_Ptr	;2 byte
 
+	LDA #<EnemyGraphicsColor
+	sta EnemyGraphicsColorPtr_E0
+	LDA #>EnemyGraphicsColor
+	sta EnemyGraphicsColorPtr_E0+1
+ 
+	lda EnemyGraphicsColorPtr_E0
+	sec
+	sbc E0_YPosFromBot
+	clc
+	adc Hero_XPos ;#C_P0_HEIGHT + #120
+	STA EnemyGraphicsColorPtr_E0
 ;setup pic animations ----------------------------------------------
 
 
@@ -519,6 +552,18 @@ MOVESET1
 	adc #C_P0_HEIGHT - #1
 	sta E1_Ptr	;2 byte
 
+	LDA #<EnemyGraphicsColor
+	sta EnemyGraphicsColorPtr_E1
+	LDA #>EnemyGraphicsColor
+	sta EnemyGraphicsColorPtr_E1+1
+ 
+	lda EnemyGraphicsColorPtr_E1
+	sec
+	sbc E1_YPosFromBot
+	clc
+	adc #C_P0_HEIGHT - #0
+	STA EnemyGraphicsColorPtr_E1
+
 ;setup pic animations ----------------------------------------------
 
 
@@ -537,7 +582,7 @@ MOVESET1
 	lda #Enemy_Row_E1 + #C_P0_HEIGHT - #1
 	sec
 	sbc E2_YPosFromBot ;subtract integer byte of distance from bottom
-	sbc #3 ;subtract extra because not enough time to dec in kernal
+	sbc #4 ;subtract extra because not enough time to dec in kernal
 	sta E2_Y
 
 
@@ -547,6 +592,19 @@ MOVESET1
 	clc
 	adc #C_P0_HEIGHT - #1
 	sta E2_Ptr	;2 byte
+
+
+	LDA #<HeroGraphicsColor
+	sta EnemyGraphicsColorPtr_E2
+	LDA #>HeroGraphicsColor
+	sta EnemyGraphicsColorPtr_E2+1
+ 
+	lda EnemyGraphicsColorPtr_E2
+	sec
+	sbc E2_YPosFromBot
+	clc
+	adc #C_P0_HEIGHT
+	STA EnemyGraphicsColorPtr_E2
 
 ;setup pic animations ----------------------------------------------
 
@@ -572,8 +630,20 @@ MOVESET1
 	sec
 	sbc E3_YPosFromBot	;integer part of distance from bottom
 	clc
-	adc #C_P0_HEIGHT-#1 
+	adc #C_P0_HEIGHT 
 	sta E3_Ptr	;2 byte
+
+	LDA #<EnemyGraphicsColor
+	sta EnemyGraphicsColorPtr_E3
+	LDA #>EnemyGraphicsColor
+	sta EnemyGraphicsColorPtr_E3+1
+ 
+	lda EnemyGraphicsColorPtr_E3
+	sec
+	sbc E3_YPosFromBot
+	clc
+	adc #C_P0_HEIGHT - #1	
+	STA EnemyGraphicsColorPtr_E3
 
 ;setup pic animations ----------------------------------------------
 
@@ -591,7 +661,7 @@ MOVESET1
 	lda #Enemy_Row_E3 + #C_P0_HEIGHT - #1
 	sec
 	sbc E4_YPosFromBot ;subtract integer byte of distance from bottom
-	sbc #3 ;subtract extra because not enough time to dec in kernal
+	sbc #4 ;subtract extra because not enough time to dec in kernal
 	sta E4_Y
 
 
@@ -601,6 +671,18 @@ MOVESET1
 	clc
 	adc #C_P0_HEIGHT-#1 
 	sta E4_Ptr	;2 byte
+
+	LDA #<EnemyGraphicsColor
+	sta EnemyGraphicsColorPtr_E4
+	LDA #>EnemyGraphicsColor
+	sta EnemyGraphicsColorPtr_E4+1
+ 
+	lda EnemyGraphicsColorPtr_E4
+	sec
+	sbc E4_YPosFromBot
+	clc
+	adc #C_P0_HEIGHT - #1	
+	STA EnemyGraphicsColorPtr_E4
 
 ;setup pic animations ----------------------------------------------
 
@@ -1052,11 +1134,12 @@ ScanLoop_E0_c
 .doDraw_E0_b:
 	lda     (E0_Ptr),y      ; 5
 	sta 	GRP0 ;3
-
+	lda     (EnemyGraphicsColorPtr_E0),y      ; 5
+	sta	COLUP0
 
 ;skipDraw 25c for color
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E0_e       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1068,7 +1151,6 @@ ScanLoop_E0_c
 
         DEY             ;count down number of scan lines          2 cycles
 
-	STA HMCLR
 	CPY #Enemy_Row_E0
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E0_c                                             ;2 cycles =
@@ -1099,17 +1181,21 @@ EndScanLoop_E0_c
 .doDraw_E0_b_2:
 	lda     (E0_Ptr),y      ; 5
 	sta 	GRP0 ;3
+	lda     (EnemyGraphicsColorPtr_E1),y      ; 5
+	tax
+;	sta	COLUP0
 
 
 ;skipDraw 25c for color
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E0_e_2       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E0_e_2:
 	lda     (Hero_Ptr),y      ; 5
+	stx 	COLUP0
 	tax
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta 	Graphics_Buffer
@@ -1126,7 +1212,7 @@ EndScanLoop_E0_c
 ;        STA WSYNC                                                ;3 cycles = ---------------<<<<
 
 ;NOT A LOOP
-
+;---------------------------------------------------------
 
 	php
   	ldx #ENAM0+1		
@@ -1136,7 +1222,7 @@ EndScanLoop_E0_c
 
 ;skipDraw 25 cycles for color version
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
 	bcs     .doDrawHero_E1_a        ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1145,13 +1231,13 @@ EndScanLoop_E0_c
 	lda     (Hero_Ptr),y      ; 5
 	tax  ;3
 	lda     (HeroGraphicsColorPtr),y      ; 5
-	sta COLUP1 ;3
+	sta Graphics_Buffer ;3 need to move to end
         DEY             ;count down number of scan lines          2 cycles = 
 
 
 ;skipDraw 25 cycles for color version
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
 	bcs     .doDrawHero_E1_b        ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1163,18 +1249,18 @@ EndScanLoop_E0_c
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta 	Color_Buffer_2
 
-	lda E1_XPos ;3
 ;sword php style
 	cpy Hero_Sword_Pos ;3
 	stx GRP1	;3                       87
+	php	;2
+	lda Graphics_Buffer
 
         STA WSYNC          ;3                                      ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ;This is not a loop, this is a one time set position for the eneamy E1
-	php	;2
-	DEY
-
+	sta COLUP1
+	lda E1_XPos ;3
 .Div15_E1_a   
 	sbc #15      ; 2         
 	bcs .Div15_E1_a   ; 3(2)
@@ -1199,6 +1285,7 @@ EndScanLoop_E0_c
 
 	stx	GRP1	;3
 	sta 	COLUP1  ;3
+	DEY
 
 
 ;sword php style
@@ -1220,7 +1307,7 @@ EndScanLoop_E0_c
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E1_e       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1238,7 +1325,7 @@ EndScanLoop_E0_c
 
 
         STA WSYNC                                                ;3 cycles =
-
+;------------------------------------------------------------
 
 ScanLoop_E1_c
 	stx	GRP1	;3
@@ -1261,13 +1348,15 @@ ScanLoop_E1_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E1_bb:
 	lda     (E1_Ptr),y      ; 5
-
 	sta 	GRP0
+	lda     (EnemyGraphicsColorPtr_E1),y      ; 5
+	sta	COLUP0
+
 	
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E1_eb       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1289,7 +1378,6 @@ ScanLoop_E1_c
         BCS ScanLoop_E1_c                                             ;2 cycles =
 EndScanLoop_E1_c
 ;-------------------------Enemy number E1 End---------------------------
-
 
 
 
@@ -1315,17 +1403,21 @@ EndScanLoop_E1_c
 .doDraw_E1_b_2:
 	lda     (E1_Ptr),y      ; 5
 	sta 	GRP0 ;3
+	lda     (EnemyGraphicsColorPtr_E2),y      ; 5
+	tax
+;	sta	COLUP0
 
 
 ;skipDraw 25c for color
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E1_e_2       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E1_e_2:
 	lda     (Hero_Ptr),y      ; 5
+	stx 	COLUP0
 	tax
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta 	Graphics_Buffer
@@ -1342,7 +1434,7 @@ EndScanLoop_E1_c
 ;        STA WSYNC                                                ;3 cycles = ---------------<<<<
 
 ;NOT A LOOP
-
+;---------------------------------------------------------
 
 	php
   	ldx #ENAM0+1		
@@ -1352,7 +1444,7 @@ EndScanLoop_E1_c
 
 ;skipDraw 25 cycles for color version
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
 	bcs     .doDrawHero_E2_a        ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1361,13 +1453,13 @@ EndScanLoop_E1_c
 	lda     (Hero_Ptr),y      ; 5
 	tax  ;3
 	lda     (HeroGraphicsColorPtr),y      ; 5
-	sta COLUP1 ;3
+	sta Graphics_Buffer ;3 need to move to end
         DEY             ;count down number of scan lines          2 cycles = 
 
 
 ;skipDraw 25 cycles for color version
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
 	bcs     .doDrawHero_E2_b        ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1379,18 +1471,18 @@ EndScanLoop_E1_c
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta 	Color_Buffer_2
 
-	lda E2_XPos ;3
 ;sword php style
 	cpy Hero_Sword_Pos ;3
 	stx GRP1	;3                       87
+	php	;2
+	lda Graphics_Buffer
 
         STA WSYNC          ;3                                      ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ;This is not a loop, this is a one time set position for the eneamy E2
-	php	;2
-	DEY
-
+	sta COLUP1
+	lda E2_XPos ;3
 .Div15_E2_a   
 	sbc #15      ; 2         
 	bcs .Div15_E2_a   ; 3(2)
@@ -1415,6 +1507,7 @@ EndScanLoop_E1_c
 
 	stx	GRP1	;3
 	sta 	COLUP1  ;3
+	DEY
 
 
 ;sword php style
@@ -1436,7 +1529,7 @@ EndScanLoop_E1_c
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E2_e       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1454,7 +1547,7 @@ EndScanLoop_E1_c
 
 
         STA WSYNC                                                ;3 cycles =
-
+;------------------------------------------------------------
 
 ScanLoop_E2_c
 	stx	GRP1	;3
@@ -1477,13 +1570,15 @@ ScanLoop_E2_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E2_bb:
 	lda     (E2_Ptr),y      ; 5
-
 	sta 	GRP0
+	lda     (EnemyGraphicsColorPtr_E2),y      ; 5
+	sta	COLUP0
+
 	
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E2_eb       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1505,7 +1600,6 @@ ScanLoop_E2_c
         BCS ScanLoop_E2_c                                             ;2 cycles =
 EndScanLoop_E2_c
 ;-------------------------Enemy number E2 End---------------------------
-
 
 ;-------------------------Enemy number E3 Start---------------------------
 
@@ -1529,17 +1623,21 @@ EndScanLoop_E2_c
 .doDraw_E2_b_2:
 	lda     (E2_Ptr),y      ; 5
 	sta 	GRP0 ;3
+	lda     (EnemyGraphicsColorPtr_E3),y      ; 5
+	tax
+;	sta	COLUP0
 
 
 ;skipDraw 25c for color
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E2_e_2       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E2_e_2:
 	lda     (Hero_Ptr),y      ; 5
+	stx 	COLUP0
 	tax
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta 	Graphics_Buffer
@@ -1556,7 +1654,7 @@ EndScanLoop_E2_c
 ;        STA WSYNC                                                ;3 cycles = ---------------<<<<
 
 ;NOT A LOOP
-
+;---------------------------------------------------------
 
 	php
   	ldx #ENAM0+1		
@@ -1566,7 +1664,7 @@ EndScanLoop_E2_c
 
 ;skipDraw 25 cycles for color version
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
 	bcs     .doDrawHero_E3_a        ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1575,13 +1673,13 @@ EndScanLoop_E2_c
 	lda     (Hero_Ptr),y      ; 5
 	tax  ;3
 	lda     (HeroGraphicsColorPtr),y      ; 5
-	sta COLUP1 ;3
+	sta Graphics_Buffer ;3 need to move to end
         DEY             ;count down number of scan lines          2 cycles = 
 
 
 ;skipDraw 25 cycles for color version
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
 	bcs     .doDrawHero_E3_b        ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1593,18 +1691,18 @@ EndScanLoop_E2_c
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta 	Color_Buffer_2
 
-	lda E3_XPos ;3
 ;sword php style
 	cpy Hero_Sword_Pos ;3
 	stx GRP1	;3                       87
+	php	;2
+	lda Graphics_Buffer
 
         STA WSYNC          ;3                                      ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ;This is not a loop, this is a one time set position for the eneamy E3
-	php	;2
-	DEY
-
+	sta COLUP1
+	lda E3_XPos ;3
 .Div15_E3_a   
 	sbc #15      ; 2         
 	bcs .Div15_E3_a   ; 3(2)
@@ -1629,6 +1727,7 @@ EndScanLoop_E2_c
 
 	stx	GRP1	;3
 	sta 	COLUP1  ;3
+	DEY
 
 
 ;sword php style
@@ -1650,7 +1749,7 @@ EndScanLoop_E2_c
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E3_e       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1668,7 +1767,7 @@ EndScanLoop_E2_c
 
 
         STA WSYNC                                                ;3 cycles =
-
+;------------------------------------------------------------
 
 ScanLoop_E3_c
 	stx	GRP1	;3
@@ -1691,13 +1790,15 @@ ScanLoop_E3_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E3_bb:
 	lda     (E3_Ptr),y      ; 5
-
 	sta 	GRP0
+	lda     (EnemyGraphicsColorPtr_E3),y      ; 5
+	sta	COLUP0
+
 	
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E3_eb       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1742,11 +1843,12 @@ EndScanLoop_E3_c
 .doDraw_E3_b_2:
 	lda     (E3_Ptr),y      ; 5
 	sta 	GRP0 ;3
-
+	lda     (EnemyGraphicsColorPtr_E3),y      ; 5
+	sta	COLUP0
 
 ;skipDraw 25c for color
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E3_e_2       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1779,7 +1881,7 @@ EndScanLoop_E3_c
 
 ;skipDraw 25 cycles for color version
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
 	bcs     .doDrawHero_E4_a        ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1794,7 +1896,7 @@ EndScanLoop_E3_c
 
 ;skipDraw 25 cycles for color version
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
 	bcs     .doDrawHero_E4_b        ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1863,7 +1965,7 @@ EndScanLoop_E3_c
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E4_e       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -1906,11 +2008,12 @@ ScanLoop_E4_c
 	lda     (E4_Ptr),y      ; 5
 
 	sta 	GRP0
-	
+	lda     (EnemyGraphicsColorPtr_E4),y      ; 5
+	sta	COLUP0	
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
+	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
 	bcs     .doDrawHero_E4_eb       ; 2/3 ; should be bcs
 	lda     #0              ; 2
@@ -2117,6 +2220,8 @@ HeroGraphics0
 	.byte #%10010000
 	.byte #%00111000
 	.byte #%00101000
+	.byte #%00111000
+	.byte #%00111000
 
 
 	.byte #%01100110
@@ -2127,6 +2232,8 @@ HeroGraphics0
 	.byte #%10010000
 	.byte #%00111000
 	.byte #%00101000
+	.byte #%00111000
+	.byte #%00111000
 
 MainPlayerGraphics0
 	.byte #%00010100
@@ -2310,7 +2417,7 @@ PFData5
 	.byte #%00111111
 	.byte #%00111111
 
-HeroGraphicsColor
+EnemyGraphicsColor
 	.byte $40
 	.byte $40
 	.byte $40
@@ -2320,7 +2427,17 @@ HeroGraphicsColor
 	.byte $80
 	.byte $80
 
-
+HeroGraphicsColor
+	.byte $40
+	.byte $40
+	.byte $40
+	.byte $20
+	.byte $3E
+	.byte $3E
+	.byte $80
+	.byte $80
+	.byte $80
+	.byte $80
 	
 PFCOLOR
 	.byte #$29
@@ -2332,3 +2449,10 @@ PFCOLOR
 	org $FFFC
 	.word Start
 	.word Start
+
+
+
+ ECHO ([$FF00-*]d), "bytes free"
+
+   
+
