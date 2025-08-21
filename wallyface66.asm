@@ -3,11 +3,7 @@
 ;make two sets of top data. First set is just the first screen
 ;the second set is where you grab a bit at a time to shift in.
 ;or start all zero and shift in the bits
-;attempting to add color to player character messed up at hmoves
-;could probably color bad guys easily, hero has problem with hmove only
-;if you know a creature will be displayed, could it be displayed in only 8 cycles,
-;if you replace picture with a blank picture when dead
-;fix labels with subroutine command
+;attempt to add color to player character
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -18,8 +14,8 @@
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 10	;height of hero sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
-Far_Left		= 1 ;0
-Far_Right		= 150
+Far_Left		= 10
+Far_Right		= 148
 Far_Right_Hero		= 148
 Far_Up_Hero		= 190 - C_P1_HEIGHT
 Far_Down_Hero		= 10
@@ -563,7 +559,7 @@ RCP_2
 	sec
 	sbc E1_YPosFromBot
 	clc
-	adc #C_P0_HEIGHT - #0
+	adc #C_P0_HEIGHT - #5
 	STA EnemyGraphicsColorPtr_E1
 
 ;setup pic animations ----------------------------------------------
@@ -592,7 +588,7 @@ RCP_2
 	sec
 	sbc E2_YPosFromBot	;integer part of distance from bottom
 	clc
-	adc #C_P0_HEIGHT - #1
+	adc #C_P0_HEIGHT - #5
 	sta E2_Ptr	;2 byte
 
 
@@ -605,7 +601,7 @@ RCP_2
 	sec
 	sbc E2_YPosFromBot
 	clc
-	adc #C_P0_HEIGHT
+	adc #C_P0_HEIGHT - #5
 	STA EnemyGraphicsColorPtr_E2
 
 ;setup pic animations ----------------------------------------------
@@ -1757,7 +1753,7 @@ EndScanLoop_E1_c
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 
-        DEY             ;2 count down number of scan lines          2 cycles
+  ;      DEY             ;2 count down number of scan lines          2 cycles
 	
 	cpy Hero_Sword_Pos  ;3
  	php	;2
@@ -1766,30 +1762,32 @@ EndScanLoop_E1_c
 ;-------------------------Enemy number E1 End---------------------------
 
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .600: SUBROUTINE
 ;This is not a loop, this is a one time set position for the eneamy E2
 	stx GRP1		
 	sta Graphics_Buffer
 	lda E2_XPos ;3
-.Div15_E1_a   
+.Div15_E2_a   
 	sbc #15      ; 2         
-	bcs .Div15_E1_a   ; 3(2)
+	bcs .Div15_E2_a   ; 3(2)
 
 	tax
 	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
 	sta HMP0 ;,x
 	sta RESP0 ;,x	;the x must be a 0 for player 0  or 1 player 1
 
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
+
 ;sword php style	
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 
 
 
-;This is not a loop, this is a one time set position for the eneamy E1
+;This is not a loop, this is a one time set position for the eneamy E2
 
+  	ldx #ENAM0+1		
+  	txs                    ; Set the top of the stack to ENAM1+1
 	ldx 	Graphics_Buffer  ;3
 	stx	GRP1	;3
 	DEY
@@ -1804,22 +1802,22 @@ EndScanLoop_E1_c
 ;skipDraw
 
 	
-	dec E1_Y
+	dec E2_Y
 	lda #0
 	sta GRP0
 
 	LDA CXM1P   ;3
-	STA E1_Hit  ;this line must refer to previous enemy
+	STA E0_Hit  ;this line must refer to previous enemy
 	STA CXCLR   ;3
 
 ;skipDraw
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_e       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_e       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_e:
+.doDrawHero_E2_e:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -1832,7 +1830,7 @@ EndScanLoop_E1_c
 
         STA WSYNC                                                ;3 cycles =
 ;------------------------------------------------------------
-.601: SUBROUTINE
+.601:
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	stx	GRP1	;3
 	sta 	COLUP0
@@ -1862,10 +1860,10 @@ EndScanLoop_E1_c
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb1       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_eb1       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb1:
+.doDrawHero_E2_eb1:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -1877,52 +1875,7 @@ EndScanLoop_E1_c
 
         STA WSYNC    
 ;-----------------------this needs to run for 8 lines, the size of an enemy
-.602: SUBROUTINE
-;-----------------------this needs to run for 8 lines, the size of an enemy
-	stx	GRP1	;3
-	sta 	COLUP0
-
-
-;sword php style
-	cpy Hero_Sword_Pos  ;3
-	php			;3
-  	ldx #ENAM0+1		;2
-  	txs                    ;2 Set the top of the stack to ENAM1+1
-;sword php style 
-;skipDraw
-
-
-;---removed comparisons here, always display character
-;--this will mess up all subsequent monsters
-
-; draw player sprite 0:
-	lda     (E1_Ptr),y      ; 5
-	sta 	GRP0	;3
-	lda     (EnemyGraphicsColorPtr_E2),y      ; 5
-	sta	Graphics_Buffer	;3
-
-	
-
-;skipDraw
-; draw Hero sprite:
-	lda     #C_P1_HEIGHT-1     ; 2 
-	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb2       ; 2/3 ; should be bcs
-	lda     #0              ; 2
-	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb2:
-	lda     (Hero_Ptr),y      ; 5
-;This allows us to do the calculation early, but must move dey to before routine
-	tax
-
-
-
-        DEY             ;2 count down number of scan lines          2 cycles
-	lda Graphics_Buffer
-
-        STA WSYNC    
-;-----------------------this needs to run for 8 lines, the size of an enemy
-.603: SUBROUTINE
+.602:
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	stx	GRP1	;3
 	sta 	COLUP0
@@ -1952,10 +1905,10 @@ EndScanLoop_E1_c
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb3       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_eb2       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb3:
+.doDrawHero_E2_eb2:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -1967,7 +1920,7 @@ EndScanLoop_E1_c
 
         STA WSYNC    
 ;-----------------------this needs to run for 8 lines, the size of an enemy
-.604: SUBROUTINE
+.603:
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	stx	GRP1	;3
 	sta 	COLUP0
@@ -1997,10 +1950,10 @@ EndScanLoop_E1_c
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb4       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_eb3       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb4:
+.doDrawHero_E2_eb3:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -2012,7 +1965,7 @@ EndScanLoop_E1_c
 
         STA WSYNC    
 ;-----------------------this needs to run for 8 lines, the size of an enemy
-.605: SUBROUTINE
+.604:
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	stx	GRP1	;3
 	sta 	COLUP0
@@ -2042,10 +1995,10 @@ EndScanLoop_E1_c
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb5       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_eb4       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb5:
+.doDrawHero_E2_eb4:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -2057,7 +2010,7 @@ EndScanLoop_E1_c
 
         STA WSYNC    
 ;-----------------------this needs to run for 8 lines, the size of an enemy
-.606: SUBROUTINE
+.605:
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	stx	GRP1	;3
 	sta 	COLUP0
@@ -2087,10 +2040,10 @@ EndScanLoop_E1_c
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb6       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_eb5       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb6:
+.doDrawHero_E2_eb5:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -2102,7 +2055,7 @@ EndScanLoop_E1_c
 
         STA WSYNC    
 ;-----------------------this needs to run for 8 lines, the size of an enemy
-.607: SUBROUTINE
+.606:
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	stx	GRP1	;3
 	sta 	COLUP0
@@ -2132,10 +2085,10 @@ EndScanLoop_E1_c
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb7       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_eb6       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb7:
+.doDrawHero_E2_eb6:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -2147,7 +2100,52 @@ EndScanLoop_E1_c
 
         STA WSYNC    
 ;-----------------------this needs to run for 8 lines, the size of an enemy
-.608: SUBROUTINE
+.607:
+;-----------------------this needs to run for 8 lines, the size of an enemy
+	stx	GRP1	;3
+	sta 	COLUP0
+
+
+;sword php style
+	cpy Hero_Sword_Pos  ;3
+	php			;3
+  	ldx #ENAM0+1		;2
+  	txs                    ;2 Set the top of the stack to ENAM1+1
+;sword php style 
+;skipDraw
+
+
+;---removed comparisons here, always display character
+;--this will mess up all subsequent monsters
+
+; draw player sprite 0:
+	lda     (E2_Ptr),y      ; 5
+	sta 	GRP0	;3
+	lda     (EnemyGraphicsColorPtr_E2),y      ; 5
+	sta	Graphics_Buffer	;3
+
+	
+
+;skipDraw
+; draw Hero sprite:
+	lda     #C_P1_HEIGHT-1     ; 2 
+	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
+	bcs     .doDrawHero_E2_eb7       ; 2/3 ; should be bcs
+	lda     #0              ; 2
+	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+.doDrawHero_E2_eb7:
+	lda     (Hero_Ptr),y      ; 5
+;This allows us to do the calculation early, but must move dey to before routine
+	tax
+
+
+
+        DEY             ;2 count down number of scan lines          2 cycles
+	lda Graphics_Buffer
+
+        STA WSYNC    
+;-----------------------this needs to run for 8 lines, the size of an enemy
+.608:
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	stx	GRP1	;3
 	sta 	COLUP0  ;3
@@ -2177,10 +2175,10 @@ EndScanLoop_E1_c
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb8       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_eb8       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb8:
+.doDrawHero_E2_eb8:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -2216,10 +2214,10 @@ ScanLoop_E2_c
 ; draw Hero sprite:
 	lda     #C_P1_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E1_eb       ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E2_eb       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E1_eb:
+.doDrawHero_E2_eb:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
@@ -2229,13 +2227,64 @@ ScanLoop_E2_c
         DEY             ;2 count down number of scan lines          2 cycles
 	lda Graphics_Buffer
 
-	CPY #Enemy_Row_E2-#1 ;3
+	CPY #Enemy_Row_E2-#2 ;3
 
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E2_c                                             ;2 cycles =
 EndScanLoop_E2_c
+;------------------------------------------------------------
+
+	stx	GRP1	;3
+	sta 	COLUP0
+	lda 	#0
+	sta 	GRP0
+
+;sword php style
+	cpy Hero_Sword_Pos  ;3
+	php			;3
+  	ldx #ENAM0+1		;2
+  	txs                    ;2 Set the top of the stack to ENAM1+1
+;sword php style 
+;skipDraw
+
+
+;---removed enemy display character
+
+
+;skipDraw
+; draw Hero sprite:
+	lda     #C_P1_HEIGHT-1     ; 2 
+	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
+	bcs     .doDrawHero_E2_eb21       ; 2/3 ; should be bcs
+	lda     #0              ; 2
+	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+.doDrawHero_E2_eb21:
+	lda     (Hero_Ptr),y      ; 5
+;This allows us to do the calculation early, but must move dey to before routine
+	tax
+
+	dey
+
+;skipDraw
+; draw Hero sprite:
+	lda     #C_P1_HEIGHT-1     ; 2 
+	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
+	bcs     .doDrawHero_E2_eb22       ; 2/3 ; should be bcs
+	lda     #0              ; 2
+	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+.doDrawHero_E2_eb22:
+	lda     (Hero_Ptr),y      ; 5
+;This allows us to do the calculation early, but must move dey to before routine
+
+        DEY             ;2 count down number of scan lines          2 cycles
+	
+	cpy Hero_Sword_Pos  ;3
+ 	php	;2
+        STA WSYNC                                                ;3 cycles =
+
 ;-------------------------Enemy number E2 End---------------------------
 
+;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 ;-------------------------Enemy number E3 Start---------------------------
