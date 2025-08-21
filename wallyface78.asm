@@ -1,6 +1,11 @@
 ;--------------------------------------------------------------
-;enemys still using skip draw, can remove some calculations from top now.
 ;Add Score HHH  XX  SSSSS
+;make 8 eneamies, 5 styles, sword, javelin, fist(snake), sword both dir, javelin both dir
+;add pot holes, max 6 per screen
+;roll the kernel up, to save rom space
+;rolling counter needs to be 16bit, for ressurection
+;lose life for not killing badguys???
+;rolling log by changing ball color and size????, use y as size????
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -12,16 +17,16 @@ C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 12	;height of hero sprite
 C_KERNAL_HEIGHT 	= 181	;height of kernal/actually the largest line on the screen ;was 186
 Far_Left		= 36
-Far_Right		= 126
+Far_Right		= 140 
 Far_Right_Hero		= 148
 Far_Up_Hero		= C_KERNAL_HEIGHT-6
 Far_Down_Hero		= 7+C_P1_HEIGHT
-Enemy_Far_Left		= 1
+Enemy_Far_Left		= 3
 Enemy_Row_0		= 181  ;185
-Enemy_Row_E0		= 125  ;160
-Enemy_Row_E1		= 90   ;109
-Enemy_Row_E2		= 50   ;73 #Enemy_Row_E2-#14
-Enemy_Row_E3		= 20   ;35  #Enemy_Row_E3-#2 diff of 17???
+Enemy_Row_E0		= 82  ;160
+Enemy_Row_E1		= 62   ;109
+Enemy_Row_E2		= 42   ;73 #Enemy_Row_E2-#14
+Enemy_Row_E3		= 22   ;35  #Enemy_Row_E3-#2 diff of 17???
 Enemy_Row_E4		= 2    ;2 ; each sprite has 4 rows of overhead
 HERO_SPEED_VER		= 1
 HERO_SPEED_HOR		= 1
@@ -32,7 +37,7 @@ Screen_Rate		= 20	;How fast screen is scrolling in X-Axis
 	seg.u RAM
 	org $0080
 PICS 			ds 1
-ROLLING_COUNTER 	ds 1
+ROLLING_COUNTER 	ds 2
 Pos			ds 1
 
 
@@ -56,6 +61,13 @@ E1_Hit			ds 1	;collision detection
 E2_Hit			ds 1	;collision detection
 E3_Hit			ds 1	;collision detection
 E4_Hit			ds 1	;collision detection
+
+Pit0_XPos		ds 1	;where pit is currently
+Pit1_XPos		ds 1	;where pit is currently
+Pit2_XPos		ds 1	;where pit is currently
+Pit3_XPos		ds 1	;where pit is currently
+Pit4_XPos		ds 1	;where pit is currently
+Pit5_XPos		ds 1	;where pit is currently
 
 
 Hero_YPosFromBot 	ds 2	;Vertical position
@@ -369,6 +381,10 @@ HeroDown
 
 ;setup pic animations ----------------------------------------------
 	INC ROLLING_COUNTER
+	BVC RCROLLOVER
+	INC ROLLING_COUNTER+1
+	
+RCROLLOVER
 
 	LDA ROLLING_COUNTER
 	AND #15		;every 8th screen swap to next image of player
@@ -387,13 +403,35 @@ PICSET3
 	AND #3		;every 8th screen move
 	CMP #2
 	BNE MOVESET1
+;Eneamy Movement---------------------------------------------------
 	DEC E0_XPos
 ;	DEC E1_XPos
 	DEC E2_XPos
 	DEC E3_XPos
 	DEC E4_XPos
-MOVESET1
 
+	DEC Pit0_XPos
+	DEC Pit1_XPos
+	DEC Pit2_XPos
+	DEC Pit3_XPos
+	DEC Pit4_XPos
+	DEC Pit5_XPos
+;Eneamy Movement---------------------------------------------------
+
+
+
+MOVESET1
+	LDX #0
+PITSET
+	LDA Pit0_XPos,x
+	CMP #Enemy_Far_Left
+	BCS NOTOOFARLEFT
+	LDA #Far_Right
+	STA Pit0_XPos,x
+NOTOOFARLEFT
+	INX
+	cpx #5
+	bcc PITSET
 	
 
 	STA HMOVE
@@ -489,7 +527,8 @@ NoCollisionP4
 RESSURECT
 	and Enemy_Life
 	BNE alive0
-	CPX ROLLING_COUNTER
+	lda RETURN,x
+	CMP ROLLING_COUNTER+1
 	BNE alive0
 	lda #Far_Right-#1
 	sta E0_XPos,x
@@ -1106,7 +1145,7 @@ MRIGHT	STA HMM1
 ;start of kernal +++++++++++++++++++++++ for player 0 positioning
 ;the hmove above pushes it slightly
 	lda E0_XPos						 ;3
-	nop	
+	nop	;these are here to make him match the others
 	nop
 	nop.w
 
@@ -1623,7 +1662,133 @@ Draw_Enemy_E2
         STA WSYNC 
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	BCS Draw_Enemy_E2
+
+;---------------------line for setting up pits-----------------------------------------
+	stx	GRP1	;3
+	sta 	COLUP1 ;3
+	lda 	#0      ;2
+	sta 	GRP0    ;3
+
+;sword php style
+	cpy Hero_Sword_Pos  ;3
+	php			;3
+  	ldx #ENAM0+1		;2
+  	txs                    ;2 Set the top of the stack to ENAM1+1
+;sword php style 
+;skipDraw
+
+
+;---removed enemy display character
+
+
+;skipDraw
+; draw Hero sprite:
+	lda     #C_P1_HEIGHT-1     ; 2 
+	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
+	bcs     .doDrawHero_E0_eb21a       ; 2/3 ; should be bcs
+	lda     #0              ; 2
+	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+.doDrawHero_E0_eb21a:
+	lda     (Hero_Ptr),y      ; 5
+;This allows us to do the calculation early, but must move dey to before routine
+	sta Graphics_Buffer_2
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	tax
+
+	dey
+
+;skipDraw
+; draw Hero sprite:
+	lda     #C_P1_HEIGHT-1     ; 2 
+	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
+	bcs     .doDrawHero_E0_eb22a       ; 2/3 ; should be bcs
+	lda     #0              ; 2
+	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+.doDrawHero_E0_eb22a:
+	lda     (Hero_Ptr),y      ; 5
+;This allows us to do the calculation early, but must move dey to before routine
+	sta Graphics_Buffer
+
+ ;       DEY             ;2 count down number of scan lines          2 cycles
+	
+	lda  Graphics_Buffer_2
+	cpy Hero_Sword_Pos  ;3
+
+
+;--------------------wsync not here because above is exact size
+
+
+
+
+ 	php	;2
+	sta GRP1		
+	stx COLUP1
+
+	lda Pit0_XPos ;3
+.Div15_Pit   
+	sbc #15      ; 2         
+	bcs .Div15_Pit   ; 3(2)
+
+	tax
+	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
+	sta HMBL 
+	sta RESBL
+;	DEY
+
+;sword php style	
+        STA WSYNC                                                ;3 cycles =
+	STA HMOVE
+
+
+
+;-----------------------------------------------post turning on pit stuff
+;This is not a loop, this is a one time set position for the eneamy E2
+
+  	ldx #ENAM0+1		
+  	txs                    ; Set the top of the stack to ENAM1+1
+	ldx 	Graphics_Buffer  ;3
+	stx	GRP1	;3
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta	COLUP1
+	DEY
+
+
+;sword php style
+	cpy Hero_Sword_Pos  ;3
+	php			;3
+  	ldx #ENAM0+1		;2
+  	txs                    ;2 Set the top of the stack to ENAM1+1
+;sword php style 
+;skipDraw
+
+	
+;skipDraw
+; draw Hero sprite:
+	lda     #C_P1_HEIGHT-1     ; 2 
+	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
+	bcs     .doDrawHero_E2_en      ; 2/3 ; should be bcs
+	lda     #0              ; 2
+	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+.doDrawHero_E2_en:
+	lda     (Hero_Ptr),y      ; 5
+;This allows us to do the calculation early, but must move dey to before routine
+	tax
+	lda     (HeroGraphicsColorPtr),y      ; 5
+
+
+        DEY             ;2 count down number of scan lines          2 cycles
+	
+
+
+        STA WSYNC                                                ;3 cycles =
 ;------------------------------------------------------------
+
+;---------------------line for setting up pits-----------------------------------------
+
+
+
+
+
 ScanLoop_E2_c
 	stx	GRP1	;3
 	sta 	COLUP1
@@ -1639,7 +1804,16 @@ ScanLoop_E2_c
 ;skipDraw
 
 
-;---removed enemy display character
+;--- need to put pits here----------------------------------------------------------------------------------------------------------------<<<<<<
+;you have about 24 cycles--------------------------
+	LDA #$FF
+	CPY #Enemy_Row_E2+#6 ;3
+	BCC NO_PIT
+	LDA #0
+NO_PIT
+	STA ENABL
+;--- need to put pits here----------------------------------------------------------------------------------------------------------------<<<<<<
+
 
 
 ;skipDraw
@@ -1664,6 +1838,7 @@ ScanLoop_E2_c
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E2_c                                             ;2 cycles =
 EndScanLoop_E2_c
+;------------------------------------------------------------
 ;------------------------------------------------------------
 	stx	GRP1	;3
 	sta 	COLUP1 ;3
@@ -1739,11 +1914,12 @@ EndScanLoop_E2_c
 ;---------------------------------------------------------
 
 ;This is not a loop, this is a one time set position for the eneamy E3
-
+	
   	ldx #ENAM0+1		
   	txs                    ; Set the top of the stack to ENAM1+1
 	ldx 	Graphics_Buffer  ;3
 	stx	GRP1	;3
+	sta 	ENABL
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta	COLUP1
 	DEY
@@ -2147,7 +2323,7 @@ EndScanLoop_E4_c
 
 	STA WSYNC  	
 
-	LDA #$00
+	LDA #%01101100
 	STA CTRLPF
 
 	LDA (#NUM8),Y		; 4 cycles
@@ -2254,7 +2430,8 @@ EndScanLoop_E4_c
 		
 
 
-	LDA #$00
+	LDA #%01101100
+
 	STA CTRLPF
 
 
@@ -2331,13 +2508,13 @@ P4Right
 
 
 ;Don't allow P0 past Position 160
-	LDA #Enemy_Far_Left	;2
+	LDA #Enemy_Far_Left
 	CMP E0_XPos	;2
 	BCC P0left	;2(3)
 	lda #%11111110
 	and Enemy_Life
 	sta Enemy_Life
-	LDA Far_Right
+	LDA #Far_Right
 	STA E0_XPos
 P0left
 
@@ -2345,13 +2522,13 @@ P0left
 	DEY
 
 ;Don't allow P1 past Position 160
-	LDA #Enemy_Far_Left	;2
+	LDA #Enemy_Far_Left
 	CMP E1_XPos	;2
 	BCC P1left	;2(3)
 	lda #%11111101
 	and Enemy_Life
 	sta Enemy_Life
-	LDA Far_Right
+	LDA #Far_Right
 	STA E1_XPos
 
 P1left
@@ -2360,13 +2537,13 @@ P1left
 	DEY
 
 ;Don't allow P2 past Position 160
-	LDA #Enemy_Far_Left	;2
+	LDA #Enemy_Far_Left
 	CMP E2_XPos	;2
 	BCC P2left	;2(3)
 	lda #%11111011
 	and Enemy_Life
 	sta Enemy_Life
-	LDA Far_Right
+	LDA #Far_Right
 	STA E2_XPos
 
 P2left
@@ -2375,26 +2552,26 @@ P2left
 	DEY
 
 ;Don't allow P3 past Position 160
-	LDA #Enemy_Far_Left	;2
+	LDA #Enemy_Far_Left
 	CMP E3_XPos	;2
 	BCC P3left	;2(3)
 	lda #%11110111
 	and Enemy_Life
 	sta Enemy_Life
-	LDA Far_Right
+	LDA #Far_Right
 	STA E3_XPos
 P3left
 	STA WSYNC
 	DEY
 
 ;Don't allow P4 past Position 160
-	LDA #Enemy_Far_Left	;2
+	LDA #Enemy_Far_Left
 	CMP E4_XPos	;2
 	BCC P4left	;2(3)
 	lda #%11101111
 	and Enemy_Life
 	sta Enemy_Life
-	LDA Far_Right
+	LDA #Far_Right
 	STA E4_XPos
 P4left
 	STA WSYNC
@@ -2789,6 +2966,16 @@ PFCOLOR
 	.byte #$5D
 	.byte #$49
 	.byte #$39
+
+RETURN
+	.byte #$1
+	.byte #$30
+	.byte #$E0
+	.byte #$70
+	.byte #$A0
+	.byte #$90
+	.byte #$C0
+	.byte #$50
 
 
 
