@@ -1,6 +1,6 @@
 ;--------------------------------------------------------------
 ;fixed top scroll messing up screen, lda and and where swapped
-;bugs swords are different sizes, if first monster killed far left, he returns
+;player can travel whole screen now.  Enemy's can go lef and right properly
 ;should make this 3d by adjusting the colors, change bg color to to bottom.
 ;--------------------------------------------------------------
 
@@ -12,12 +12,12 @@
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 8	;height of sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
-Far_Left		= 20	
-Far_Right		= 122
+Far_Left		= 10	
+Far_Right		= 150
 Far_Right_Hero		= 147
 Far_Up_Hero		= 182
 Far_Down_Hero		= 10
-Enemy_Far_Left		= 15
+Enemy_Far_Left		= 10
 Enemy_Row_0		= 185
 Enemy_Row_E0		= 150
 Enemy_Row_E1		= 115
@@ -813,7 +813,7 @@ WaitForVblankEnd
 
 
 	STA WSYNC	
-	STA HMOVE 	
+;	STA HMOVE 	
 	
 	STA VBLANK  	
 
@@ -973,7 +973,8 @@ PreScanLoop
 	LDA #0
 	STA RESMP0
 	STA RESMP1
-
+	STA GRP0
+	STA GRP1
 	LDA #%11111000	;The last 3 bits control number and size of players
 			;the second 2 bits control missle size
 	STA NUSIZ0
@@ -1010,23 +1011,20 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 	DEC E0_Y
 	DEC Hero_Y
 	DEY
-	NOP
-	NOP
 	LDA MOV_STAT
 	CMP #1
 	BCS MLEFT
 	LDA #0
 	JMP MRIGHT
 MLEFT	LDA #%01100000
-MRIGHT	NOP
-	NOP
-	NOP
-	STA HMM1
+MRIGHT	STA HMM1
 	LDA #0
 	STA HMP1
+
 	lda E0_XPos						 ;3
+	STA CXCLR	;reset the collision detection for next time
 	STA WSYNC
-	STA HMOVE
+;	STA HMOVE
 ;this is to align sword
 
 ScanLoopa ;start of kernal +++++++++++++++++++++++ for player 0 positioning
@@ -1043,17 +1041,18 @@ ScanLoopa ;start of kernal +++++++++++++++++++++++ for player 0 positioning
 
 
         DEY             ;count down number of scan lines          2 cycles = 
+	Lda #0
+	Ldx #0
+	;Can't get LAX to work here
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 EndScanLoopa ;end of kernal +++++++++++++++++ for player 0 positioning
 
 ;-------------------------Enemy number E0 start---------------------------
-	STA CXCLR	;reset the collision detection for next time
-	lda	Graphics_Buffer_2
 ScanLoop 
 	sta	GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
-	lda	Graphics_Buffer ;3
-	sta	GRP0	
+;	ldx	Graphics_Buffer ;3
+	stx	GRP0	
 
 ;sword php style
 	cpy Hero_Sword_Pos
@@ -1071,11 +1070,8 @@ ScanLoop
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw0:
 	lda     (E0_Ptr),y      ; 5
-	sta     Graphics_Buffer ; This allows us to do the calculation early, but must move dey to before routine
-
-
-
-
+;	sta     Graphics_Buffer ; This allows us to do the calculation early, but must move dey to before routine
+	tax 
 ;skipDraw
 ; draw Hero sprite:
 	lda     #C_P0_HEIGHT-1     ; 2 
@@ -1107,8 +1103,8 @@ ScanLoop_E1_a
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
-  ldx #ENAM0+1		
-  txs                    ; Set the top of the stack to ENAM1+1
+  	ldx #ENAM0+1		
+  	txs                    ; Set the top of the stack to ENAM1+1
 
 
 ;sword php style
@@ -1154,9 +1150,6 @@ ScanLoop_E1_b
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-
 
 ;sword php style 
 	lda E1_XPos
@@ -1171,10 +1164,13 @@ ScanLoop_E1_b
 	sta RESP0 ;,x	;the x must be a 0 for player 0  or 1 player 1
 
 	
-	DEY
+
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 EndScanLoop_E1_b 
+  	ldx #ENAM0+1		
+  	txs                    ; Set the top of the stack to ENAM1+1
+	DEY
 	lda	Graphics_Buffer_2
 
 ScanLoop_E1_c 
@@ -1604,9 +1600,9 @@ ScanLoop_E4_c
         DEY             ;count down number of scan lines          2 cycles
 	STA HMCLR
 
-	CPY #Enemy_Row_E4-#1
+;	CPY #0 ;on last one must be  used
         STA WSYNC                                                ;3 cycles =
-        BCS ScanLoop_E4_c                                             ;2 cycles =
+        BNE ScanLoop_E4_c  ;BNE instead of BCS on last one ;2 cycles =
 EndScanLoop_E4_c
 
 ;-------------------------Enemy number E4 End---------------------------
@@ -1631,21 +1627,21 @@ EndScanLoop_E4_c
 ;Fix Positions
 
 ;Don't allow P0 past Position 160
-	LDA #Far_Right	;2
-	CMP E0_XPos	;2
-	BCS P0Right	;2(3)
-	LDA #Far_Left+1 ;2
+	LDA E0_XPos	;2
+	CMP #Far_Right	;2
+	BCC P0Right	;2(3)
+	LDA #Enemy_Far_Left+1 ;2
 	STA E0_XPos	;3
 P0Right
 
 	STA WSYNC
 	DEY
 
-;Don't allow P0 past Position 160
-	LDA #Far_Right	;2
-	CMP E1_XPos	;2
-	BCS P1Right	;2(3)
-	LDA #Far_Left+1 ;2
+;Don't allow P1 past Position 160
+	LDA E1_XPos	;2
+	CMP #Far_Right	;2
+	BCC P1Right	;2(3)
+	LDA #Enemy_Far_Left+1 ;2
 	STA E1_XPos	;3
 P1Right
 
@@ -1654,10 +1650,10 @@ P1Right
 	DEY
 
 ;Don't allow P2 past Position 160
-	LDA #Far_Right	;2
-	CMP E2_XPos	;2
-	BCS P2Right	;2(3)
-	LDA #Far_Left+1 ;2
+	LDA E2_XPos	;2
+	CMP #Far_Right	;2
+	BCC P2Right	;2(3)
+	LDA #Enemy_Far_Left+1 ;2
 	STA E2_XPos	;3
 P2Right
 
@@ -1666,10 +1662,10 @@ P2Right
 	DEY
 
 ;Don't allow P3 past Position 160
-	LDA #Far_Right	;2
-	CMP E3_XPos	;2
-	BCS P3Right	;2(3)
-	LDA #Far_Left+1 ;2
+	LDA E3_XPos	;2
+	CMP #Far_Right	;2
+	BCC P3Right	;2(3)
+	LDA #Enemy_Far_Left+1 ;2
 	STA E3_XPos	;3
 P3Right
 
@@ -1678,10 +1674,10 @@ P3Right
 	DEY
 
 ;Don't allow P4 past Position 160
-	LDA #Far_Right	;2
-	CMP E4_XPos	;2
-	BCS P4Right	;2(3)
-	LDA #Far_Left+1 ;2
+	LDA E4_XPos	;2
+	CMP #Far_Right	;2
+	BCC P4Right	;2(3)
+	LDA #Enemy_Far_Left+1 ;2
 	STA E4_XPos	;3
 P4Right
 
@@ -1694,7 +1690,7 @@ P4Right
 	LDA #Enemy_Far_Left	;2
 	CMP E0_XPos	;2
 	BCC P0left	;2(3)
-	LDA #Far_Right ;2
+	LDA #Far_Right-1 ;2
 	STA E0_XPos	;3
 P0left
 
@@ -1705,7 +1701,7 @@ P0left
 	LDA #Enemy_Far_Left	;2
 	CMP E1_XPos	;2
 	BCC P1left	;2(3)
-	LDA #Far_Right	;2
+	LDA #Far_Right-1	;2
 	STA E1_XPos	;3
 P1left
 
@@ -1716,7 +1712,7 @@ P1left
 	LDA #Enemy_Far_Left	;2
 	CMP E2_XPos	;2
 	BCC P2left	;2(3)
-	LDA #Far_Right	;2
+	LDA #Far_Right-1	;2
 	STA E2_XPos	;3
 P2left
 
@@ -1727,7 +1723,7 @@ P2left
 	LDA #Enemy_Far_Left	;2
 	CMP E3_XPos	;2
 	BCC P3left	;2(3)
-	LDA #Far_Right	;2
+	LDA #Far_Right-1	;2
 	STA E3_XPos	;3
 P3left
 	STA WSYNC
@@ -1737,7 +1733,7 @@ P3left
 	LDA #Enemy_Far_Left	;2
 	CMP E4_XPos	;2
 	BCC P4left	;2(3)
-	LDA #Far_Right	;2
+	LDA #Far_Right-1	;2
 	STA E4_XPos	;3
 P4left
 	STA WSYNC
