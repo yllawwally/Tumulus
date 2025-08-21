@@ -1,5 +1,7 @@
 ;--------------------------------------------------------------
 ;top rolls incorrectly
+;attempting to shift enemies into using vdel
+;attempting to add color to player character
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -70,6 +72,7 @@ Hero_XPos 		ds 2	;horizontal position
 Hero_Y 			ds 1	;needed for skipdraw
 Hero_Ptr 		ds 2	;ptr to current graphic
 Hero_Sword_Pos		ds 1
+HeroGraphicsColorPtr	ds 2
 
 Graphics_Buffer		ds 1	;buffer for graphics
 Graphics_Buffer_2	ds 1	;buffer for graphics
@@ -113,6 +116,8 @@ PF5_L4 			ds 1	; playfield buffer
 PF_TEMP			ds 1	; playfield buffer temp
 PF_TWIST_TEMP		ds 1	; playfield buffer for flipping PF2
 
+;ColorBuffer		ds 1	;buffer sprite color
+;ColorBuffer2		ds 1	;buffer sprite color
 SavedStackPointer	ds 1
 
 	seg code
@@ -420,6 +425,7 @@ MOVESET1
 	lda #>HeroGraphics0 ;high byte of graphic location
 	sta Hero_Ptr+1	;store in high byte of graphic pointer
 	
+
 	
 	;for skipDraw, E0_Y needs to be set (usually during VBLANK)
 	;to Vertical Position (0 = top) + height of sprite - 1.
@@ -444,6 +450,19 @@ MOVESET1
 	clc
 	adc #C_P0_HEIGHT - #1 
 	sta Hero_Ptr	;2 byte
+
+	LDA #<HeroGraphicsColor
+	sta HeroGraphicsColorPtr
+	LDA #>HeroGraphicsColor
+	sta HeroGraphicsColorPtr+1
+ 
+	lda HeroGraphicsColorPtr
+	sec
+	sbc Hero_YPosFromBot
+	clc
+	adc #C_P0_HEIGHT - #1	
+	STA HeroGraphicsColorPtr
+	
 
 ;setup pic animations ----------------------------------------------
 
@@ -764,7 +783,9 @@ LOOPMEM2
 	LDA PF_TEMP
 	STA PF4_L1
 
-
+	LDA $00
+	STA VDELP0
+	STA VDELP1
 	
 ;setup php ball trick
 
@@ -905,7 +926,7 @@ ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 	STA WSYNC 						 ;3 cycles =74
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 
-	LDA #30;
+	LDA #18;
 
 	STA COLUBK	;and store as the bgcolor
 	LDY #C_KERNAL_HEIGHT; 
@@ -1042,6 +1063,8 @@ ScanLoop_E0_c
 .doDrawHero_E0_e:
 	lda     (Hero_Ptr),y      ; 5
 	tax
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta COLUP1
 
         DEY             ;count down number of scan lines          2 cycles
 
@@ -1057,7 +1080,7 @@ EndScanLoop_E0_c
 
 ;-------------------------Enemy number E1 Start---------------------------
 ;NOT A LOOP
-	sta GRP1
+	stx GRP1
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
@@ -1103,7 +1126,7 @@ EndScanLoop_E0_c
 
         STA WSYNC                                                ;3 cycles =
 ;NOT A LOOP
-;------------------------------------------------
+;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ;This is not a loop, this is a one time set position for the eneamy E1
 	php
 	DEY
@@ -1129,8 +1152,8 @@ EndScanLoop_E0_c
 
 ScanLoop_E1_c 
 	sta	GRP1	;3
-	lda	Graphics_Buffer
-	sta	GRP0	; 3
+;	lda	Graphics_Buffer
+;	sta	GRP0	; 3
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
@@ -1138,19 +1161,20 @@ ScanLoop_E1_c
   	ldx #ENAM0+1		;2
   	txs                    ;2 Set the top of the stack to ENAM1+1
 ;sword php style 
-
 ;skipDraw
 ; draw player sprite 0:
 	lda     #C_P0_HEIGHT-1     ; 2
 	dcp     E1_Y            ; 5 (DEC and CMP)
 	bcs     .doDraw_E1_b        ; 2/3 ; should be bcs
 	lda     #0              ; 2
-
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E1_b:
 	lda     (E1_Ptr),y      ; 5
-;	sta     GRP0 ; This allows us to do the calculation early
-	sta 	Graphics_Buffer
+	sta 	GRP0
+;	sta 	Graphics_Buffer
+
+
+	
 
 
 ;skipDraw
@@ -1163,6 +1187,10 @@ ScanLoop_E1_c
 .doDrawHero_E1_e:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
+	tax
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta COLUP1
+	txa
         DEY             ;2 count down number of scan lines          2 cycles
 	
 
@@ -1244,8 +1272,8 @@ EndScanLoop_E1_c
 
 ScanLoop_E2_c 
 	sta	GRP1	;3
-	lda	Graphics_Buffer
-	sta	GRP0	; 3
+;	lda	Graphics_Buffer
+;	sta	GRP0	; 3
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
@@ -1264,8 +1292,8 @@ ScanLoop_E2_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E2_b:
 	lda     (E2_Ptr),y      ; 5
-;	sta     GRP0 ; This allows us to do the calculation early
-	sta 	Graphics_Buffer
+	sta 	GRP0
+;	sta 	Graphics_Buffer
 
 
 ;skipDraw
@@ -1278,6 +1306,10 @@ ScanLoop_E2_c
 .doDrawHero_E2_e:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
+	tax
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta COLUP1
+	txa
         DEY             ;2 count down number of scan lines          2 cycles
 	
 
@@ -1360,8 +1392,8 @@ EndScanLoop_E2_c
 
 ScanLoop_E3_c 
 	sta	GRP1	;3
-	lda	Graphics_Buffer
-	sta	GRP0	; 3
+;	lda	Graphics_Buffer
+;	sta	GRP0	; 3
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
@@ -1380,8 +1412,8 @@ ScanLoop_E3_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E3_b:
 	lda     (E3_Ptr),y      ; 5
-;	sta     GRP0 ; This allows us to do the calculation early
-	sta 	Graphics_Buffer
+	sta 	GRP0
+;	sta 	Graphics_Buffer
 
 
 ;skipDraw
@@ -1394,6 +1426,10 @@ ScanLoop_E3_c
 .doDrawHero_E3_e:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
+	tax
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta COLUP1
+	txa
         DEY             ;2 count down number of scan lines          2 cycles
 	
 
@@ -1423,6 +1459,10 @@ EndScanLoop_E3_c
 .doDrawHero_E4_a:
 	lda     (Hero_Ptr),y      ; 5
 	tax
+	tax
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta COLUP1
+	txa
         DEY             ;count down number of scan lines          2 cycles = 
 
 
@@ -1476,8 +1516,8 @@ EndScanLoop_E3_c
 
 ScanLoop_E4_c 
 	sta	GRP1	;3
-	lda	Graphics_Buffer
-	sta	GRP0	; 3
+;	lda	Graphics_Buffer
+;	sta	GRP0	; 3
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
@@ -1496,8 +1536,8 @@ ScanLoop_E4_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E4_b:
 	lda     (E4_Ptr),y      ; 5
-;	sta     GRP0 ; This allows us to do the calculation early
-	sta 	Graphics_Buffer
+	sta 	GRP0
+;	sta 	Graphics_Buffer
 
 
 ;skipDraw
@@ -1510,6 +1550,10 @@ ScanLoop_E4_c
 .doDrawHero_E4_e:
 	lda     (Hero_Ptr),y      ; 5
 ;This allows us to do the calculation early, but must move dey to before routine
+	tax
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta COLUP1
+	txa
         DEY             ;2 count down number of scan lines          2 cycles
 	
 
@@ -1691,6 +1735,7 @@ fineAdjustTable EQU fineAdjustBegin - %11110001 ; NOTE: %11110001 = -15
 
 
 	org $FDC0
+
 
 
 HeroGraphics0
@@ -1895,6 +1940,15 @@ PFData5
 	.byte #%00111111
 	.byte #%00111111
 
+HeroGraphicsColor
+	.byte $40
+	.byte $40
+	.byte $40
+	.byte $20
+	.byte $3E
+	.byte $3E
+	.byte $80
+	.byte $80
 
 
 	
