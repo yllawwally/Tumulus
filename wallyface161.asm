@@ -11,27 +11,30 @@
 
 
 ;a monster who shares the background color with head, so head is only seen when hit.
+;for linked creatures need to set them to same position at the beginning of each frame
+
 
 ;FUTURE FEATURES
 ;Need to add grappling
-;differentiate levels more
+;differentiate levels more, not sure there is much I can do
 ;add more creatures
 ;maybe monsters shouldn't attack when on fire
 ;slide ceratures up and down
 ;allow creatures to move to a different lane if overeyes > 0
 ;Need to move monsters order around so that the proper ones damage player
-;baddie values won't be correct, need 7 more bytes in that section
+
 
 
 ;BUGS
 ;1 line of player is discolored
-;snakes don't damage player
 ;tree doesn't damage player
 ;make dragon not move
 ;make dragon fire move
 ;bottom part of boss changes direction when hit.
-;Sometimes when you kill a monster, the screen flickers for a moment.When I lose horse? Or maybe only on that lane
+;when you kill a monster on lane 3, the screen flickers for a moment
 ;Skyline is messed up, when monsters on screen, need to adjust color palette
+;fire potion doesn't kill only brings them down to zero(artificially say they are hit to kill?)
+;Using potion sometimes messes up creature, perhaps only on last lane
 
 ;FIXED
 
@@ -77,8 +80,8 @@
 ;11,01011,Snake
 ;12,01100,Bat 
 ;13,01101,Rat 
-;14,01110,Homonoculus ;Palette swap of Boggart???
-;15,01111,Goblin ;Need to add it
+;14,01110,Homonoculus 
+;15,01111,Goblin
 ;(Section of monsters that must be defeated)
 ;16,10000,RedCap ;Palette swap of Goblin???
 ;17,10001,Orc
@@ -136,9 +139,10 @@ Enemy_Row_E4		= 85   ;109
 Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
-Min_Eye_Trigger		= 8;was 8
+Min_Eye_Trigger		= 15   ;was 8
+Min_Damage		= 8    ;was 8
 LVL1BOSS			= 27
-LVL2BOSS			= 14
+LVL2BOSS			= 23 ;14 ;This is somehow causing the rolling
 LVL3BOSS			= 25
 LVL4BOSS			= 28
 LVL5BOSS			= 30
@@ -643,9 +647,13 @@ NoCoPo
 	CMP #7
 	BEQ Type5
 
-	CMP #LVL2BOSS
-	BNE Type2
-	jmp dontpause
+
+;	CMP #LVL2BOSS+1 ;this is probably what's needed to stop bottom
+;	BEQ dontpause   ;half of monster from going a different direction
+;This causes the rolling
+;	CMP #LVL2BOSS
+;	BNE Type2
+;	jmp dontpause
 
 Type2
 	LDA Direction ;make baddie change dir if hit
@@ -693,19 +701,20 @@ ExtraDead
 
 
 
-	CMP #4
-	BEQ RedMandrakeMan
+	CMP #5
+	BEQ BlueMandrakeMan
 	BCS NoCollisionP0
 
 	CMP #2
 	BEQ RedMandrakePlant
 	CMP #3
 	BEQ BlueMandrakePlant
-	CMP #5
-	BEQ BlueMandrakeMan
+	CMP #4
+	BEQ RedMandrakeMan
 
 
-	CMP #1
+
+	CMP #1 ;Do I need to compare BEQ ITSZERO is at the beginning
 	BNE NoCollisionP0
 
 ITSZERO
@@ -1158,6 +1167,8 @@ resetx
 	sta New_Hit
 	sta Other_Hit
 
+	
+
 	bit SWCHB
 	bmi leftdif
 	lda #24
@@ -1168,6 +1179,7 @@ nozero
 ;	sta onhorse
 
 TESTPOINTG
+
 ;-test to start on horse
 ;	LDY #4
 
@@ -1176,9 +1188,9 @@ TESTPOINTG
 
 	LDA #0
 
-	sta Other_Hit
+;	sta Other_Hit
 	sta Player_Hit
-	sta New_Hit
+;	sta New_Hit
 
 	CMP Pause
 	BCS NOBIGEYES
@@ -2552,7 +2564,7 @@ EnemyLife
      .byte #1 ;;11,Snake
      .byte #1 ;;12,Bat ;Need to add it
      .byte #1 ;;13,Rat ;Need to add it
-     .byte #2 ;;14,Homonoculus ;Need to add it
+     .byte #2 ;;14,Homonoculus
      .byte #4 ;;15,Goblin ;Need to add it
      .byte #5 ;;16,RedCap ;Need to add it
      .byte #7 ;;17,Orc ;Need to add it
@@ -3523,8 +3535,8 @@ HeroGraphics1
 
 
 
-SkullGraphics
-
+RedCapGraphics
+GoblinGraphics
 
 	.byte #%00000000
 	.byte #%00010100
@@ -3584,9 +3596,9 @@ BrownieGraphics
 ;9,01001,Large Pit
 ;10,01010,Small Pit
 ;11,01011,Snake
-;12,01100,Bat ;Need to add it
+;12,01100,Bat ;need to fix color
 ;13,01101,Rat ;Need to add it
-;14,01110,Homonoculus ;Need to add it
+;14,01110,Homonoculus
 ;15,01111,Goblin ;Need to add it
 ;(Section of monsters that must be defeated)
 ;16,10000,RedCap ;Need to add it
@@ -3609,15 +3621,15 @@ BrownieGraphics
 
 
 NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
-     .byte #%00000111
-     .byte #%00100001 
+     .byte #%00001011
+     .byte #%00101100 
      .byte #%10001111 ;mummy arms
      .byte #%10110000 ;mummy legs
      .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
-     .byte #%01101110
-     .byte #%11001110
-     .byte #%11001110
-     .byte #%00001110
+     .byte #%01100010
+     .byte #%11000011 
+     .byte #%11001011
+     .byte #%00001011
      .byte #%00101110
      .byte #%01010000
      .byte #%01110001
@@ -3628,10 +3640,10 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%00000010
      .byte #%00100010
      .byte #%01001000
-     .byte #%01101001
+     .byte #%01101011
      .byte #%10000111
      .byte #%10101000
-     .byte #%11001001
+     .byte #%11001011
      .byte #%11001110
      .byte #255 ;This is to reset to beginning
 
@@ -3769,20 +3781,20 @@ SnakeGraphics ;Snake
 
 HomonoculusGraphics
         .byte #%00000000;$0E
-        .byte #%01110000;$0E
+        .byte #%00100100;$0E
         .byte #%00111000;$0E
-        .byte #%00110010;$0E
+        .byte #%10111000;$0E
         .byte #%01111100;$0E
-        .byte #%10010000;$0E
+        .byte #%00010010;$0E
         .byte #%00101000;$32
         .byte #%00111000;$0E
 HomonoculusGraphicsb
         .byte #%00000000;$0E
-        .byte #%00011100;$0E
+        .byte #%01001100;$0E
         .byte #%00111000;$0E
-        .byte #%10110000;$0E
+        .byte #%00111010;$0E
         .byte #%01111100;$0E
-        .byte #%00010010;$0E
+        .byte #%10010000;$0E
         .byte #%00101000;$32
         .byte #%00111000;$0E
 
@@ -3922,7 +3934,7 @@ LEFTAUD
 ;11,01011,Snake
 ;12,01100,Bat 
 ;13,01101,Rat 
-;14,01110,Homonoculus ;Need to add it
+;14,01110,Homonoculus
 ;15,01111,Goblin ;Need to add it
 ;(Section of monsters that must be defeated)
 ;16,10000,RedCap ;Need to add it
@@ -3957,13 +3969,13 @@ GraphicsTableLow
 
      .byte #<ChestGraphics ;6
 
-     .byte #<ChestGraphics ;7
+     .byte #<UpgradeGraphics ;7
 
-     .byte #<ChestGraphics ;8
+     .byte #<UnusedGraphics ;8
 
-     .byte #<TreeGraphics ;9
+     .byte #<LPitGraphics ;9
 
-     .byte #<TreeGraphics ;10
+     .byte #<SPitGraphics ;10
 
      .byte #<SnakeGraphics ;11
 
@@ -3971,11 +3983,11 @@ GraphicsTableLow
 
      .byte #<RatGraphics ;13
 
-     .byte #<BoggartGraphics ;14
+     .byte #<HomonoculusGraphics ;14
 
-     .byte #<TreeGraphics ;15
+     .byte #<GoblinGraphics ;15
 
-     .byte #<TreeGraphics ;16
+     .byte #<RedCapGraphics ;16
 
      .byte #<OrcGraphics ;17
 
@@ -3993,19 +4005,19 @@ GraphicsTableLow
 
      .byte #<Mummy0a ;24
 
-     .byte #<TreeGraphics ;25
+     .byte #<DragonGraphicsb ;25
 
-     .byte #<TreeGraphics ;26
+     .byte #<DragonGraphicsa ;26
 
      .byte #<WillOWispGraphics ;27
 
-     .byte #<TreeGraphics ;28
+     .byte #<VampGraphicsb ;28
 
-     .byte #<TreeGraphics ;29
+     .byte #<VampGraphicsa ;29
 
-     .byte #<TreeGraphics ;30
+     .byte #<MinotaurGraphicsb ;30
 
-     .byte #<TreeGraphics ;31
+     .byte #<MinotaurGraphicsa ;31
 
 
 
@@ -4024,13 +4036,13 @@ GraphicsTableHigh
 
      .byte #>ChestGraphics ;6
 
-     .byte #>ChestGraphics ;7
+     .byte #>UpgradeGraphics ;7
 
-     .byte #>ChestGraphics ;8
+     .byte #>UnusedGraphics ;8
 
-     .byte #>TreeGraphics ;9
+     .byte #>LPitGraphics ;9
 
-     .byte #>TreeGraphics ;10
+     .byte #>SPitGraphics ;10
 
      .byte #>SnakeGraphics ;11
 
@@ -4038,11 +4050,11 @@ GraphicsTableHigh
 
      .byte #>RatGraphics ;13
 
-     .byte #>BoggartGraphics ;14
+     .byte #>HomonoculusGraphics ;14
 
-     .byte #>TreeGraphics ;15
+     .byte #>GoblinGraphics ;15
 
-     .byte #>TreeGraphics ;16
+     .byte #>RedCapGraphics ;16
 
      .byte #>OrcGraphics ;17
 
@@ -4060,19 +4072,19 @@ GraphicsTableHigh
 
      .byte #>Mummy0a ;24
 
-     .byte #>TreeGraphics ;25
+     .byte #>DragonGraphicsb ;25
 
-     .byte #>TreeGraphics ;26
+     .byte #>DragonGraphicsa ;26
 
      .byte #>WillOWispGraphics ;27
 
-     .byte #>TreeGraphics ;28
+     .byte #>VampGraphicsb ;28
 
-     .byte #>TreeGraphics ;29
+     .byte #>VampGraphicsa ;29
 
-     .byte #>TreeGraphics ;30
+     .byte #>MinotaurGraphicsb ;30
 
-     .byte #>TreeGraphics ;31
+     .byte #>MinotaurGraphicsa ;31
 
 
 GraphicsColorTableLow
@@ -4089,23 +4101,23 @@ GraphicsColorTableLow
 
      .byte #<MandrakeColorBlue ;5
 
-     .byte #<MandrakeManColorb ;6
+     .byte #<ChestColor ;6
 
      .byte #<GhostColor ;7
 
-     .byte #<MandrakeManColor ;8
+     .byte #<BatColor ;8
 
-     .byte #<EnemyGraphicsColor1 ;9
+     .byte #<WarriorColor ;9
 
      .byte #<SnakeColor ;10
 
      .byte #<SnakeColor ;11
 
-     .byte #<EnemyGraphicsColor1 ;12
+     .byte #<BatColor ;12
 
      .byte #<EnemyGraphicsColor0 ;13
 
-     .byte #<EnemyGraphicsColor1 ;14
+     .byte #<WarriorColor ;14
 
      .byte #<SnakeColor ;15 This is where mummy color is pulling from was 6
 
@@ -4191,7 +4203,8 @@ EnemyGraphicsColor0
 	.byte #$80
 	.byte #$80
 
-EnemyGraphicsColor1
+WarriorColor
+EnemyGraphicsColor3
 	.byte #$40
 	.byte #$40
 	.byte #$40
@@ -4211,15 +4224,15 @@ EnemyGraphicsColor2
 	.byte #$80
 	.byte #$80
 
-EnemyGraphicsColor3
-	.byte #$40
-	.byte #$40
-	.byte #$40
-	.byte #$20
-	.byte #$3E
-	.byte #$3E
-	.byte #$80
-	.byte #$80
+;EnemyGraphicsColor3
+;	.byte #$40
+;	.byte #$40
+;	.byte #$40
+;	.byte #$20
+;	.byte #$3E
+;	.byte #$3E
+;	.byte #$80
+;	.byte #$80
 
 
 EnemyGraphicsColor4
@@ -4285,17 +4298,17 @@ MandrakeColorBlue ;Mandrake Plant
         .byte #$80;
 
 
-MandrakeManColor ;Mandrake Man
-        .byte #$10;
-        .byte #$10;
-        .byte #$12;
-        .byte #$12;
-        .byte #$12;
-        .byte #$14;
-        .byte #$C0;
-        .byte #$C0;
+BatColor ;Bat Color Gray and Black
+        .byte #$02;
+        .byte #$02;
+        .byte #$04;
+        .byte #$04;
+        .byte #$06;
+        .byte #$06;
+        .byte #$04;
+        .byte #$04;
 
-MandrakeManColorb ;Mandrake Man
+ChestColor ;Mandrake Man
         .byte #$10;
         .byte #$10;
         .byte #$12;
@@ -4393,8 +4406,9 @@ NotPit
 	sty Link
 	
 NOTMUMMY
-;	LDA EnemyLife,y ;Not really sure what i'm doing here
-;	STA E0_Health,y ;this was causing lane 1 to have large life total
+	TAX
+	LDA EnemyLife,x
+	STA E0_Health,y ;HOW did this ever work without TAX???
 
 AddingPit
 	lda #Far_Right-1
@@ -4499,6 +4513,18 @@ ChestGraphics
 	.byte #%00111100
 	.byte #%00000000
 
+
+
+SPitGraphics
+LPitGraphics
+UnusedGraphics
+UpgradeGraphics
+MinotaurGraphicsa
+VampGraphicsb
+VampGraphicsa
+DragonGraphicsa
+MinotaurGraphicsb
+DragonGraphicsb
 
 NUM0
 
