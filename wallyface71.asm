@@ -1,8 +1,9 @@
 ;--------------------------------------------------------------
-;mountain range moves backwards
+;mountain range moves correctly
 ;make two sets of top data. First set is just the first screen
 ;the second set is where you grab a bit at a time to shift in.
 ;or start all zero and shift in the bits
+;maybe make random mountains, look at last 2 bits of five and random next?
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -27,7 +28,7 @@ Enemy_Row_E3		= 35
 Enemy_Row_E4		= 2
 HERO_SPEED_VER		= 1
 HERO_SPEED_HOR		= 1
-Screen_Rate		= 200	;How fast screen is scrolling in X-Axis
+Screen_Rate		= 20	;How fast screen is scrolling in X-Axis
 
 ;Variables ------
 
@@ -815,112 +816,96 @@ notalive1
 
 
 
+
 	LDA ROLLING_COUNTER
-	ROR
-;	ROR
-;	ROR
-;	ROR
-	ROR
-	AND #%00000111
-	TAX
-	LDA ROLLING_COUNTER
-	ROR
-	ROR
-	ROR
-	AND #%00000111
-	ADC #1
-	STA Pos
-			
+	AND #%00011111
 
 
-;while shift > 0 do
-;load shift into Y
-	LDY Pos
-	
+	CMP #%00011111
+	BNE SKIPMTN	
 
 
 
-;Left Scrolling Demo Start
-;               LDX #04
-;Scroll          
-;               LSR #PF2_L1-1,X   ; Scroll Line X-1 (= 3-0)
-;               ROL #PF1_L1-1,X
-;               ROR #PF0_L1-1,X
-;               LDA #PF0_L1-1,X
-;               AND #%00001000
-;               BEQ Scroll_1   
-;               LDA #PF2_L1-1,X            
-;               ORA #%10000000      
-;               STA #PF2_L1-1,X
-;Scroll_1               
-;               DEX
-;               BNE Scroll
-;
-;Scroll_End   
-;Left Scrolling Demo End
-
-
-
-	LDA PF5_L1
-	ROL 
-
+	LDA #%00010000
+	AND PF0_L1
+	CMP #0
+	CLC
+	BEQ R1AJMP
+	SEC
+R1AJMP	
+;movign the initial bit into and outof the 4bit is causing the issue
 ROTATE1
-	ROL PF0_L1
-	ROR PF1_L1 ;reversed
-	ROL PF2_L1 ;4 bit reversed
+	ROR PF5_L1 ; 4bit
+	ROL PF4_L1 ;reversed
+	ROR PF3_L1 ;
 	LDA #%00001000
-	AND PF2_L1
+	AND PF3_L1
 	CMP #0
 	CLC
 	BEQ R1JMP
 	SEC
-R1JMP	ROL PF3_L1
-	ROR PF4_L1 ;reversed
-	ROL PF5_L1 ;4 bit reversed
+R1JMP	
+	ROR PF2_L1;4bit
+	ROL PF1_L1 ;reversed
+	ROR PF0_L1 
+
 
 ;---------------------------------------
-	LDA PF0_L2
-	ROR 
-	ROR
-	ROR
-	ROR
 
+	LDA #%00010000
+	AND PF0_L2
+	CMP #0
+	CLC
+	BEQ R2AJMP
+	SEC
+R2AJMP	
+;movign the initial bit into and outof the 4bit is causing the issue
 ROTATE2
-	ROR PF5_L2
+	ROR PF5_L2 ; 4bit
 	ROL PF4_L2 ;reversed
-	ROR PF3_L2 ;4 bit reversed
+	ROR PF3_L2 ;
 	LDA #%00001000
 	AND PF3_L2
 	CMP #0
 	CLC
 	BEQ R2JMP
 	SEC
-R2JMP	ROR PF2_L2
+R2JMP	
+	ROR PF2_L2;4bit
 	ROL PF1_L2 ;reversed
-	ROR PF0_L2 ;4 bit reversed
+	ROR PF0_L2 
+
 
 ;----------------------------------------
 
 
-	LDA PF0_L3
-	ROR 
-	ROR
-	ROR
-	ROR
-
+	LDA #%00010000
+	AND PF0_L3
+	CMP #0
+	CLC
+	BEQ R3AJMP
+	SEC
+R3AJMP	
+;movign the initial bit into and outof the 4bit is causing the issue
 ROTATE3
-	ROR PF5_L3
+	ROR PF5_L3 ; 4bit
 	ROL PF4_L3 ;reversed
-	ROR PF3_L3 ;4 bit reversed
+	ROR PF3_L3 ;
 	LDA #%00001000
 	AND PF3_L3
 	CMP #0
 	CLC
 	BEQ R3JMP
 	SEC
-R3JMP	ROR PF2_L3
+R3JMP	
+	ROR PF2_L3;4bit
 	ROL PF1_L3 ;reversed
-	ROR PF0_L3 ;4 bit reversed
+	ROR PF0_L3 
+
+SKIPMTN
+
+
+
 
 
 	LDA %00000001
