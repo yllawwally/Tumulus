@@ -1,24 +1,28 @@
 ;--------------------------------------------------------------
 ;Tumulus : Burial Mound, Entrance to the underworld
 ;One can shoot down, one accross, and one up. That way fireballs don't overlap
-;player has corruption on far right
-;need to add way to change playfield colors, for enemy special attack, and top eye enemy attack 
-;certain pallettes don't work on lanes 6 and 7, The colors for monster types (3,4,5,6,7)
-;Boss portion really needs a way for monster to travel whole screen.
-;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
-;top line of baddie is wrong because it needs to be loaded in prior line, but not the color
-;make giant ogre, out of several pieces
-;endline1 is where players arm is miscolored
-;EndLin4b is where the color is bad for the arm now
-;Need to add grappling
-;may be problems with too many points at once, with potion kill
 ;add second weapon a whip, then whip goes further, but is slower, on horse it cant stay out like the knife, it 
 ;straddles several lines, so it's like this -----
 ;                                               -----
 ;                                                    -----
 ;Using hmove, not sure how to leave active, use player active? Maybe use ball instead of missle
-;make level 1 will o wisp.  All 8 lines get a monster, only one is real.
+
+
+
+;FUTURE FEATURES
+;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
+;make giant ogre, out of several pieces
+;Need to add grappling
+;need to differentiate levels, probably different colors
 ;maybe monsters shouldn't attack when on fire
+
+
+;BuGS
+;Moving and attacking causes an addition line to be added
+;endline1 is where players arm is miscolored
+;EndLin4b is where the color is bad for the arm now
+;player has corruption on far right
+
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
@@ -26,13 +30,16 @@
 ;Num baddie types per level 6+level*2
 ;--------------------------------------------------------------
 ;5 different level masters
+;Use wide for all bosses?
 ;NAGA, can summon snakes
-;Gargoyle
+;Gargoyle, 2 forms flying and still. When still can't be damaged
 ;Griffon
 ;Vampire, summon undead???, drain life, resurrect helpers in same spot they died, but as next more powerfull?, bats
 ;Giant, can create craters that move accross screen
 ;Mummy
 ;Dragon, breath fire, uses the moving pit in mouth, change color when spit at player
+; 4 pieces, plus shoots fire pits.  two pieces for head, and 2 hands.
+; can move up and down only, when not shooting fire.
 ;Minotaur
 ;Sirens, control player
 ;Gorgon, causes player death if on same level facing her
@@ -98,7 +105,7 @@ Enemy_Row_E4		= 85   ;109
 Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
-Min_Eye_Trigger		= 6
+Min_Eye_Trigger		= 8
 LVL1BOSS		= 14
 
 ;Variables ------
@@ -294,8 +301,9 @@ ClearMem
 	lda #17
 	sta Offset
 
-	LDA #%11111111
+	LDA #%11111110
 	STA Enemy_Life
+	LDA #%11111111
 	STA Player_Health
 	STA Pit_Color
 
@@ -465,7 +473,7 @@ SLICE1
 	
 	
 
-	LDX #6
+	LDX #7
 
 ;Eneamy Movement---------------------------------------------------
 
@@ -656,13 +664,9 @@ ExtraDead
 
 NoCollisionP0
 	lda E0_Type-1,x
-;	cmp #1 ;Not hurt by horse
-;	Beq notsmacked
-
-
 	cmp #Min_Eye_Trigger
-	bcc nosnakepause
-	JMP notsnake
+	bcs nosnakepause
+	JMP notsmacked 
 
 BOSS1
 	stx Multi_Temp
@@ -694,10 +698,10 @@ NotOutsideBOSSRange
 RedMandrakeMan
 	SEC
 	ROR Player_Health
-	jmp notsnake
+	jmp notsmacked
 BlueMandrakeMan
 	INC Potion
-	jmp notsnake
+	jmp notsmacked
 RedMandrakePlant
 	lda #5
 	jmp mandrake
@@ -710,9 +714,9 @@ mandrake
 	STA Enemy_Life	
 	LDA #3
 	sta E0_Health-1,x
-
+	jmp notsmacked
 nosnakepause
-	lda #$FF
+	;lda #$FF
 	;sta Pause
 notsnake
 
@@ -900,7 +904,7 @@ Enemies_Alive
 	lda GraphicsColorTableHigh ;Cheating because all the color is in the same bank
 	sta TempGraphicsColor+1    ;Cheating because all the color is in the same bank
 
-	ldy #8
+	ldy #7
 
 
 setuppics
@@ -2023,7 +2027,7 @@ EndScanLoop_E2_c
 	asl Multi_Temp
 
 	lda Multi_Temp
-	cmp #%01000000     ;Set this to number of monsters you want ////////////////////////////////
+	cmp #%10000000     ;Set this to number of monsters you want ////////////////////////////////
 
 	lda     (HeroGraphicsColorPtr),y      ; 5
 
