@@ -1517,14 +1517,14 @@ new_E1_line3     STA WSYNC
 	sta Graphics_Buffer
 
 
-	DEY
 
 
 	lda  Graphics_Buffer_2
 	cpy Hero_Sword_Pos  ;3
- 	php	;2
-	INY
+
 	stx COLUP1
+ 	php	;2
+	DEY
 
 EndLine1   STA WSYNC  
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1553,7 +1553,11 @@ EndLine2        STA WSYNC                                                ;3 cycl
 ;This is not a loop, this is a one time set position for the eneamy E2
 
 	pla ;this is to reset sword
+;sword php style
+	cpy Hero_Sword_Pos  ;3
+	php			;3
 
+;	INY
 
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta	COLUP1
@@ -1565,11 +1569,10 @@ EndLine2        STA WSYNC                                                ;3 cycl
 
 
 
-	DEY
 
-;sword php style
-	cpy Hero_Sword_Pos  ;3
-	php			;3
+;	DEY
+
+
 
 
 	pla ;4 Set the top of the stack to ENAM1+1
