@@ -112,7 +112,7 @@ Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
 Min_Eye_Trigger		= 8
 LVL1BOSS			= 14
-
+Mummy_Num		= %01111
 ;Variables ------
 
 
@@ -211,7 +211,8 @@ HeroGraphicsColorPtr	ds 2
 Player_Health		ds 1
 MOV_STAT		ds 1 	;direction player is moving
 Level			ds 1 ;What is the current level
-Grapple		ds 1
+Grapple			ds 1
+Link			ds 1 ;level for part of monster to be damaged
 
 Graphics_Buffer		ds 1	;buffer for graphics
 Graphics_Buffer_2	ds 1	;buffer for graphics
@@ -316,6 +317,7 @@ ClearMem
 	LDA #%00010000 ;set playfield to not reflected
 	STA CTRLPF
 	sta duration
+	LDA MummyColor
 	STA Pit_Color
 
 	LDA #%11111000	;The last 3 bits control number and size of players
@@ -492,9 +494,9 @@ MOVELEFT
 	beq dontmovepit
 	CMP onhorse
 	beq notonhorsepit
-	DEC #Pit0_XPos-1,x
+;	DEC #Pit0_XPos-1,x ; Pits no longer move, they are parts of bigger monsters
 notonhorsepit
-	DEC #Pit0_XPos-1,x
+;	DEC #Pit0_XPos-1,x ; Pits no longer move, they are parts of bigger monsters
 dontmovepit
 
 	LDA #Multiplexer-1,x
@@ -1370,13 +1372,13 @@ New_E2_Start
 	beq NOPITTHISLEVEL
 	clc ;this is needed beacause of the subtract, and the sword compare
 	lda Enemy_Row_Data,x
-	sbc #14 ;was 15
+	sbc #14 ;was 14
 	sta	Row_1	
 
 	lda Enemy_Row_Data+1,x
-	sbc #100 ;
+	sbc #86 ;was 100
 	sta	Row_3
-	adc #8 ;was 5 8
+	adc #8 ;was 8
 	sta	Row_2
 	JMP YESPIT	
 	
@@ -1889,7 +1891,8 @@ pitposition
 
 	tax
 	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
-;	sta HMP0 
+	lda #0
+	sta HMP0 
 ;	sta RESP0 ;Disabling pit movement, because no longer use pits.
 
 ;sword php style	
@@ -1964,7 +1967,7 @@ ScanLoop_E2_c
 ;you have about 24 cycles--------------------------
 	CPY Row_2 ;3
 	BCS NO_PIT
-	LDA #$3C
+	LDA TempPit_XPos
 	STA GRP0
 NO_PIT
 
@@ -2295,7 +2298,23 @@ LINED
 	ORA E1_Ptr2
 	STA E1_Ptr2
 
-
+	LDY Link
+	BEQ LINEE
+	LDA #E0_Health,y
+	BEQ KILLLINKS
+	LDA #10
+	INY
+	STA #E0_Health,y
+	JMP LINEE
+KILLLINKS
+	LDA #0
+	STA #Pit0_XPos,y
+	INY
+	STA #E0_Health,y
+	STA Link
+;	LDA #Mask-1,y ;can just kill everything on screen because this is last on each level
+;	AND Enemy_Life ;can just kill everything on screen because this is last on each level
+	STA Enemy_Life
 
 LINEE
 ;	STA WSYNC  
@@ -3408,7 +3427,7 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%10001111 ;mummy arms
      .byte #%10110000 ;mummy legs
      .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
-     .byte #%01101110
+     .byte #%01100001
      .byte #%11000100
      .byte #%11000100
      .byte #%00001000
@@ -3433,29 +3452,29 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
 NEXTBADDIEDUR
 	.byte #$0
 	.byte #$10
-	.byte #$0
-	.byte #$0
-	.byte #$0
-	.byte #$1
+	.byte #$FA
 	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
 
 
 
@@ -4076,6 +4095,8 @@ RESSURECT
 
 TOOLARGE
 
+
+
 	ldx Baddie_Num
 
 	LDA NEXTBADDIETYPE,x
@@ -4084,6 +4105,7 @@ TOOLARGE
 	LDX #0
 	STX Baddie_Num
 DONTLOOP
+
 
 
 	LDA NEXTBADDIETYPE,x
@@ -4103,11 +4125,18 @@ DONTLOOP
 	BNE NotPit
 ;Setup Pit
 
-	LDA #Far_Right -#1
+	;LDA #Far_Right -#1 ;this is where we are changing pit to middle body
+	LDA #%00001110
 	STA Pit0_XPos,y
 	JMP AddingPit
 NotPit
+
 	STA E0_Type,y
+	CMP #Mummy_Num
+	BNE NOTMUMMY
+	sty Link
+	
+NOTMUMMY
 	LDA EnemyLife
 	STA E0_Health,y
 
@@ -4130,6 +4159,14 @@ AddingPit
 
 	lda NEXTBADDIEDUR,y
 	
+	CMP #240
+	BCS DONTLOOP2
+	STA Overeyes
+	STA Pause
+	lda NEXTBADDIEDUR,y
+DONTLOOP2
+
+
 	sta Baddie_Duration
 	BEQ TOOLARGE
 
