@@ -1,22 +1,17 @@
 ;--------------------------------------------------------------
 ;Tumulus : Burial Mound, Entrance to the underworld
 ;One can shoot down, one accross, and one up. That way fireballs don't overlap
-;Enemy possesses baddy, change baddie palette then do rest
-;Enemy face appears in sky, throws down pillars of fire, which can cause holes in ground
 ;Maybe player magic that destroys all monster and leaves holes in ground. Beams that kill only if hit enemy
 ;player has corruption on far right
 ;player sword corruption on far left
 ;need to add way to change playfield colors, for enemy special attack, and top eye enemy attack
 ;certain pallettes don't work on lanes 6 and 7, The colors for monster types (3,4,5,6,7)
-;enemy portion really needs a way for monster to travel whole screen.
+;Boss portion really needs a way for monster to travel whole screen.
 ;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
-;messed up mountains again
 ;a dot rolls accross the ground where monsters were, which hits player sometimes. 
-;Killing baddies is causing screen to get extra lines 
-;using sword is causing screen to get exra lines
-;pits don't decrement
+;Killing baddies is causing screen to get extra lines, and sometimes to switch to pit
 ;--------------------------------------------------------------
-;add a variable every x monsters then boss, with smaller monsters defined by a formula
+;add a variable every x monsters then boss, with smaller monsters defined by a formula???
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
 ;level 1 : 20, level 2 : 25, level 3 : 30, level 4 : 35, level 5 40, 155 monsters in whole game.  
@@ -45,7 +40,7 @@
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 12	;height of hero sprite
 C_KERNAL_HEIGHT 	= 182	;height of kernal/actually the largest line on the screen ;was 186
-Far_Left		= 10
+Far_Left		= 12
 Far_Right		= 140
 Far_Right_Hero		= 134
 Far_Up_Hero		= 182
@@ -65,6 +60,7 @@ Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
 Min_Eye_Trigger		= 6
+
 ;Variables ------
 
 
@@ -379,11 +375,11 @@ NOTHORSE
 	lda Baddie_Num
 	EOR #$FF
 	AND #%00001111
-;	ADC #20
-	ASL
-	ASL
-	ASL
 	ADC #1
+	ASL
+	ASL
+	ASL
+	ADC #10
 	
 	
 	sta Baddie_Duration
@@ -706,11 +702,12 @@ notsmacked
 	JMP Collision
 NoCollision	
 	tya
-
+	ldy #0
 	ldx #0
 NotInvincable
 	cmp #0
 	beq NOSCORE
+
 ;---------------------Increment Score
         sed
         clc
@@ -1188,7 +1185,13 @@ NOTONHORSEKNIFE
 ;DEX
 	LDA #$44
 	STA COLUP0
+
+	LDA #%00000001	
+	STA VDELBL
 	LDX #0
+
+	LDA PFCOLOR-1,Y		; 4 cycles
+
 
 	STA WSYNC
 ;start of kernal +++++++++++++++++++++++ for player 0 positioning
@@ -1197,7 +1200,6 @@ NOTONHORSEKNIFE
 ;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 MTNRANGE2
 
-	LDA PFCOLOR-1,Y		; 4 cycles
 	STA COLUBK		;and store as the bgcolor ; 3 cycles
 	LDA PFCOLORB-1,Y
 	STA COLUPF
@@ -1208,8 +1210,8 @@ MTNRANGE2
 	STA PF1			; 3 cycles
 	LDA PF2_L1,x		; 4 cycles
 	STA PF2			; 3 cycles
-	LDA #%00000001	
-	STA VDELBL
+				 ;3 cycles 
+
 
 	LDA PF3_L1,x		; 4 cycles
 	STA PF0			; 3 cycles
@@ -1219,8 +1221,13 @@ MTNRANGE2
 	STA PF2			; 3 cycles
 
 
+	dey	
 	INX
-	dey					 ;3 cycles =74
+
+	
+
+	LDA PFCOLOR-1,Y		; 4 cycles
+
 	cpx #4
 	STA WSYNC 
 	bne MTNRANGE2
@@ -1229,7 +1236,7 @@ MTNRANGE2
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 	
 	STA COLUPF
-	LDA #$E4;
+	LDA #$12;
 
 	STA COLUBK	;and store as the bgcolor
 	LDY #C_KERNAL_HEIGHT; 
@@ -1598,19 +1605,18 @@ No_Hit_the_Pit
         DEY             ;2 count down number of scan lines          2 cycles
 
 
-	
+
+
+
+
 
 
 EndLine3       STA WSYNC                                                ;3 cycles =
 ;------------------------------------------------------------
 
-
 	inc PF_TEMP
-
-
 	STA CXCLR   ;3
 
-;need to preset NUSIZ0, to make them single,double or triple sized
 
 Draw_Enemy_E2
 .608:
@@ -1618,16 +1624,18 @@ Draw_Enemy_E2
 	stx	GRP1	;3
 	sta 	COLUP1
 
-	lda     (Temp_Ptr),y      ; 5
-	sta 	GRP0	;3
-	lda     (TempGraphicsColor),y      ; 5
-	sta	COLUP0	;3
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
 	php	
 ;skipDraw
-; draw player sprite 0: Always draw the 8 lines of each baddie, if dead draw empty square
+
+
+	lda     (Temp_Ptr),y      ; 5
+	sta 	GRP0	;3
+	lda     (TempGraphicsColor),y      ; 5
+	sta	COLUP0	;3
+
 
 	pla 		;3
 ;sword php style 
