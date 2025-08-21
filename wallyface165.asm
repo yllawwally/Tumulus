@@ -17,33 +17,36 @@
 
 ;Dragon's name is scar??? So that way I don't have to fix black line
 
-;FUTURE FEATURES
+;FUTURE FEATURES / WATCH LIST
 ;Need to add grappling
 ;add more creatures
 ;slide ceratures up and down
 ;allow creatures to move to a different lane if overeyes > 0
-;Need to move monsters order around so that the proper ones damage player
 ;make sure points are scored for potion killed baddies
 ;Can I remove duration, and calculate based on is it a boss, then use rand+level for duration???
 
 ;BUGS
 ;1 line of player is discolored
-;tree doesn't damage player
 ;make dragon not move
 ;make dragon fire move
 ;Skyline is messed up, when monsters on screen, need to adjust color palette
 ;Rat is miscolored
-;Potion once again destroys creatures
 ;Multi-Sprite bad guy has one line that slide, this is because it's reinitialzing the hor position
-;Touching an enemy causes an extra line
+;Touching an enemy causes one less line, will this cause TV distortion?
+;if you use potion on enemy too far right, they will stop and you can't continue
 
 ;IMPROVED
 ;when you hit a monster on lane 3, the screen flickers for a moment
 
 
 ;FIXED
-;killing the guy on 6, also killed the guy on the first lane
-
+;sometimes killing the guy on 6, also killed the guy on the first lane
+;This was related to the linking of bosses, it incorectly listed lane 6 and another lane as linked.
+;tree doesn't damage player
+;This was because I had accidently replaced the eye trigger with the damage list
+;Potion once again destroys creatures
+;Touching an enemy causes an extra line
+;moved monsters order around so that the proper ones damage player
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -144,8 +147,8 @@ Enemy_Row_E4		= 85   ;109
 Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
-Min_Eye_Trigger		= 15   ;was 8
-Min_Damage		= 7    ;was 8
+Min_Eye_Trigger		= 15   ;
+Min_Damage		= 9    ;
 LVL1BOSS			= 27
 LVL2BOSS			= 25 ;This is somehow causing the rolling
 LVL3BOSS			= 26
@@ -479,8 +482,8 @@ NS3
 	BNE NS4
 	JMP SLICE1 ;Baddie Movement is twice as fast
 NS4
-	CMP #5
-	BNE NS5
+;	CMP #7 ;Bumped this to triple potency of potions
+;	BNE NS5
 	JMP SLICE4 ;Baddie Movement is twice as fast
 NS5
 ;	CMP #6
@@ -553,7 +556,7 @@ dontmovepit
 	JMP DONEMOVE
 FORWARD	
 	LDA #E0_Type-1,x
-	CMP #Min_Eye_Trigger
+	CMP #Min_Damage
 	BCC DONEMOVE
 	INC E0_XPos-1,x
 	LDA onhorse
@@ -623,8 +626,8 @@ ENDSLICES
 	BCC NotBossLevel
 	LDX Other_Hit
 	BEQ HITSCORE
-	INX 
-	DEC E0_Health,x
+;	INX 
+;	DEC E0_Health,x
 	JMP NOSCORE
 HITSCORE
 	LDX Link
@@ -733,7 +736,7 @@ ITSZERO
 
 NoCollisionP0
 	lda E0_Type-1,x
-	cmp #Min_Eye_Trigger ;This is causing snake to not damage player
+	cmp #Min_Damage ;This is causing snake to not damage player
 	bcs nosnakepause ;This is the routine that damages the player
 	JMP notsmacked 
 ;	JMP nosnakepause ;this wasn't here
@@ -1914,6 +1917,8 @@ No_Hit_the_Baddie
 	LDA Multi_Temp ; 3 cycles
 	ORA Player_Hit ;4 cycles`
 	STA Player_Hit  ;4 cycles
+	.NOP
+	.NOP
 Hit_Baddie
 ;--------New Collision Detection Style
 
@@ -1948,7 +1953,7 @@ MidLine5a
 
 	;.nop
 
-EndLine5 	sta WSYNC
+EndLine5 	;sta WSYNC
 
 ;---------------------line for setting up pits-----------------------------------------
 ;sword php style
@@ -2752,7 +2757,7 @@ horseknife
 	asl
 	cmp #%0110000
 	bne nobonus	
-	lda #%10000000
+	lda #%11000000 ;This was 10000000 trying to make potion last longer
 nobonus
 	ora Potion
 	sta Potion
@@ -2773,6 +2778,7 @@ NoPotion
 	cmp #11
 	bcs NoSwordAttack
 SwordAttack
+
 ;	lda swordduration
 	lsr
 	lsr
@@ -4382,7 +4388,7 @@ DONTLOOP
 	JMP AddingPit
 NotPit
 
-	STA E0_Type,y
+	STA E0_Type,y 
 	CMP #LVL2BOSS
 	BNE NOTMUMMY
 	sty Link
@@ -4755,7 +4761,6 @@ PFCOLORB
 	.byte #$72
 	.byte #$74
 	.byte #$76
-
 
 Enemy_Row_Data
 	.byte Enemy_Row_0
