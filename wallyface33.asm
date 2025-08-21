@@ -12,7 +12,7 @@ C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 8	;height of sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
 Far_Left		= 15	;apparently putting # here does nothing
-Far_Right		= 130
+Far_Right		= 120
 Far_Right_Hero		= 150
 Far_Up_Hero		= 182
 Far_Down_Hero		= 10
@@ -1064,21 +1064,25 @@ EndScanLoop ;end of kernal +++++++++++++++++ for player 0
 	
 	
 ;-------------------------Enemy number 1 Start---------------------------
-ScanLoop_E1_a ;start of kernal +++++++++++++++++++++++ for player 2
+ScanLoop_E1_a
 	sta	GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
 	lda	Graphics_Buffer ;3
 	sta	GRP0	
 	
-; draw Hero Sword:
-	lda     #C_P0_HEIGHT-4     ; 2 
-	cmp     Hero_Y            ; 3 
-	beq     .doDrawHero_E1_a        ; 
+
+
+;skipDraw
+; draw Hero sprite:
+	lda     #C_P0_HEIGHT-1     ; 2 
+	dcp     Hero_Y            ; 5 (DEC and CMP)
+	bcs     .doDrawHero_E1_a        ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E1_a:
-	LDA Hero_Attack
-	STA ENAM1	;SWORD STUFF   
-; draw Hero Sword:
+	lda     (Hero_Ptr),y      ; 5
+	tax
+
+        DEY             ;count down number of scan lines          2 cycles = 
 
 ;skipDraw
 ; draw Hero sprite:
@@ -1090,28 +1094,28 @@ ScanLoop_E1_a ;start of kernal +++++++++++++++++++++++ for player 2
 .doDrawHero_E1_b:
 	lda     (Hero_Ptr),y      ; 5
 
-	tax
+	sta Graphics_Buffer_2
 
-        DEY             ;count down number of scan lines          2 cycles = 
-
-;skipDraw
-; draw Hero sprite:
-	lda     #C_P0_HEIGHT-1     ; 2 
-	dcp     Hero_Y            ; 5 (DEC and CMP)
-	bcs     .doDrawHero_E1_c        ; 2/3 ; should be bcs
+; draw Hero Sword:
+	lda     #C_P0_HEIGHT-4     ; 2 -5 to position near hand
+	cmp     Hero_Y            ; 5 (DEC and CMP)
+	bcs     .doDrawHero_E1_c        ; 2/3 ; should be bcs was beq
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E1_c:
-	lda     (Hero_Ptr),y      ; 5
+	LDA Hero_Attack
+	STA ENAM1	;SWORD STUFF   
 
-	sta Graphics_Buffer_2
+
         STA WSYNC                                                ;3 cycles =
-EndScanLoop_E1_a 
+EndScanLoop_E1_a
 ;------------------------------------------------
-ScanLoop_E1_b 
+	
+ScanLoop_E1_b
 	STX GRP1
 
 	lda E1_XPos
+
         sec	     ; 2 set carry
 .Div15_E1_a   
 	sbc #15      ; 2         
@@ -1120,16 +1124,15 @@ ScanLoop_E1_b
 	tax
 	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
 	sta HMP0 ;,x
-
 	sta RESP0 ;,x	;the x must be a 0 for player 0  or 1 player 1
 
 	LDA CXM1P
-	STA E0_Hit
+	STA E1_Hit
+	
 	DEY
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
-EndScanLoop_E1_b
-
+EndScanLoop_E1_b 
 	STA CXCLR	;reset the collision detection for next time
 	lda	Graphics_Buffer_2
 
@@ -1143,31 +1146,31 @@ ScanLoop_E1_c
 	cmp     Hero_Y            ; 3 
 	beq     .doDrawHero_E1_d        ; 
 	lda     #0              ; 2
+	sta 	ENAM1 ;added to address sword size
+
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E1_d:
+; draw Hero Sword:
 	LDA Hero_Attack
 	STA ENAM1	;SWORD STUFF   
-; draw Hero Sword:
 
 ;skipDraw
 ; draw player sprite 0:
 	lda     #C_P0_HEIGHT-1     ; 2
 	dcp     E1_Y            ; 5 (DEC and CMP)
-	bcs     .doDraw_E1_a        ; 2/3 ; should be bcs
+	bcs     .doDraw_E1_b        ; 2/3 ; should be bcs
 	lda     #0              ; 2
-	sta 	ENAM1 ;added to address sword size
 
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDraw_E1_a:
+.doDraw_E1_b:
 	lda     (E1_Ptr),y      ; 5
 	sta     Graphics_Buffer ; This allows us to do the calculation early, but must move dey to before routine
-
 
 ;skipDraw
 ; draw Hero sprite:
 	lda     #C_P0_HEIGHT-1     ; 2 
 	dcp     Hero_Y            ; 5 (DEC and CMP)
-	bcs     .doDrawHero_E1_e        ; 2/3 ; should be bcs
+	bcs     .doDrawHero_E1_e       ; 2/3 ; should be bcs
 	lda     #0              ; 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDrawHero_E1_e:
@@ -1175,12 +1178,13 @@ ScanLoop_E1_c
 
 
         DEY             ;count down number of scan lines          2 cycles
-
 	STA HMCLR
-        STA WSYNC                                                ;3 cycles =
+
 	CPY #Enemy_Row_E1-#1
+        STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E1_c                                             ;2 cycles =
 EndScanLoop_E1_c
+
 ;-------------------------Enemy number 1 End---------------------------
 
 ;-------------------------Enemy number 2 Start---------------------------
@@ -1228,13 +1232,10 @@ ScanLoop_E2_a ;start of kernal +++++++++++++++++++++++ for player 2
 
 
         STA WSYNC                                                ;3 cycles =
-EndScanLoop_E2_a ;end of kernal +++++++++++++++++ for player 2
+EndScanLoop_E2_a
 ;------------------------------------------------
-	LDA #0		;SWORD STUFF
-	STA ENAM0	;SWORD STUFF
-	STA GRP0
 	
-ScanLoop_E2_b ;start of kernal +++++++++++++++++++++++ for player 2 positioning
+ScanLoop_E2_b
 	STX GRP1
 
 	lda E2_XPos
@@ -1260,8 +1261,8 @@ EndScanLoop_E2_b ;end of kernal +++++++++++++++++ for player 2 positioning
 
 ScanLoop_E2_c ;start of kernal +++++++++++++++++++++++ for player 2
 	sta	GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
-	lda	Graphics_Buffer ;3
-	sta	GRP0	
+;	lda	Graphics_Buffer ;3 ???
+;	sta	GRP0	????
 	
 ; draw Hero Sword:
 	lda     #C_P0_HEIGHT-4     ; 2 
@@ -1286,8 +1287,8 @@ ScanLoop_E2_c ;start of kernal +++++++++++++++++++++++ for player 2
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E2_b:
 	lda     (E2_Ptr),y      ; 5
-	sta     Graphics_Buffer ; This allows us to do the calculation early, but must move dey to before routine
-
+;	sta     Graphics_Buffer ; This allows us to do the calculation early, but must move dey to before routine
+	sta 	GRP0 ;?????
 ;skipDraw
 ; draw Hero sprite:
 	lda     #C_P0_HEIGHT-1     ; 2 
@@ -1303,12 +1304,12 @@ ScanLoop_E2_c ;start of kernal +++++++++++++++++++++++ for player 2
 	CPY #Enemy_Row_E2-#1
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E2_c                                             ;2 cycles =
-EndScanLoop_E2_c ;end of kernal +++++++++++++++++ for player 2
+EndScanLoop_E2_c
 
 ;-------------------------Enemy number 2 End---------------------------
 
 ;-------------------------Enemy number 3 Start---------------------------
-ScanLoop_E3_a ;start of kernal +++++++++++++++++++++++ for player 2
+ScanLoop_E3_a
 	sta	GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
 	lda	Graphics_Buffer ;3
 	sta	GRP0	
@@ -1352,13 +1353,10 @@ ScanLoop_E3_a ;start of kernal +++++++++++++++++++++++ for player 2
 
 
         STA WSYNC                                                ;3 cycles =
-EndScanLoop_E3_a ;end of kernal +++++++++++++++++ for player 2
+EndScanLoop_E3_a 
 ;------------------------------------------------
-	LDA #0		;SWORD STUFF
-	STA ENAM0	;SWORD STUFF
-	STA GRP0
-	
-ScanLoop_E3_b ;start of kernal +++++++++++++++++++++++ for player 2 positioning
+
+ScanLoop_E3_b 
 	STX GRP1
 
 	lda E4_XPos
