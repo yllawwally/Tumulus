@@ -1,8 +1,8 @@
 ;--------------------------------------------------------------
-;sword shift one line down when moving left
-;should make this 3d by adjusting the colors, change bg color to to bottom.
-;bne vs bcc , lda, x used incorrectly didn't load x tried to load location
-;between 41 and 42 added bug when crossing segments, he stretches
+;he no longer stretches
+;collision fixed
+;his sword shifts on left edge
+;top rolls incorrectly
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -1104,7 +1104,7 @@ MRIGHT	STA HMM1
 ;start of kernal +++++++++++++++++++++++ for player 0 positioning
 	nop
 	nop
-	lda E1_XPos						 ;3
+	lda E0_XPos						 ;3
 .Div15a   
 	sbc #15      ; 2         
 	bcs .Div15a   ; 3(2)
@@ -1317,7 +1317,7 @@ EndScanLoop_E1_c
 	DEY
 
 	LDA CXM1P
-	STA E0_Hit  ;this line must refer to previous enemy
+	STA E1_Hit  ;this line must refer to previous enemy
 
 
 	LDX Graphics_Buffer
@@ -1426,7 +1426,7 @@ EndScanLoop_E2_c
 	DEY
 
 	LDA CXM1P
-	STA E0_Hit  ;this line must refer to previous enemy
+	STA E2_Hit  ;this line must refer to previous enemy
 
 
 	LDX Graphics_Buffer
@@ -1536,7 +1536,7 @@ EndScanLoop_E3_c
 	DEY
 
 	LDA CXM1P
-	STA E0_Hit  ;this line must refer to previous enemy
+	STA E3_Hit  ;this line must refer to previous enemy
 
 
 	LDX Graphics_Buffer
