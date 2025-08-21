@@ -1,6 +1,4 @@
 ;--------------------------------------------------------------
-;he no longer stretches
-;collision fixed
 ;his sword shifts on left edge
 ;top rolls incorrectly
 ;--------------------------------------------------------------
@@ -1059,6 +1057,7 @@ ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 	
 
 ScanLoopHero ;start of kernal +++++++++++++++++++++++ for Hero positioning
+	clc
 	lda Hero_XPos ;3
 
 
