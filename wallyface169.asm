@@ -26,24 +26,28 @@
 ;Can I remove duration, and calculate based on is it a boss, then use rand+level for duration???
 ;need to pause when starting, and also stop when dead
 ;reduce max potions, so that you can increase timer length, 
+;can I make it so pits and trees don't change color when hit?
+
 
 ;BUGS
-;1 line of player is discolored
+;1 line of player is discolored-
 ;make dragon not move
 ;make dragon fire move
 ;Rat is miscolored
 ;Touching an enemy causes one less line, will this cause TV distortion?
 ;if you use potion on enemy too far right, they will stop and you can't continue
-;Touching Boss causes an extra line
 ;sometimes number of potions doesn't decrease, when they are used
-
+;Screen no longer shakes, with overeyes
+;need to make pit 10, not change direction when hit
 
 ;IMPROVED
 ;when you hit a monster on lane 3, the screen flickers for a moment
 
 
 ;FIXED
-;Potion was not always affecting each lane
+;Potion was damaging the player
+;Touching Boss causes an extra line
+;You cannot get more than 5 potions
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -144,6 +148,7 @@ Enemy_Row_E4		= 85   ;109
 Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
+Min_Eye_Quake		= 120
 Min_Eye_Trigger		= 15   ;
 Min_Damage		= 9    ;
 LVL1BOSS			= 27
@@ -397,10 +402,13 @@ LOADPFDATA
 
 MainLoop ;+++++++++++++++++++++++++++The start of a new screen
 MainLoopStart
-	LDA #30
-	STA VSYNC	
 	
 
+	LDA #30
+	
+	STA VSYNC	
+	
+	
 	JMP MORECALCS
 MORECALCSRET
 ;----------------------
@@ -514,7 +522,7 @@ SLICE4
 	sta Potion
 	lda ROLLING_COUNTER ;#$FF
 	sta Other_Hit
-	sta New_Hit
+;	sta New_Hit
 	
 OverPotionB	
 	JMP ENDSLICES
@@ -597,7 +605,7 @@ DONTCHANGEDIR
 
 MOVESET1
 
-
+	
 	
 	JMP ENDSLICES
 
@@ -778,6 +786,9 @@ RedMandrakeMan
 	ROR Player_Health
 	jmp notsmacked
 BlueMandrakeMan
+	LDA Potion
+	CMP #5
+	BCS notsmacked
 	INC Potion
 	jmp notsmacked
 RedMandrakePlant
@@ -817,6 +828,8 @@ NoCollision
 NotInvincable
 	cmp #0
 	beq NOSCORE
+
+
 
 ;---------------------Increment Score
         sed
@@ -1043,11 +1056,15 @@ notalive1b
 	LDA #<EnemyFireColor
 	JMP AdjustTableForColor
 AdjustTableForColorHitTest
+	lda E0_Type-1,y
+	cmp #$10
+	bcc NotAdjusted
 	lda Multiplexer-1,y
 	and Other_Hit
 	cmp #1
 	LDA #<EnemyHitColor
 	bcs AdjustTableForColor
+NotAdjusted
 	LDA GraphicsColorTableLow,x
 AdjustTableForColor
 	sec
@@ -1224,10 +1241,10 @@ TESTPOINTG
 	CMP Pause
 	BCS NOBIGEYES
 	LDA Overeyes
-	CMP #240
+	CMP #Min_Eye_Quake
 	LDA #0
 	BCC NOEyesYet
-	LDA #240
+	LDA #Min_Eye_Quake
 	STA Overeyes
 	LDA #$FF
 
@@ -1465,8 +1482,8 @@ MTNRANGE2
 	
 
 	LDA Overeyes
-	CMP #240
-	BNE NOQUAKE
+	CMP #Min_Eye_Quake ;fixed
+	BCC NOQUAKE
 	LDA ROLLING_COUNTER
 	AND #%00000111
 	BEQ NOQUAKE
@@ -2309,8 +2326,8 @@ EndScanLoop_E0_cz
  
 
 	LDA Overeyes
-	CMP #240
-	BNE ALWAYSQUAKE
+	CMP #Min_Eye_Quake
+	BCC ALWAYSQUAKE
 	LDA ROLLING_COUNTER
 	AND #%00000111
 	BNE NOQUAKE2
@@ -2441,7 +2458,7 @@ LINEB
 
 
 LINEC
-	STA WSYNC  
+;	STA WSYNC  
 
 	LDA Score
 	AND #$0F ;Because this is a reversed PF
@@ -2674,6 +2691,15 @@ BoggartGraphicsb
         .byte #%00110001;$1A
         .byte #%00111000;$74
 
+PitGraphics
+	.byte #%00000000
+	.byte #%00111000
+	.byte #%01111100
+	.byte #%01111100
+	.byte #%01111100
+	.byte #%00111000
+	.byte #%00000000
+	.byte #%00000000
 
 WillOWispGraphics
 	.byte #%00000000
@@ -2716,39 +2742,7 @@ BrownieaGraphics
 	.byte #%00111000
 	.byte #%00111000
 
-BADDIEVALUE 
-     .byte #0 ;;0,Tree
-     .byte #0 ;;1,Horse
-     .byte #1 ;;2,Mandrake Red Plant
-     .byte #1 ;;3,Mandrake Blue Plant
-     .byte #1 ;;4,Mandrake Red Man
-     .byte #1 ;;5,Mandrake Blue Man
-     .byte #3 ;;6,Treasure Chest
-     .byte #3 ;;7,Weapon Upgrade???
-     .byte #3 ;;8,
-     .byte #0 ;;9,Large Pit
-     .byte #0 ;;10,Small Pit
-     .byte #2 ;;11,Snake
-     .byte #2 ;;12,Bat 
-     .byte #1 ;;13,Rat
-     .byte #1 ;;14,Homonoculus
-     .byte #1 ;;15,Goblin
-     .byte #1 ;;16,RedCap
-     .byte #1 ;;17,Ogre
-     .byte #4 ;;18,Ghost
-     .byte #4 ;;19,Snake Man
-     .byte #4 ;;20,Boggart Fighter
-     .byte #4 ;;21,Brownie
-     .byte #4 ;;22,Satyr
-     .byte #4 ;;23,Mummy A
-     .byte #5 ;;24,Mummy B
-     .byte #5 ;;25,Dragon A
-     .byte #5 ;;26,Dragon B
-     .byte #6 ;;27,Will O Wisp
-;     .byte #7 ;;28,Monster 4a
- ;    .byte #7 ;;29,Monster 4b
-;     .byte #8 ;;30,Monster 5a
- ;    .byte #8 ;;31,Monster 5b
+
 
 
 
@@ -2776,7 +2770,7 @@ horseknife
 	asl
 	asl
 	asl
-;	cmp #%0110000
+;	cmp #%1110000
 ;	bne nobonus	
 ;	lda #%11100000 ;This was 10000000 trying to make potion last longer
 nobonus
@@ -3191,7 +3185,6 @@ SKIPMTN
 PreOverScanWait
 ;Can put stuff here --------------------------------------------------
 
-
 OverScanWait
 	STA WSYNC
 	DEY
@@ -3370,7 +3363,7 @@ No_Hit_the_Baddie3
 
 
 	DEY
-	STA WSYNC
+;	STA WSYNC
 	
 ;Fix Positions
 	BIT CXPPMM ;3 cycles
@@ -3673,7 +3666,7 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
      .byte #%01100001
      .byte #%11000011 
-     .byte #%11001011
+     .byte #%11001010
      .byte #%00001011
      .byte #%00101110
      .byte #%01010000
@@ -3736,7 +3729,7 @@ NOMAKEEYES
 NOMOVESET
 
 	LDA Overeyes
-	CMP #240
+	CMP #Min_Eye_Quake
 	BCC NOPITCREATION
 	LDA RNG
 	CMP #120
@@ -3745,9 +3738,9 @@ NOMOVESET
 	BCS NOPITCREATION
 	AND #%00000111
 	tax
-	LDA RNG
-	ADC #10
-;AND #%01111111
+;	LDA RNG
+;	ADC #10
+;	AND #%01111111
 ;	STA #Pit0_XPos-1,x	 
 
 NOPITCREATION	
@@ -3793,6 +3786,40 @@ DragonGraphics1b .byte #%00000100;$0C ;now a dragon head
         .byte #%01111111;$0E
         .byte #%01100111;$0C
         .byte #%01100111;$0E
+
+BADDIEVALUE 
+     .byte #0 ;;0,Tree
+     .byte #0 ;;1,Horse
+     .byte #1 ;;2,Mandrake Red Plant
+     .byte #1 ;;3,Mandrake Blue Plant
+     .byte #1 ;;4,Mandrake Red Man
+     .byte #1 ;;5,Mandrake Blue Man
+     .byte #3 ;;6,Treasure Chest
+     .byte #3 ;;7,Weapon Upgrade???
+     .byte #3 ;;8,
+     .byte #0 ;;9,Large Pit
+     .byte #0 ;;10,Small Pit
+     .byte #2 ;;11,Snake
+     .byte #2 ;;12,Bat 
+     .byte #1 ;;13,Rat
+     .byte #1 ;;14,Homonoculus
+     .byte #1 ;;15,Goblin
+     .byte #1 ;;16,RedCap
+     .byte #1 ;;17,Ogre
+     .byte #4 ;;18,Ghost
+     .byte #4 ;;19,Snake Man
+     .byte #4 ;;20,Boggart Fighter
+     .byte #4 ;;21,Brownie
+     .byte #4 ;;22,Satyr
+     .byte #4 ;;23,Mummy A
+     .byte #5 ;;24,Mummy B
+     .byte #5 ;;25,Dragon A
+     .byte #5 ;;26,Dragon B
+     .byte #6 ;;27,Will O Wisp
+;     .byte #7 ;;28,Monster 4a
+ ;    .byte #7 ;;29,Monster 4b
+;     .byte #8 ;;30,Monster 5a
+ ;    .byte #8 ;;31,Monster 5b
 
 
 	org #$FCC0 ;HeroGraphicsColor + #256
@@ -4036,7 +4063,7 @@ GraphicsTableLow
 
      .byte #<LPitGraphics ;9
 
-     .byte #<SPitGraphics ;10
+     .byte #<PitGraphics ;10
 
      .byte #<SnakeGraphics ;11
 
@@ -4103,7 +4130,7 @@ GraphicsTableHigh
 
      .byte #>LPitGraphics ;9
 
-     .byte #>SPitGraphics ;10
+     .byte #>PitGraphics ;10
 
      .byte #>SnakeGraphics ;11
 
@@ -4170,7 +4197,7 @@ GraphicsColorTableLow
 
      .byte #<WarriorColor ;9
 
-     .byte #<SnakeColor ;10
+     .byte #<PonyGraphicsColor ;10
 
      .byte #<SnakeColor ;11
 
@@ -4460,9 +4487,9 @@ AddingPit
 
 	lda NEXTBADDIEDUR,y
 	
-	CMP #240
+	CMP #Min_Eye_Quake
 	BCS DONTLOOP2
-	STA Overeyes
+	INC Overeyes
 	STA Pause
 	lda NEXTBADDIEDUR,y
 DONTLOOP2
