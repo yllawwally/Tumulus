@@ -1,7 +1,8 @@
 ;--------------------------------------------------------------
 ;sword shift one line down when moving left
 ;should make this 3d by adjusting the colors, change bg color to to bottom.
-;http://www.atariage.com/forums/topic/167608-best-way-to-swap-bits-within-a-byte/
+;bne vs bcc , lda, x used incorrectly didn't load x tried to load location
+;between 41 and 42 added bug when crossing segments, he stretches
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -12,7 +13,7 @@
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 8	;height of sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
-Far_Left		= 5	
+Far_Left		= 16	
 Far_Right		= 150
 Far_Right_Hero		= 140
 Far_Up_Hero		= 182
@@ -180,7 +181,8 @@ ClearMem
 	LDA #53
 	STA COLUP1 ;color it
 
-	LDA #$10
+	LDA #%00010000 ;set playfield to not reflected
+	STA CTRLPF
 
 	LDA #%00000000	; set to not move
 	STA HMM1	; of HMM1 sets it to moving
@@ -676,7 +678,10 @@ alive4
 alive5
 
 
-	LDA Pos
+	LDA ROLLING_COUNTER
+	ROR
+	ROR
+	ROR
 	AND #%00000111
 	ADC #1
 	STA Pos
@@ -688,38 +693,49 @@ alive5
 	STA PF2_L1 ;C
 	LDA PFData2		; 4 cycles
 	STA PF3_L1 ;d
-;	LDA PFData3		; 4 cycles
-;	STA PF3_L1 ;E
-;	LDA PFData4		; 4 cycles
-;	STA PF4_L1 ;F
+	LDA PFData3		; 4 cycles
+	STA PF3_L1 ;E
+	LDA PFData4		; 4 cycles
+	STA PF4_L1 ;F
+	LDA PFData5		; 4 cycles
+	STA PF5_L1 ;F
 
-;	LDA #0 ;Screen_Location+1
-;	LSR
-;	LSR
-;	LSR
-;	LSR
 
 ;	CLC
 ;	ADC #$4
 ;	TAY
 	LDY Pos
 ROTATE1
-;	ROL PF4_L1
+	ROL PF5_L1
+	ROL PF4_L1
 	ROL PF3_L1
 	ROL PF2_L1
 	ROL PF1_L1
-;	ROL PF0_L1
+	ROL PF0_L1
  	DEY
 	BNE ROTATE1	
-	
 
 
-;NEED to reverse pf2
+	ROR PF0_L1
+	ROR PF0_L1
+	ROR PF0_L1
+	ROR PF0_L1
+	ROR PF5_L1
+	ROR PF5_L1
+	ROR PF5_L1
+	ROR PF5_L1
+
+
+
+;NEED to reverse pf1
 
 	ldx PF1_L1
 	lda SwapTable,x
 	STA PF1_L1
 
+	ldx PF4_L1
+	lda SwapTable,x
+	STA PF4_L1
 
 	LDX #1
 
@@ -730,39 +746,48 @@ ROTATE1
 	STA PF2_L2 ;C
 	LDA PFData2,x		; 4 cycles
 	STA PF3_L2 ;d
-;	LDA PFData3 ,x		; 4 cycles
-;	STA PF3_L2 ;E
-;	LDA PFData4 ,x		; 4 cycles
-;	STA PF4_L2 ;F
-
-;	LDA #0 ;Screen_Location+1
-;	LSR
-;	LSR
-;	LSR
-;	LSR
+	LDA PFData3 ,x		; 4 cycles
+	STA PF3_L2 ;E
+	LDA PFData4 ,x		; 4 cycles
+	STA PF4_L2 ;F
+	LDA PFData5 ,x		; 4 cycles
+	STA PF5_L2 ;F
 
 ;	CLC
 ;	ADC #$4
 ;	TAY
 	LDY Pos
 ROTATE2
-;	ROL PF4_L2
+	ROL PF5_L2
+	ROL PF4_L2
 	ROL PF3_L2
 	ROL PF2_L2
 	ROL PF1_L2
-;	ROL PF0_L2
+	ROL PF0_L2
  	DEY
 	BNE ROTATE2	
 	
 
 
-;NEED to reverse pf2
+;NEED to reverse pf1
 
 	ldx PF1_L2
 	lda SwapTable,x
 	STA PF1_L2
 
+	ldx PF4_L2
+	lda SwapTable,x
+	STA PF4_L2
 
+
+	ROR PF0_L2
+	ROR PF0_L2
+	ROR PF0_L2
+	ROR PF0_L2
+	ROR PF5_L2
+	ROR PF5_L2
+	ROR PF5_L2
+	ROR PF5_L2
 	
 	ldx #2
 
@@ -774,27 +799,25 @@ ROTATE2
 	STA PF2_L3 ;C
 	LDA PFData2 ,x		; 4 cycles
 	STA PF3_L3 ;d
-;	LDA PFData3 ,x		; 4 cycles
-;	STA PF3_L3 ;E
-;	LDA PFData4 ,x		; 4 cycles
-;	STA PF4_L3 ;F
+	LDA PFData3 ,x		; 4 cycles
+	STA PF3_L3 ;E
+	LDA PFData4 ,x		; 4 cycles
+	STA PF4_L3 ;F
+	LDA PFData5 ,x		; 4 cycles
+	STA PF5_L3 ;F
 
-;	LDA #0 ;Screen_Location+1
-;	LSR
-;	LSR
-;	LSR
-;	LSR
 
 ;	CLC
 ;	ADC #$4
 ;	TAY
 	LDY Pos
 ROTATE3
-;	ROL PF4_L3
+	ROL PF5_L3
+	ROL PF4_L3
 	ROL PF3_L3
 	ROL PF2_L3
 	ROL PF1_L3
-;	ROL PF0_L3
+	ROL PF0_L3
  	DEY
 	BNE ROTATE3	
 	
@@ -806,6 +829,19 @@ ROTATE3
 	lda SwapTable,x
 	STA PF1_L3
 
+	ldx PF4_L3
+	lda SwapTable,x
+	STA PF4_L3
+
+	ROR PF0_L3
+	ROR PF0_L3
+	ROR PF0_L3
+	ROR PF0_L3
+	ROR PF5_L3
+	ROR PF5_L3
+	ROR PF5_L3
+	ROR PF5_L3
+
 
 	ldx #3
 
@@ -816,27 +852,23 @@ ROTATE3
 	STA PF2_L4 ;C
 	LDA PFData2,x		; 4 cycles
 	STA PF3_L4 ;d
-;	LDA PFData3,x		; 4 cycles
-;	STA PF3_L4 ;E
-;	LDA PFData4,x		; 4 cycles
-;	STA PF4_L4 ;F
+	LDA PFData3,x		; 4 cycles
+	STA PF3_L4 ;E
+	LDA PFData5,x		; 4 cycles
+	STA PF5_L4 ;F
 
-;	LDA #0 ;Screen_Location+1
-;	LSR
-;	LSR
-;	LSR
-;	LSR
 
 ;	CLC
 ;	ADC #$4
 ;	TAY
 	LDY Pos
 ROTATE4
-;	ROL PF4_L4
+	ROL PF5_L4
+	ROL PF4_L4
 	ROL PF3_L4
 	ROL PF2_L4
 	ROL PF1_L4
-;	ROL PF0_L4
+	ROL PF0_L4
  	DEY
 	BNE ROTATE4	
 	
@@ -847,6 +879,19 @@ ROTATE4
 	ldx PF1_L4
 	lda SwapTable,x
 	STA PF1_L4
+
+	ldx PF4_L4
+	lda SwapTable,x
+	STA PF4_L4
+
+	ROR PF0_L4
+	ROR PF0_L4
+	ROR PF0_L4
+	ROR PF0_L4
+	ROR PF5_L4
+	ROR PF5_L4
+	ROR PF5_L4
+	ROR PF5_L4
 
 
 	
@@ -896,7 +941,7 @@ PreScanLoop
 	NOP
 	NOP
 	NOP	
-	LDA PF3_L1		; 4 cycles
+	LDA PF3_L1		; 4 cycles 
 	STA PF0			; 3 cycles
 	LDA PF4_L1		; 4 cycles
 	STA PF1			; 3 cycles
