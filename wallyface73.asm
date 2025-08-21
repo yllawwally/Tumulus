@@ -16,19 +16,19 @@
 ; Constants ------
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 12	;height of hero sprite
-C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
+C_KERNAL_HEIGHT 	= 181	;height of kernal/actually the largest line on the screen ;was 186
 Far_Left		= 20
 Far_Right		= 120
 Far_Right_Hero		= 148
-Far_Up_Hero		= 188
-Far_Down_Hero		= 8+C_P1_HEIGHT
+Far_Up_Hero		= C_KERNAL_HEIGHT-6
+Far_Down_Hero		= 1+C_P1_HEIGHT
 Enemy_Far_Left		= 1
-Enemy_Row_0		= 185
-Enemy_Row_E0		= 160
-Enemy_Row_E1		= 115
-Enemy_Row_E2		= 65
-Enemy_Row_E3		= 35
-Enemy_Row_E4		= 2
+Enemy_Row_0		= 181  ;185
+Enemy_Row_E0		= 110  ;160
+Enemy_Row_E1		= 75  ;115
+Enemy_Row_E2		= 45   ;65
+Enemy_Row_E3		= 15   ;35
+Enemy_Row_E4		= 2    ;2
 HERO_SPEED_VER		= 1
 HERO_SPEED_HOR		= 1
 Screen_Rate		= 20	;How fast screen is scrolling in X-Axis
@@ -202,18 +202,18 @@ ClearMem
 
 LOADPFDATA
 
-
-	LDA PFData0		; 4 cycles
+	LDX 0
+	LDA PFData0,X		; 4 cycles
 	STA PF0_L1 ;B
-	LDA PFData1		; 4 cycles
+	LDA PFData1,X		; 4 cycles
 	STA PF1_L1 ;B
-	LDA PFData2		; 4 cycles
+	LDA PFData2,X		; 4 cycles
 	STA PF2_L1 ;C
-	LDA PFData3		; 4 cycles
+	LDA PFData3,X		; 4 cycles
 	STA PF3_L1 ;d
-	LDA PFData4		; 4 cycles
+	LDA PFData4,X		; 4 cycles
 	STA PF4_L1 ;E
-	LDA PFData5		; 4 cycles
+	LDA PFData5,X		; 4 cycles
 	STA PF5_L1 ;F
 
 	LDX 1
@@ -591,7 +591,7 @@ RCP_2
 	sec
 	sbc Hero_YPosFromBot	;integer part of distance from bottom
 	clc
-	adc #C_P1_HEIGHT - #1 
+	adc #C_P1_HEIGHT - #1
 	sta Hero_Ptr	;2 byte
 
 	LDA #<HeroGraphicsColor
@@ -637,7 +637,7 @@ alive1
 
 notalive1	
 
-	lda #Enemy_Row_0 + #C_P0_HEIGHT - #10
+	lda #Enemy_Row_0 + #C_P0_HEIGHT - #1
 	sec
 	sbc E0_YPosFromBot ;subtract integer byte of distance from bottom
 	sta E0_Y
@@ -646,7 +646,7 @@ notalive1
 	sec
 	sbc E0_YPosFromBot	;integer part of distance from bottom
 	clc
-	adc #C_P0_HEIGHT + #1
+	adc #C_P0_HEIGHT - #6
 	sta E0_Ptr	;2 byte
 
 	LDA #<EnemyGraphicsColor
@@ -658,19 +658,19 @@ notalive1
 	sec
 	sbc E0_YPosFromBot
 	clc
-	adc #C_P0_HEIGHT - #2
+	adc #C_P0_HEIGHT - #6
 	STA EnemyGraphicsColorPtr_E0
 ;setup pic animations ----------------------------------------------
 
 
 ;setup pic animations ----------------------------------------------
 
-	lda #<MainPlayerGraphics1 	;low byte of ptr is graphic
+	lda #<MainPlayerGraphics0 	;low byte of ptr is graphic
 	CLC	;clear carry
 	ADC PICS
 	sta E1_Ptr		;(high byte already set)
 
-	lda #>MainPlayerGraphics1 ;high byte of graphic location
+	lda #>MainPlayerGraphics0 ;high byte of graphic location
 	sta E1_Ptr+1	;store in high byte of graphic pointer
 	
 
@@ -706,13 +706,18 @@ notalive1
 
 ;setup pic animations ----------------------------------------------
 
-	lda #<MainPlayerGraphics0 	;low byte of ptr is graphic
+
+	lda #<MainPlayerGraphics3 	;low byte of ptr is graphic
 	CLC	;clear carry
 	ADC PICS
 	sta E2_Ptr		;(high byte already set)
 
-	lda #>MainPlayerGraphics0 ;high byte of graphic location
+	lda #>MainPlayerGraphics3 ;high byte of graphic location
 	sta E2_Ptr+1	;store in high byte of graphic pointer
+
+notalive1c
+
+
 
 	lda #Enemy_Row_E1 + #C_P0_HEIGHT - #1
 	sec
@@ -745,12 +750,12 @@ notalive1
 
 ;setup pic animations ----------------------------------------------
 
-	lda #<MainPlayerGraphics3 	;low byte of ptr is graphic
+	lda #<MainPlayerGraphics0 	;low byte of ptr is graphic
 	CLC	;clear carry
 	ADC PICS
 	sta E3_Ptr		;(high byte already set)
 
-	lda #>MainPlayerGraphics3 ;high byte of graphic location
+	lda #>MainPlayerGraphics0 ;high byte of graphic location
 	sta E3_Ptr+1	;store in high byte of graphic pointer
 	
 
@@ -784,12 +789,12 @@ notalive1
 
 ;setup pic animations ----------------------------------------------
 
-	lda #<MainPlayerGraphics2 	;low byte of ptr is graphic
+	lda #<MainPlayerGraphics0 	;low byte of ptr is graphic
 	CLC	;clear carry
 	ADC PICS
 	sta E4_Ptr		;(high byte already set)
 
-	lda #>MainPlayerGraphics2 ;high byte of graphic location
+	lda #>MainPlayerGraphics0 ;high byte of graphic location
 	sta E4_Ptr+1	;store in high byte of graphic pointer
 	
 
@@ -944,13 +949,18 @@ WaitForVblankEnd
 
 ;main scanline loop...
 
-
+	STA WSYNC
+	STA WSYNC
+	STA WSYNC
+	STA WSYNC
 
 PreScanLoop
 
 
 
 ;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
+	LDX #2
+MTNRANGE1
 	LDA PFCOLOR-1,Y		; 4 cycles
 	STA COLUBK		;and store as the bgcolor ; 3 cycles	 
 	LDA PF0_L1		; 4 cycles
@@ -971,11 +981,15 @@ PreScanLoop
 	LDA PF5_L1		; 4 cycles
 	STA PF2			; 3 cycles
 	
-
-
 	STA WSYNC 						 ;3 cycles =74
+	DEX
+;	bne     MTNRANGE1 
+	dey
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 ;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
+	LDX #1
+MTNRANGE2
+
 	LDA PFCOLOR-1,Y		; 4 cycles
 	STA COLUBK		;and store as the bgcolor ; 3 cycles
 	LDA PF0_L2		; 4 cycles
@@ -997,9 +1011,15 @@ PreScanLoop
 	STA PF2			; 3 cycles
 	
 
-	STA WSYNC 						 ;3 cycles =74
+	STA WSYNC 
+	DEX
+;	bne     MTNRANGE2 	
+	dey					 ;3 cycles =74
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 ;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
+	LDX #2
+MTNRANGE3
+
 	LDA PFCOLOR-1,Y		; 4 cycles
 	STA COLUBK		;and store as the bgcolor ; 3 cycles
 	LDA PF0_L3		; 4 cycles
@@ -1022,8 +1042,14 @@ PreScanLoop
 	
 
 	STA WSYNC 						 ;3 cycles =74
+	DEX
+;	bne     MTNRANGE3 
+	dey
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
+	LDX #2
+MTNRANGE4
+
 	LDA PFCOLOR-1,Y		; 4 cycles
 	STA COLUBK		;and store as the bgcolor ; 3 cycles
 	LDA PF0_L4		; 4 cycles
@@ -1045,7 +1071,9 @@ ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 	STA PF2			; 3 cycles
 	
 
-	STA WSYNC 						 ;3 cycles =74
+	STA WSYNC 	
+	DEX
+;	bne     MTNRANGE4	
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 
 	LDA #18;
@@ -1612,13 +1640,12 @@ EndScanLoop_E0_c
 	cpy Hero_Sword_Pos  ;3
 ;        STA WSYNC   
 ;-------------------------Enemy number E0 End---------------------------
-
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .500: SUBROUTINE
 ;This is not a loop, this is a one time set position for the eneamy E1
  	php	;2
-	stx GRP1		
-	sta COLUP1
+	sta GRP1		
+	stx COLUP1
 	lda E1_XPos ;3
 .Div15_E1_a   
 	sbc #15      ; 2         
@@ -1657,6 +1684,8 @@ EndScanLoop_E0_c
 
 	
 	dec E1_Y
+;	lda #0
+;	sta GRP0
 
 	LDA CXM1P   ;3
 	STA E0_Hit  ;this line must refer to previous enemy
@@ -2107,14 +2136,13 @@ EndScanLoop_E1_c
 	cpy Hero_Sword_Pos  ;3
 ;        STA WSYNC   
 ;-------------------------Enemy number E1 End---------------------------
-
-;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .600: SUBROUTINE
 ;This is not a loop, this is a one time set position for the eneamy E2
  	php	;2
 	sta GRP1		
 	stx COLUP1
+
 	lda E2_XPos ;3
 .Div15_E2_a   
 	sbc #15      ; 2         
@@ -2122,8 +2150,8 @@ EndScanLoop_E1_c
 
 	tax
 	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
-	sta HMP0 ;,x
-	sta RESP0 ;,x	;the x must be a 0 for player 0  or 1 player 1
+	sta HMP0 
+	sta RESP0 
 
 
 ;sword php style	
@@ -3595,6 +3623,7 @@ EndScanLoop_E4_c
  ;       DEY             ;2 count down number of scan lines          2 cycles
 	
 	lda  Graphics_Buffer_2
+	cpy Hero_Sword_Pos ;3
 ;        STA WSYNC   
 ;-------------------------Enemy number E4 End---------------------------
 
@@ -3745,6 +3774,12 @@ OverScanWait
 
 
   
+
+
+
+;	org $FDD0 ;fdbc is the min that can be used
+
+
 ;-----------------------------
 ; This table converts the "remainder" of the division by 15 (-1 to -15) to the correct
 ; fine adjustment value. This table is on a page boundary to guarantee the processor
@@ -3752,7 +3787,7 @@ OverScanWait
 ; for a RESP0,x write
 ;ROM is located from F000 to FFFF
 
-            ORG $FDC0 ;was FD80
+            ORG $FDE0 ;this a critical location, must be on edge of page
 fineAdjustBegin
 
             DC.B %01110000 ; Left 7
@@ -3773,42 +3808,25 @@ fineAdjustBegin
 
 fineAdjustTable EQU fineAdjustBegin - %11110001 ; NOTE: %11110001 = -15
 
+	org $FEA6 ;fdbc
 
-	org $FDD0 ;fe4e is the min that can be used
+HeroGraphicsColor
 
-
-PFData0 
-        .byte #%00000011
-        .byte #%00000111
-        .byte #%00001111 
-
-PFData1
-        .byte #%01111100
-        .byte #%00111011
-        .byte #%00010001
-
-PFData2
-        .byte #%11100111
-        .byte #%11000011
-        .byte #%00000000
-
-PFData3
-        .byte #%10111011
-        .byte #%10011001
-        .byte #%00000000 
-
-PFData4 
-        .byte #%11101111
-        .byte #%11000111
-        .byte #%10000011
-
-PFData5
-        .byte #%11000011
-        .byte #%10000001
-        .byte #%00000000
+     .byte #$FC
+     .byte #$FA
+     .byte  #$FA
+     .byte  #$F8
+     .byte  #$FE
+     .byte   #$FE
+     .byte  #$FC
+     .byte  #$F6
+     .byte   #$FA
+     .byte #$F8
+     .byte #$FE
+     .byte  #$FE
 
 
-	org $FF50 ;was FDC0/FDD0
+;$FB00 + KernalHeight
 
 
 	
@@ -3862,47 +3880,7 @@ MainPlayerGraphics0
 	.byte #%00111000
 
 
-MainPlayerGraphics1
-	.byte #%00010100
-	.byte #%00010100
-	.byte #%00111100
-	.byte #%00111100
-	.byte #%01111110
-	.byte #%00010000
-	.byte #%00111000
-	.byte #%00111000
-
-
-	.byte #%00100010
-	.byte #%00100100
-	.byte #%00111100
-	.byte #%00111100
-	.byte #%01111110
-	.byte #%00010000
-	.byte #%00111000
-	.byte #%00111000
-
-
-
-MainPlayerGraphics2
-	.byte #%01111000
-	.byte #%10000100
-	.byte #%00001000
-	.byte #%00010000
-	.byte #%00010000
-	.byte #%00010000
-	.byte #%00111000
-	.byte #%00111000
-
-
-	.byte #%01111000
-	.byte #%01001000
-	.byte #%00010000
-	.byte #%00100000
-	.byte #%00100000
-	.byte #%00100000
-	.byte #%01110000
-	.byte #%01110000
+;	org $FF00 ;was FDC0/FDD0
 
 
 MainPlayerGraphics3
@@ -3926,6 +3904,25 @@ MainPlayerGraphics3
 	.byte #%01110000
 
 
+EmptyPlayerGraphics
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+	.byte #0
+
+
 EnemyGraphicsColor
 	.byte #$40
 	.byte #$40
@@ -3937,63 +3934,55 @@ EnemyGraphicsColor
 	.byte #$80
 
 
-
-        
+   
 
 
 
 ;	org $FFd0 
 
-HeroGraphicsColor
-
-     .byte #$FC
-     .byte #$FA
-     .byte  #$FA
-     .byte  #$F8
-     .byte  #$FE
-     .byte   #$FE
-     .byte  #$FC
-     .byte  #$F6
-
-
-     .byte   #$FA
-     .byte #$F8
-     .byte #$FE
-     .byte  #$FE
-     .byte  #$FC
-     .byte  #$F6
-	
-     .byte   #$4E
-     .byte  #$4E
-     .byte   #$4E
-     .byte #$4E
-     .byte  #$98
-     .byte   #$4E
-     .byte #$4E
-     .byte  #$3E
 
 
 
 
 
 
-EmptyPlayerGraphics
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
 
+PFData0 
+        .byte #%00000011
+        .byte #%00000111
+        .byte #%00001111 
 
+PFData1
+        .byte #%01111111
+        .byte #%00111011
+        .byte #%00010001
+
+PFData2
+        .byte #%11100111
+        .byte #%11000011
+        .byte #%00000000
+
+PFData3
+        .byte #%10111011
+        .byte #%10011001
+        .byte #%00000000 
+
+PFData4 
+        .byte #%11101111
+        .byte #%11000111
+        .byte #%10000011
+
+PFData5
+        .byte #%11000011
+        .byte #%10000001
+        .byte #%00000000
 	
 PFCOLOR
 	.byte #$29
 	.byte #$5D
 	.byte #$49
 	.byte #$39
+
 
 
 	org $FFFC
