@@ -33,29 +33,19 @@
 ;Touching an enemy causes one less line, will this cause TV distortion?
 ;if you use potion on enemy too far right, they will stop and you can't continue
 ;reintroduced bug that bounces screen if you hit bad guy, maybe related to timing of collision detection .nop
-
+;sometimes monsters wrap around screen
+;make overeyes only increment if monster on screen > min_damage
 
 ;IMPROVED
 ;when you hit a monster on lane 3, the screen flickers for a moment
 
 
 ;FIXED
-;can I make it so pits and trees don't change color when hit?
-;need to make pit 10, not change direction when hit
-;Screen no longer shakes, with overeyes
-;sometimes number of potions doesn't decrease, when they are used
-;I actually had a line dontdecpoison, what the hell was I thinking
-;Pits need to appear when eyes overhead
-;need to pause when starting, and also stop when dead
-;Rat is miscolored
-;removed unused code
-;Need to read CXP1FB ,Pf(10000000) and Ball (01000000)
+;Removed unused main hero graphics, which saved 32 bytes
+;Removed list of monsters, saved 57 bytes
+;Calculated score, saved 32 bytes
+;Calc duration, save 22
 
-;--------------------------------------------------------------
-;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
-;add treasure chest?
-;level 1 : 20, level 2 : 25, level 3 : 30, level 4 : 35, level 5 40, 155 monsters in whole game.  
-;Num baddie types per level 6+level*2
 ;--------------------------------------------------------------
 ;5 different level masters
 ;Use wide for all bosses?
@@ -75,41 +65,7 @@
 ;--------------------------------------------------------------
 ;
 
-;(Section of don't damage players, but will scare away horse)
-;0,00000,Blank 
-;1,00001,Horse
-;2,00010,Mandrake Red Plant
-;3,00011,Mandrake Blue Plant
-;4,00100,Mandrake Red Man
-;5,00101,Mandrake Blue Man
-;6,00110,Treasure Chest
-;7,00111,Weapon Upgrade???
-;8,01000, Tree
-;(Section of monsters that can exit the screen)
-;9,01001,Large Pit
-;10,01010,Small Pit
-;11,01011,Snake
-;12,01100,Bat 
-;13,01101,Rat 
-;14,01110,Homonoculus 
-;15,01111,Goblin
-;(Section of monsters that must be defeated)
-;16,10000,RedCap ;Palette swap of Goblin???
-;17,10001,Orc
-;18,10010,Ghost
-;19,10011,Snake Man
-;20,10100,Boggart Fighter
-;21,10101,Brownie
-;22,10110,Satyr ;Need to add it
-;23,10111,Mummy A
-;24,11000,Mummy B
-;25,11001,Dragon A
-;26,11010,Dragon B
-;27,11011,Will O Wisp
-;28,11100,Vampire a ;Need to add it
-;29,11101,Vampire b ;Need to add it
-;30,11110,Minotaur a;Need to add it
-;31,11111,Minotaur b;Need to add it
+
 
 ;mummy will take 2 images to make him big, and change pit color
 ;mummy b
@@ -150,7 +106,7 @@ Enemy_Row_E4		= 85   ;109
 Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
-Min_Eye_Quake		= 120
+Min_Eye_Quake		= 220
 Min_Eye_Trigger		= 15   ;
 Min_Damage		= 9    ;
 LVL1BOSS			= 27
@@ -357,13 +313,11 @@ ClearMem
 	lda #17
 	sta Offset
 
-;	LDA #40
 	STA Hero_XPos
 
 	LDA #%11111110
 	STA Enemy_Life
-;	LDA #%11111111
-;	STA Player_Health
+
 
 	LDA #%00010000 ;set playfield to not reflected
 	STA CTRLPF
@@ -384,14 +338,19 @@ LOADPFDATA
 
 	LDA PFData0-1,X		
 	STA PF0_L1-1,x ;B
+
 	LDA PFData1-1,X		
 	STA PF1_L1-1,x ;B
+
 	LDA PFData2-1,X		
 	STA PF2_L1-1,x ;C
+
 	LDA PFData3-1,X		
 	STA PF3_L1-1,x ;d
+
 	LDA PFData4-1,X		
 	STA PF4_L1-1,x ;E
+
 	LDA PFData5-1,X		
 	STA PF5_L1-1,x ;F
 
@@ -535,23 +494,17 @@ OverPotionB
 SLICE1
 	
 	
+	
 
 	LDX #7
 
 ;Eneamy Movement---------------------------------------------------
 
 MOVELEFT
-;	LDA Pause
-;	BNE dontmovepit
-;	LDA #0
-;	cmp Pit0_XPos-1,x
-;	beq dontmovepit
-;	CMP onhorse
-;	beq notonhorsepit
-;	DEC #Pit0_XPos-1,x ; Pits no longer move, they are parts of bigger monsters
-notonhorsepit
-;	DEC #Pit0_XPos-1,x ; Pits no longer move, they are parts of bigger monsters
-dontmovepit
+
+
+
+;I think I can mess with Y
 
 	LDA #Multiplexer-1,x
 	AND Enemy_Life
@@ -615,18 +568,13 @@ MOVESET1
 
 ENDSLICES
 
-;------------------------- setup backgrounds 20 pixels accross
-;	LDA #255		; 3 cycles
-;	STA PF0			; 3 cycles
-;	STA PF1			; 3 cycles
-;	STA PF2			; 3 cycles
+	LDA #255		; 3 cycles
+	STA PF0			; 3 cycles
+	STA PF1			; 3 cycles
+	STA PF2			; 3 cycles
 ;-------------------------
-;	LDA #0
-;	STA HMP1 ;Set Hero to stand still
-;	STA ENABL ;clear pits
-
-;	STA WSYNC ;//////////////////////////////////////////////
-;	STA HMOVE
+	LDA #0
+	STA HMP1 ;Set Hero to stand still
 
 	LDA Grapple
 	BEQ NOPFHIT 
@@ -640,15 +588,14 @@ NOPFHIT
 	BCC NotBossLevel
 	LDX Other_Hit
 	BEQ HITSCORE
-;	INX 
-;	DEC E0_Health,x
+
 	JMP NOSCORE
 HITSCORE
 	LDX Link
 	JMP NOSCORE
 
 NotBossLevel
-;	sta Grapple ;too big
+
 	LDX #7
 Collision
 
@@ -677,12 +624,6 @@ NoCoPo
 	CMP #10
 	BEQ Type4
 
-;	CMP #LVL2BOSS+1 ;this is probably what's needed to stop bottom
-;	BEQ dontpause   ;half of monster from going a different direction
-;This causes the rolling
-;	CMP #LVL2BOSS
-;	BNE Type2
-;	jmp dontpause
 
 Type2
 	LDA Direction ;make baddie change dir if hit
@@ -721,7 +662,7 @@ ExtraDead
 	lda E0_Type-1,x
 	sty PF_TEMP
 	adc PF_TEMP
-	ldy BADDIEVALUE,x
+	ldy E0_Type-1,x ;This is where I will need to fix score baddie value
 	LDA Mask-1,x
 	AND Enemy_Life
 	STA Enemy_Life
@@ -755,7 +696,6 @@ NoCollisionP0
 	cmp #Min_Damage ;This is causing snake to not damage player
 	bcs nosnakepause ;This is the routine that damages the player
 	JMP notsmacked 
-;	JMP nosnakepause ;this wasn't here
 
 BOSS1
 	stx Multi_Temp
@@ -763,7 +703,6 @@ BOSS1
 	sta PF_TEMP
 	lda #0
 	sta E0_Health-1,x
-;	sta E0_Type-1,x
 	LDA Mask-1,x
 	AND Enemy_Life
 	STA Enemy_Life
@@ -799,10 +738,10 @@ BlueMandrakeMan
 	INC Potion
 	jmp notsmacked
 RedMandrakePlant
-	lda #5
+	lda #4
 	jmp mandrake
 BlueMandrakePlant
-	lda #6
+	lda #5
 mandrake
 	sta E0_Type-1,x
 	LDA Multiplexer-1,x
@@ -820,7 +759,7 @@ notsnake
 	and Player_Hit
 	beq notsmacked
 	asl Player_Health
-;	this is where to put grappling stuff
+
 notsmacked
 
 	DEX
@@ -861,8 +800,7 @@ KEEPPAUSE
 	
 ;---------------------------------------
 
-;	lda onhorse
-;	bne Did_Not_Hit_Pit
+
 	lda Player_Hit
 	cmp #1;if not 1, you can't get on horse
 	lda #0
@@ -870,9 +808,8 @@ KEEPPAUSE
 	LDA New_Hit
 	CMP #1
 	LDA #0 ;to fix issue with player corruption from monster touching
-;	sta Grapple
+
 	BCC Did_Not_Hit_Pit 
-;	ASL Player_Health
 Hit_Pit
 	sta onhorse
 Did_Not_Hit_Pit
@@ -891,13 +828,13 @@ LinkZero
 
 	lda ROLLING_COUNTER
 	and #%00001000
-;	cmp #0
+
 	bne RCP_1 
 	lda onhorse
-;	cmp #0	
+
 	bne swinging
 	lda swordduration
-;	cmp #0
+
 SW1	beq swinging
 SW2	cmp #11
 SW3	bcs swinging
@@ -956,12 +893,12 @@ ENDHORSEMULT
 
 
 
+
 	LDA Enemy_Life
 	BNE Enemies_Alive
 	STA Overeyes
-
 Enemies_Alive
-	
+		
 
 
 	
@@ -1088,8 +1025,6 @@ AdjustTableForColor
 
 
 
-
-
 	LDA %00000001
 	STA VDELP0
 ;	STA VDELP1
@@ -1205,67 +1140,28 @@ resetx
 ;music section ------------------------------------------------------------------------
 
 
-	
-
-
-	
-;	ldx Potion
-;	cpx #10
-;	bcs Dontresetpotion
-
-;	lda #0
-
-;	sta New_Hit
-;	sta Other_Hit
-Dontresetpotion
-	
-
-	bit SWCHB
-	bmi leftdif
-	lda #24
-	jmp nozero
-leftdif	
-	lda #0
-nozero
-;	sta onhorse
-
-TESTPOINTG
-
-;-test to start on horse
-;	LDY #4
 
 
 
+;-----------------------------Overyeys Pit Creation	
 
-	LDA #0
-
-;	sta Other_Hit
-	sta Player_Hit
-;	sta New_Hit
-
-;	CMP Pause
+;	LDA Pause
 ;	BCS NOBIGEYES
 	LDA Overeyes
 	CMP #Min_Eye_Quake
 	LDA #0
 	BCC NOEyesYet
 
-	;This is a good place to generate holes for the earthquakes
-	
-
 	LDA RNG
 	CMP #127
 	BCS NOTCREATED 
-;	CMP #Far_Right
-;	BCS NOTCREATED
+
 	AND #%00000111
 	tax
 	LDA E0_Type-1,x
 	CMP #$11
 	BCS NOTCREATED
-;	LDA Multiplexer-1,x
-;	AND Enemy_Life
-;	BNE NOTCREATED
+
 	LDA Multiplexer-1,x
 	ORA Enemy_Life
 	STA Enemy_Life
@@ -1280,8 +1176,6 @@ NOTCREATED
 
 
 
-	LDA #Min_Eye_Quake
-	STA Overeyes
 	LDA #$FF
 
 NOEyesYet	
@@ -1336,26 +1230,6 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 	DEC Hero_Y
 
 
-;I'm not doing this right, this is halfway between seeding one color, and the pallete method 
-;	ldx Mummy_Num
-
-;	lda BellyColor,x	;low byte of ptr is graphic
-
-;	sec				;maybe last position should be used as color
-;	sbc DistFromBottom+2	;uses too much time, can we simply load the color here, instead of ptr
-
-
-;	sta MidSectionColorPtr
-
-;	lda GraphicsColorTableHigh,x ;high byte of graphic location
-;	lda #>BellyColor
-
-;	sta MidSectionColorPtr+1
-
-
-
-
-
 	ldx Mummy_Num
 
 ;GraphicsTable
@@ -1389,10 +1263,10 @@ MRIGHT	STA HMM1
 	LDY #4 
 
 
-	CMP Pause
-	BCS NOBIGEYES2
-	LDY #4 ;was 8//this controls if the skyline will shift color
-NOBIGEYES2
+;	CMP Pause
+;	BCS NOBIGEYES2
+;	LDY #8 ;was 8//this controls if the skyline will shift color
+;NOBIGEYES2
 
 	LDA #$72
 	STA COLUPF
@@ -1581,7 +1455,6 @@ New_E2_Start
 	
 	lda Pit0_XPos,x
 	sta TempPit_XPos
-;	CMP #$0
 	beq NOPITTHISLEVEL
 	jmp NOPITTHISLEVEL ;This may need to be removed to fix pit problems
 	clc ;this is needed beacause of the subtract, and the sword compare
@@ -2136,35 +2009,6 @@ pitposition
 
 	
 NOCOLLISIONPF
-;PFCOLLISION
-;---------collision
-;	BIT CXP1FB
-;	BPL No_Hit_the_Fire ;2 cycles
-;	LDA #%10000000
-;	ORA Grapple ;4 cycles
-;	STA Grapple  ;4 cycles
-;No_Hit_the_Fire
-;---------collision
-;BALLCOLLISION
-;---------collision
-;	BIT CXP1FB
-;	BPL No_Hit_the_Ball ;2 cycles
-;	LDA #%01000000
-;	ORA Grapple ;4 cycles
-;	STA Grapple  ;4 cycles
-;No_Hit_the_Ball
-;---------collision
-
-;	lda TempPit_XPos ;3
-;	clc	;2
-
-
-.Div15_Pit   
-;	sbc #15      ; 2         
-;	bcs .Div15_Pit   ; 3(2)
-
-;	tax
-;	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
 	lda #0
 	sta HMP0 
 
@@ -2411,7 +2255,7 @@ NOQUAKE2
 
 
 	LDA #0
-;	STA PF0 ;This is outside of player range, so don't need to modify it
+	STA PF0 ;This is part of the playfield monster attack stuff
 	STA PF1
 	STA PF2
 	
@@ -2714,23 +2558,23 @@ GhostGraphicsb
 
 
 BoggartGraphics
-        .byte #%00000110;$90
-        .byte #%00110100;$AA
-        .byte #%00010100;$98
-        .byte #%00011000;$76
-        .byte #%00011000;$78
-        .byte #%00011100;$74
-        .byte #%00110010;$1A
-        .byte #%00111001;$74
+        .byte #%00001100;$06
+        .byte #%01100100;$06
+        .byte #%00101000;$06
+        .byte #%00011010;$06
+        .byte #%00111100;$06
+        .byte #%01011000;$02
+        .byte #%10001100;$02
+        .byte #%00011100;--
 BoggartGraphicsb
-        .byte #%00110000;$90
-        .byte #%00100110;$AA
-        .byte #%00010100;$98
-        .byte #%01011000;$76
-        .byte #%00111100;$78
-        .byte #%00011010;$74
-        .byte #%00110001;$1A
-        .byte #%00111000;$74
+        .byte #%01100000;$06
+        .byte #%00101100;$06
+        .byte #%00101000;$06
+        .byte #%00011000;$06
+        .byte #%00011000;$06
+        .byte #%00111000;$02
+        .byte #%01001100;$02
+        .byte #%10011100;--
 
 PitGraphics
 	.byte #%00000000
@@ -2949,34 +2793,6 @@ HeroDown
 
 	JMP MORECALCSRET
 
-
-
-NEXTBADDIEDUR
-	.byte #$0
-	.byte #$10
-	.byte #$FA
-	.byte #$10
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
 
             ORG $F9C0 
 
@@ -3341,34 +3157,7 @@ HeroGraphics2
         .byte #%11110000;$22
 
 
-HeroGraphics3
-        .byte #%00000000;$F4
-        .byte #%11011000;$F4
-        .byte #%10010000;$F4
-        .byte #%11110000;$F4
-        .byte #%11110000;$F4
-        .byte #%11111111;$EA
-        .byte #%11110000;$CA
-        .byte #%00110000;$46
-        .byte #%11110000;$0E
-        .byte #%11110000;$0E
-        .byte #%11000000;$0E
-        .byte #%11110000;$22
 
-
-
-        .byte #%00000000;$F4
-        .byte #%01010000;$F4
-        .byte #%10100000;$F4
-        .byte #%11110000;$F4
-        .byte #%11110000;$F4
-        .byte #%11111111;$EA
-        .byte #%11110000;$CA
-        .byte #%00110000;$46
-        .byte #%11110000;$0E
-        .byte #%11110000;$0E
-        .byte #%11000000;$0E
-        .byte #%11110000;$22
 
 
 
@@ -3548,6 +3337,14 @@ SkipMoveDown
 
 SkipMoveUp
 
+
+	LDA #Min_Eye_Quake
+	CMP Overeyes
+	BNE Overeyes_Reset
+	STA Overeyes
+
+Overeyes_Reset
+
 	JMP PreOverScanWait
 
 
@@ -3605,7 +3402,8 @@ HeroGraphicsColor3
      .byte #$08
 
 
-DragonGraphicsa .byte #%01100111;$0E ;now a dragon head
+DragonGraphicsa 
+	.byte #%01100111;$0E ;now a dragon head
         .byte #%01100111;$0C
         .byte #%01111111;$0E
         .byte #%00001111;$0C
@@ -3614,7 +3412,7 @@ DragonGraphicsa .byte #%01100111;$0E ;now a dragon head
         .byte #%00001111;$0E
         .byte #%00000100;$0C
 
-DragonGraphics1a .byte #%01100111;$0E ;now a dragon head
+	.byte #%01100111;$0E 
         .byte #%01100111;$0C
         .byte #%01111111;$0E
         .byte #%00001111;$0C
@@ -3685,14 +3483,9 @@ HeroGraphics1
         .byte #%00100000;$0E
         .byte #%00110000;$22
 
-
-
-
-
-
 ;(Section of don't damage players, but will scare away horse)
 ;0,00000,Blank 
-;1,00001,Horse
+;1,00001,Horse		    ; Looks Good
 ;2,00010,Mandrake Red Plant ; Looks Good	
 ;3,00011,Mandrake Blue Plant; Looks Good
 ;4,00100,Mandrake Red Man   ; Looks Good
@@ -3700,7 +3493,7 @@ HeroGraphics1
 ;6,00110,Treasure Chest     ;Needs different pallet
 ;7,00111,Weapon Upgrade??? ;Doesn't Exist
 ;8,01000, Tree		; Looks Good	
-;(Section of monsters that can exit the screen)
+;(Section of monsters that can exit the screen, and damage player)
 ;9,01001,Large Pit	;Doesn't Exist
 ;10,01010,Small Pit     ; Looks Good
 ;11,01011,Snake   	; Looks Good
@@ -3715,7 +3508,7 @@ HeroGraphics1
 ;19,10011,Snake Man		;Needs to have different color than snake
 ;20,10100,Boggart Fighter       ;Graphics need to be inverted
 ;21,10101,Brownie		;Looks identical to goblin
-;22,10110,Satyr ;Need to add it ; Looks Good
+;22,10110,Satyr			; Looks Good
 ;23,10111,Mummy A
 ;24,11000,Mummy B
 ;25,11001,Dragon A
@@ -3728,68 +3521,6 @@ HeroGraphics1
 
 
 
-NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
-;     .byte #%111  
-     .byte #%10101110
-     .byte #%10101110
-     .byte #%10011001 ;mummy arms
-     .byte #%10111010 ;mummy legs
-     .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
-     .byte #%01110110
-     .byte #%10110110
-     .byte #%11010110
-     .byte #%01101111
-     .byte #%10101011
-     .byte #%11000101
-     .byte #%01100110
-     .byte #%10101111
-     .byte #%11010011
-     .byte #%01101101
-     .byte #%10101010
-     .byte #%11001011
-     .byte #%11101100
-     .byte #%01101101
-     .byte #%10101110
-     .byte #%11001111
-     .byte #%01110000
-     .byte #%10110001
-     .byte #%11010010
-     .byte #255 ;This is to reset to beginning
-
-EnemyLife
-     .byte #100 ;;0,Empty
-     .byte #1 ;;1,Horse
-     .byte #1 ;;2,Mandrake Red Plant
-     .byte #1 ;;3,Mandrake Blue Plant
-     .byte #1 ;;4,Mandrake Red Man
-     .byte #1 ;;5,Mandrake Blue Man
-     .byte #1 ;;6,Treasure Chest
-     .byte #1 ;;7,
-     .byte #100 ;;8,Tree
-     .byte #100 ;;9,Large Pit
-     .byte #100 ;;10,Small Pit
-     .byte #1 ;;11,Snake
-     .byte #1 ;;12,Bat ;Need to add it
-     .byte #1 ;;13,Rat ;Need to add it
-     .byte #2 ;;14,Homonoculus
-     .byte #4 ;;15,Goblin ;Need to add it
-     .byte #5 ;;16,RedCap ;Need to add it
-     .byte #7 ;;17,Orc ;Need to add it
-     .byte #1 ;;18,Ghost
-     .byte #1 ;;19,Snake Man
-     .byte #1 ;;20,Boggart Fighter
-     .byte #1 ;;21,Brownie
-     .byte #1 ;;22,Satyr
-     .byte #5 ;;23,Mummy A
-     .byte #5 ;;24,Mummy B
-     .byte #5 ;;25,Dragon A
-     .byte #5 ;;26,Dragon B
-     .byte #3 ;;27,Will O Wisp
-;     .byte #6 ;;28,Vampire a ;Need to add it
- ;    .byte #6 ;;29,Vampire b ;Need to add it
-;     .byte #7 ;;30,Minotaur a;Need to add it
-;     .byte #7 ;;31,Minotaur b;Need to add it might not need this value since it's a copy of monster ;30
-
 
 
 
@@ -3798,7 +3529,7 @@ EnemyLife
 SLICE3
 MOVESECTION
 	LDA Pause
-	CMP #0
+;	CMP #0
 	BEQ NOMAKEEYES
 	INC Overeyes
 NOMAKEEYES
@@ -3808,20 +3539,16 @@ NOMAKEEYES
 	JMP MOVESET1
 NOMOVESET
 
-;	LDA Overeyes
-;	CMP #Min_Eye_Quake
-;	BCC NOPITCREATION
-;	LDA RNG
-;	CMP #120
-;	BCS NOPITCREATION
-;	CMP #Far_Right
-;	BCS NOPITCREATION
-;	AND #%00000111
-;	tax
-;	LDA RNG
-;	ADC #10
-;	AND #%01111111
-;	STA #Pit0_XPos-1,x	 
+	LDA Overeyes
+	CMP #Min_Eye_Quake
+	BCC NOPITCREATION
+	LDA RNG
+	CMP #120
+	BCS NOPITCREATION
+	CMP #Far_Right
+	BCS NOPITCREATION
+	AND #%00000111
+	tax 
 
 NOPITCREATION	
 	CMP #11
@@ -3848,8 +3575,9 @@ Level_Color ;One level per monster
 		.byte #$F4
 		.byte #$12
 
-;You have 41 bytes here. But it will be needed at add more monsters, for nextbaddie.
-DragonGraphicsb .byte #%00000100;$0C ;now a dragon head
+
+DragonGraphicsb 
+	.byte #%00000100;$0C ;now a dragon head
         .byte #%00001111;$0E
         .byte #%00001101;$0C
         .byte #%00001101;$0E
@@ -3859,7 +3587,7 @@ DragonGraphicsb .byte #%00000100;$0C ;now a dragon head
         .byte #%01100111;$0E
 
 
-DragonGraphics1b .byte #%00000100;$0C ;now a dragon head
+	.byte #%00000100;$0C 
         .byte #%00001111;$0E
         .byte #%00001101;$0C
         .byte #%00001101;$0E
@@ -3868,7 +3596,7 @@ DragonGraphics1b .byte #%00000100;$0C ;now a dragon head
         .byte #%01100111;$0C
         .byte #%01100111;$0E
 
-BADDIEVALUE 
+BADDIEVALUE3 
      .byte #0 ;;0,Tree
      .byte #0 ;;1,Horse
      .byte #1 ;;2,Mandrake Red Plant
@@ -3980,7 +3708,7 @@ HomonoculusGraphics
         .byte #%00010010;$0E
         .byte #%00101000;$32
         .byte #%00111000;$0E
-HomonoculusGraphicsb
+
         .byte #%00000000;$0E
         .byte #%01001100;$0E
         .byte #%00111000;$0E
@@ -4106,41 +3834,7 @@ LEFTAUD
      .byte     #$FF
 
 
-;(Section of don't damage players, but will scare away horse)
-;0,00000,Blank 
-;1,00001,Horse
-;2,00010,Mandrake Red Plant
-;3,00011,Mandrake Blue Plant
-;4,00100,Mandrake Red Man
-;5,00101,Mandrake Blue Man
-;6,00110,Treasure Chest
-;7,00111,Weapon Upgrade???
-;8,01000, Tree
-;(Section of monsters that can exit the screen)
-;9,01001,Large Pit
-;10,01010,Small Pit
-;11,01011,Snake
-;12,01100,Bat 
-;13,01101,Rat 
-;14,01110,Homonoculus 
-;15,01111,Goblin
-;(Section of monsters that must be defeated)
-;16,10000,RedCap ;Palette swap of Goblin???
-;17,10001,Orc
-;18,10010,Ghost
-;19,10011,Snake Man
-;20,10100,Boggart Fighter
-;21,10101,Brownie
-;22,10110,Satyr ;Need to add it
-;23,10111,Mummy A
-;24,11000,Mummy B
-;25,11001,Dragon A
-;26,11010,Dragon B
-;27,11011,Will O Wisp
-;28,11100,Vampire a ;Need to add it
-;29,11101,Vampire b ;Need to add it
-;30,11110,Minotaur a;Need to add it
-;31,11111,Minotaur b;Need to add it
+
 
 GraphicsTableLow
      .byte #<BlankGraphics ;0
@@ -4157,11 +3851,11 @@ GraphicsTableLow
 
      .byte #<ChestGraphics ;6
 
-     .byte #<UpgradeGraphics ;7
+     .byte #<ChestGraphics ;7
 
      .byte #<TreeGraphics ;8
 
-     .byte #<LPitGraphics ;9
+     .byte #<PitGraphics ;9
 
      .byte #<PitGraphics ;10
 
@@ -4173,9 +3867,9 @@ GraphicsTableLow
 
      .byte #<HomonoculusGraphics ;14
 
-     .byte #<GoblinGraphics ;15
+     .byte #<BrownieGraphics ;15
 
-     .byte #<RedCapGraphics ;16
+     .byte #<BrownieGraphics ;16
 
      .byte #<OrcGraphics ;17
 
@@ -4224,11 +3918,11 @@ GraphicsTableHigh
 
      .byte #>ChestGraphics ;6
 
-     .byte #>UpgradeGraphics ;7
+     .byte #>ChestGraphics ;7
 
      .byte #>TreeGraphics ;8
 
-     .byte #>LPitGraphics ;9
+     .byte #>PitGraphics ;9
 
      .byte #>PitGraphics ;10
 
@@ -4240,9 +3934,9 @@ GraphicsTableHigh
 
      .byte #>HomonoculusGraphics ;14
 
-     .byte #>GoblinGraphics ;15
+     .byte #>BrownieGraphics ;15
 
-     .byte #>RedCapGraphics ;16
+     .byte #>BrownieGraphics ;16
 
      .byte #>OrcGraphics ;17
 
@@ -4522,30 +4216,53 @@ RESSURECT
 TOOLARGE
 
 
-
-	ldx Baddie_Num
-
-	LDA NEXTBADDIETYPE,x
-	CMP #255
-	BNE DONTLOOP
-	LDX #0
-	STX Baddie_Num
+;Old get baddie routine
+;
+;	ldx Baddie_Num
+;
+;	LDA NEXTBADDIETYPE,x
+;	CMP #255
+;	BNE DONTLOOP
+;	LDX #0
+;	STX Baddie_Num
 DONTLOOP
+;Old get baddie routine
+
+;Increment to next baddie
+
+	lda Baddie_Num
+	cmp #23
+	bne resetto0
+	lda #0
+	sta Baddie_Num
+resetto0
+	inc Baddie_Num
+;Increment to next baddie
 
 
+	
 
-	LDA NEXTBADDIETYPE,x
-	LSR
-	LSR
-	LSR
-	LSR
-	LSR
-	AND #%00000111
+;old get baddie lane info
+;	LDA NEXTBADDIETYPE,x
+;	LSR
+;	LSR
+;	LSR
+;	LSR
+;	LSR
+;	AND #%00000111
+;	TAY
+;old get baddie lane info
+
+;Makeup lane
+	AND #%00000110	
 	TAY
+;Makeup lane
 
 
 
-	LDA NEXTBADDIETYPE,x
+;Need to change to not need a badditype for the pit, if baddie > 23, need to autoload 2 part, and belly
+;	LDA NEXTBADDIETYPE,x
+	LDA Baddie_Num
 	AND #%00011111
 	CMP #%00011111
 	BNE NotPit
@@ -4563,8 +4280,12 @@ NotPit
 	sty Link
 	
 NOTMUMMY
-	TAX
-	LDA EnemyLife,x
+;	TAX
+;	LDA EnemyLife,x
+	LDA Baddie_Num
+	ROR
+	ROR
+	ORA #1
 	STA E0_Health,y ;HOW did this ever work without TAX???
 
 AddingPit
@@ -4582,18 +4303,20 @@ AddingPit
 	ora Enemy_Life
 	sta Enemy_Life
 
-	INC Baddie_Num
+;	INC Baddie_Num
 
-	lda NEXTBADDIEDUR,y
+;	lda NEXTBADDIEDUR,y
+
+	lda Baddie_Num
 	
 	CMP #Min_Eye_Quake
 	BCS DONTLOOP2
-	INC Overeyes
 	STA Pause
-	lda NEXTBADDIEDUR,y
+;	lda NEXTBADDIEDUR,y
 DONTLOOP2
 
 
+	lda #20
 	sta Baddie_Duration
 	BEQ TOOLARGE
 
@@ -4603,8 +4326,7 @@ NotYet
 
 	JMP ENDSLICES
 
-RedCapGraphics
-GoblinGraphics
+
 BrownieGraphics
 	.byte #%00000000
 	.byte #%00010100
@@ -4647,7 +4369,7 @@ RatGraphics
         .byte #%01000000;--
         .byte #%00000000;--
         .byte #%00000000;--
-RatGraphicsB
+
         .byte #%00000000;--
         .byte #%11000100;--
         .byte #%01111100;--
@@ -4666,7 +4388,7 @@ SatyrGraphics
         .byte #%00010100;--
         .byte #%00111000;--
         .byte #%00101000;--
-SatyrGraphicsB
+
         .byte #%00000000;--
         .byte #%00100100;--
         .byte #%00111000;--
@@ -4698,13 +4420,12 @@ ChestGraphics
 
 
 
-SPitGraphics
-LPitGraphics
-UnusedGraphics
-UpgradeGraphics
-MinotaurGraphicsa
+
+
+
 VampGraphicsb
 VampGraphicsa
+MinotaurGraphicsa
 MinotaurGraphicsb
 Mummy0b
 Mummy0a
