@@ -7,12 +7,8 @@
 ;certain pallettes don't work on lanes 6 and 7, The colors for monster types (3,4,5,6,7)
 ;Boss portion really needs a way for monster to travel whole screen.
 ;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
-;a dot rolls accross the ground where monsters were, which hits player sometimes. 
-;Killing baddies is causing screen to get extra lines, and sometimes to switch to pit
+;a dot rolls accross the ground where monsters were, which hits player sometimes. Does this still happen
 ;bad guys are messed up on left
-;player is smacked immediatly, and reduced to 7 bars.
-;all lanes now have trees at start
-;moving and attacking simultaeously causes extra line
 ;--------------------------------------------------------------
 ;add a variable every x monsters then boss, with smaller monsters defined by a formula???
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -518,8 +514,8 @@ dontmovepit
 	DEC E0_XPos-1,x
 
 	LDA onhorse
-	cmp #1
-	bcc DONEMOVE
+;	cmp #1
+	beq DONEMOVE
 	DEC E0_XPos-1,x
 	JMP DONEMOVE
 FORWARD	
@@ -528,8 +524,8 @@ FORWARD
 	BCC DONEMOVE
 	INC E0_XPos-1,x
 	LDA onhorse
-	cmp #1
-	bcc DONEMOVE
+;	cmp #1
+	beq DONEMOVE
 	INC E0_XPos-1,x
 DONEMOVE
 
@@ -796,9 +792,7 @@ KEEPPAUSE
 ;---------------------------------------
 
 	lda onhorse
-	cmp #1
-	lda #0
-	bcs Did_Not_Hit_Pit
+	bne Did_Not_Hit_Pit
 	lda Player_Hit
 	cmp #1
 	lda #0
@@ -1000,10 +994,7 @@ AdjustTableForColor
 ;setup pic animations ----------------------------------------------
 
 
-	LDA #0
-	sta Other_Hit
-	sta Player_Hit
-	sta New_Hit
+
 
 
 
@@ -1118,10 +1109,8 @@ resetx
 	sta New_Hit
 	sta Other_Hit
 
-	lda SWCHB
-checka	and #%01000000
-	cmp #%01000000
-	beq leftdif
+	bit SWCHB
+	bmi leftdif
 	lda #24
 	jmp nozero
 leftdif	
@@ -1131,9 +1120,14 @@ nozero
 
 TESTPOINTG
 ;-test to start on horse
-	LDY #4
+;	LDY #4
 
 	LDA #0
+
+	sta Other_Hit
+	sta Player_Hit
+	sta New_Hit
+
 	CMP Pause
 	BCS NOBIGEYES
 	LDA Overeyes
@@ -2444,7 +2438,6 @@ MORECALCS
 ;assum horiz speed will be zero
 
 	lda onhorse ;while on horse knife is always readied
-;	cmp #1
 	beq horseknife
 	lda #8
 	sta swordduration
@@ -2464,14 +2457,14 @@ SwordAttack
 	lsr
 	sta PF_TEMP
 	lda Hero_YPosFromBot
-	clc
+;	clc ;carry will always be set because of earlier compare
 	sbc #C_P1_HEIGHT - 10
-	sec
+	clc
 	sbc PF_TEMP
 	jmp DoneWithSwordAttack
 NoSwordAttack2
 	lda #0
-	sta PF_TEMP
+	;sta PF_TEMP
 	sta swordduration
 NoSwordAttack
 	lda #200
@@ -2481,9 +2474,9 @@ DoneWithSwordAttack
 
 
 
-	LDA #%01000000	;Left?
+;	LDA #%01000000	;Left?
 	BIT SWCHA 
-	BNE SkipMoveLeft
+	BVS SkipMoveLeft
 	;16 bit math
 
 	sec
@@ -2501,10 +2494,18 @@ DoneWithSwordAttack
 	LDA #%00000001
 	STA MOV_STAT
 
+;Don't allow Hero too far left
+	LDA #Far_Left
+	CMP Hero_XPos
+	BCC HeroLeft
+	STA Hero_XPos
+HeroLeft
+
+	JMP SkipMoveRight
+
 SkipMoveLeft
-	LDA #%10000000	;Right?
 	BIT SWCHA 
-	BNE SkipMoveRight
+	BMI SkipMoveRight
 
 
 	clc
@@ -2521,7 +2522,6 @@ SkipMoveLeft
 	STA REFP1
 	STA MOV_STAT
 
-SkipMoveRight
 
 
 ;Don't allow Hero too far right
@@ -2531,12 +2531,13 @@ SkipMoveRight
 	STA Hero_XPos
 HeroRight
 
-;Don't allow Hero too far left
-	LDA #Far_Left
-	CMP Hero_XPos
-	BCC HeroLeft
-	STA Hero_XPos
-HeroLeft
+
+SkipMoveRight
+
+
+
+
+
 
 ;Don't allow Hero above top position
 	LDA #Far_Up_Hero
