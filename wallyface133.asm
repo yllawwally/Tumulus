@@ -3,13 +3,16 @@
 ;One can shoot down, one accross, and one up. That way fireballs don't overlap
 ;Maybe player magic that destroys all monster and leaves holes in ground. Beams that kill only if hit enemy
 ;player has corruption on far right
-;player sword corruption on far left
 ;need to add way to change playfield colors, for enemy special attack, and top eye enemy attack
 ;certain pallettes don't work on lanes 6 and 7, The colors for monster types (3,4,5,6,7)
 ;Boss portion really needs a way for monster to travel whole screen.
 ;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
 ;a dot rolls accross the ground where monsters were, which hits player sometimes. 
 ;Killing baddies is causing screen to get extra lines, and sometimes to switch to pit
+;bad guys are messed up on left
+;player is smacked immediatly, and reduced to 7 bars.
+;need to split time in slices.  
+;enemy attack only on slice 1, mtn move slice 2, etc
 ;--------------------------------------------------------------
 ;add a variable every x monsters then boss, with smaller monsters defined by a formula???
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -43,7 +46,7 @@ C_KERNAL_HEIGHT 	= 182	;height of kernal/actually the largest line on the screen
 Far_Left		= 12
 Far_Right		= 140
 Far_Right_Hero		= 134
-Far_Up_Hero		= 182
+Far_Up_Hero		= 180
 Far_Down_Hero		= 21+C_P1_HEIGHT
 Enemy_Far_Left		= 8
 Enemy_Pause_Left	= 12
@@ -233,6 +236,7 @@ Start
 	CLD  	
 	LDX #$FF	
 	TXS	
+	LDA #0
 
 	
 ClearMem 
@@ -303,7 +307,30 @@ MainLoopStart
 MORECALCSRET
 ;----------------------
 
-	lda #0
+
+
+	STA WSYNC ;//////////////////////////////////////////////	
+	STA HMOVE
+
+
+
+
+	LDA #43 ;was 43	
+	STA TIM64T	
+
+
+
+
+
+	LDA #0
+	STA VSYNC 	
+
+;----------lots of time
+
+;------------------------------------------
+
+
+	LDA #0
 	cmp Pause ;If screen paused because ceratures going backwords, pause
 	bcc NotYet
 RESSURECT
@@ -400,6 +427,7 @@ NOTHORSE
 	INC Baddie_Num
 NotYet
 
+
 ;setup pic animations ----------------------------------------------
 	INC ROLLING_COUNTER
 	BNE RCROLLOVER
@@ -439,21 +467,6 @@ PICSET3
 	STA WSYNC ;//////////////////////////////////////////////	
 	STA HMOVE
 
-
-	LDA #43 ;was 43	
-	STA TIM64T	
-
-
-
-
-
-	LDA #0
-	STA VSYNC 	
-
-;----------lots of time
-
-;------------------------------------------
-
 	
 rand_8
 	LDA	RNG		; get seed
@@ -481,6 +494,7 @@ MOVESECTION
 NOMAKEEYES
 	LDA #0
 	STA Player_Hit ;Need to make it easier to live
+	STA New_Hit
 	JMP MOVESET1
 NOMOVESET
 
@@ -507,6 +521,12 @@ NOPITCREATION
 NOLOSEHORSE
 
 
+	LDA Player_Hit
+	BEQ HORSENOTLOST
+	LDA #0
+	STA onhorse
+HORSENOTLOST
+	
 	LDX #8
 
 ;Eneamy Movement---------------------------------------------------
@@ -636,7 +656,8 @@ ExtraDead
 	lda E0_Type-1,x
 	sty PF_TEMP
 	adc PF_TEMP
-	tay
+	ldy BADDIEVALUE,x
+;	tay
 	LDA #200
 	STA Pit0_XPos-1,x
 	LDA Mask-1,x
@@ -736,14 +757,17 @@ KEEPPAUSE
 	lda onhorse
 	cmp #1
 	lda #0
-	bcc Did_Not_Hit_Pit
-;	lda Invinsable
-;	cmp #0
-;	BNE Did_Not_Hit_Pit
+	bcs Did_Not_Hit_Pit
 	lda Player_Hit
 	cmp #1
 	lda #0
+	BCS Hit_Pit
+	LDA New_Hit
+	CMP #1
+	LDA #0
 	BCC Did_Not_Hit_Pit
+	ASL Player_Health
+Hit_Pit
 	sta onhorse
 Did_Not_Hit_Pit
 	;sta Player_Hit ;why was this here???
@@ -937,7 +961,8 @@ AdjustTableForColor
 
 	LDA #0
 	sta Other_Hit
-
+	sta Player_Hit
+	sta New_Hit
 
 
 
@@ -1870,7 +1895,7 @@ ScanLoop_E2_c
 ;you have about 24 cycles--------------------------
 	CPY Row_2 ;3
 	BCS NO_PIT
-	LDA #$F0
+	LDA #$3C
 	STA GRP0
 NO_PIT
 
@@ -2355,6 +2380,22 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%11001010
      .byte #255 ;This is to reset to beginning
 
+
+BADDIEVALUE 
+     .byte #0 ;1
+     .byte #0 ;2
+     .byte #0 ;3
+     .byte #0 ;4
+     .byte #1 ;5
+     .byte #1 ;6
+     .byte #2 ;7
+     .byte #2 ;8
+     .byte #3 ;9
+     .byte #4 ;10
+     .byte #5 ;11
+     .byte #6 ;12
+     .byte #7 ;13
+     .byte #8 ;14
 
 
 
