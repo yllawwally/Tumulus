@@ -13,6 +13,7 @@
 ;Non distributed future
 ;make players as large pits, that can't be jumped by horse
 
+;146 is last version without mummy
 
 ;FUTURE FEATURES
 ;Need to add grappling
@@ -1196,12 +1197,13 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 	DEC Hero_Y
 
 	ldx Mummy_Num
-	lda GraphicsTableLow+3,x 	;low byte of ptr is graphic
-	sec
-	sbc DistFromBottom-1
+	lda GraphicsTableLow,x 	;low byte of ptr is graphic
+;	sec
+	ADC PICS
+	sbc DistFromBottom+2
 	sta MidSectionColorPtr
 
-	lda GraphicsTableHigh+3,x ;high byte of graphic location
+	lda GraphicsTableHigh,x ;high byte of graphic location
 
 	sta MidSectionColorPtr+1
 
@@ -1232,7 +1234,9 @@ NOBIGEYES2
 
 	LDA #$72
 	STA COLUPF
-	LDA #%00000010
+	LDA #%00000010	;The last 3 bits control number and size of players
+
+
 	STA NUSIZ0
 
 
@@ -1341,9 +1345,12 @@ MTNRANGE2
 	INC Hero_Y
 	INC Hero_Y
 
-	STA NUSIZ0
+	
 	STA GRP1
 	STA HMCLR
+
+
+	STA NUSIZ0
 
 	LDA Multiplexer,1 ;This is where you control number of critters on screen //////////////////////////////////
 	sta Multi_Temp	
@@ -1357,6 +1364,7 @@ MTNRANGE2
 	AND #%00000111
 	BEQ NOQUAKE
 	STA WSYNC
+
 
 
 
@@ -1413,20 +1421,20 @@ New_E2_Start
 	sta	Row_1	
 
 	lda Enemy_Row_Data+1,x
-	sbc #86 ;was 100
+	sbc #86 ;was 100,86
 	sta	Row_3
-	adc #8 ;was 8
+	adc #8 ;was 8,8
 	sta	Row_2
 	JMP YESPIT	
 	
 NOPITTHISLEVEL
 	clc ;this is needed beacause of the subtract, and the sword compare
 	lda Enemy_Row_Data,x
-	sbc #14 ;was 15
+	sbc #14 ;was 15,14
 	sta	Row_1	
 
 	lda Enemy_Row_Data+1,x
-	sbc #1 ;
+	sbc #1 ; was 1 
 	sta	Row_3
 	lda #1 ;was 5
 	sta	Row_2
@@ -1922,19 +1930,10 @@ pitposition
 	sta COLUP0
 
 
-	lda TempPit_XPos ;3
-	clc	;2
 
-
-;.Div15_Pit   
-;	sbc #15      ; 2         
-;	bcs .Div15_Pit   ; 3(2)
-;
-;	tax
-;	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
 	lda #0
 	sta HMP0 
-;	sta RESP0 ;Disabling pit movement, because no longer use pits.
+
 
 ;sword php style	
 EndLine7        STA WSYNC                                                ;3 cycles =
@@ -2010,6 +2009,9 @@ ScanLoop_E2_c
 	BCS NO_PIT
 	LDA TempPit_XPos
 	STA GRP0
+	lda (MidSectionColorPtr),y
+	sta COLUP0
+
 NO_PIT
 
 ;--- need to put pits here----------------------------------------------------------------------------------------------------------------<<<<<<
