@@ -34,6 +34,7 @@ Screen_Rate		= 20	;How fast screen is scrolling in X-Axis
 	org $0080
 PICS 			ds 1
 ROLLING_COUNTER 	ds 1
+Pos			ds 1
 
 
 E0_YPosFromBot 		ds 1	;Vertical position
@@ -162,7 +163,8 @@ ClearMem
 	STA E4_YPosFromBot
 	LDA #50
 	STA E4_XPos
-	
+	LDA #0
+	STA Pos
  
 
 	
@@ -674,131 +676,179 @@ alive4
 alive5
 
 
-;ldx ByteToSwap 
-;lda SwapTable,x
-
-
-
+	LDA Pos
+	AND #%00000111
+	ADC #1
+	STA Pos
+	
 	LDA PFData0		; 4 cycles
-	STA PF0_L1
+	STA PF0_L1 ;B
+	STA PF1_L1 ;B
 	LDA PFData1		; 4 cycles
-	STA PF1_L1
+	STA PF2_L1 ;C
 	LDA PFData2		; 4 cycles
-	STA PF2_L1
-	LDA PFData3		; 4 cycles
-	STA PF3_L1
-	LDA PFData4		; 4 cycles
-	STA PF4_L1
-	LDA PFData5		; 4 cycles
-	STA PF5_L1
-	LDA PFData6		; 4 cycles
-	STA PF_TEMP
-	LDA Screen_Location+1
-	AND #%00000011
-	CLC
-	ADC #1
-	TAY
-ROTATE1	ROL PF_TEMP
-	ROR PF5_L1
-	ROL PF4_L1
+	STA PF3_L1 ;d
+;	LDA PFData3		; 4 cycles
+;	STA PF3_L1 ;E
+;	LDA PFData4		; 4 cycles
+;	STA PF4_L1 ;F
+
+;	LDA #0 ;Screen_Location+1
+;	LSR
+;	LSR
+;	LSR
+;	LSR
+
+;	CLC
+;	ADC #$4
+;	TAY
+	LDY Pos
+ROTATE1
+;	ROL PF4_L1
 	ROL PF3_L1
-	ROR PF2_L1
+	ROL PF2_L1
 	ROL PF1_L1
-	ROL PF0_L1
-	DEY
-	BNE ROTATE1
+;	ROL PF0_L1
+ 	DEY
+	BNE ROTATE1	
 	
-	
-	
-	LDA PFData0+1		; 4 cycles
-	STA PF0_L2
-	LDA PFData1+1		; 4 cycles
-	STA PF1_L2
-	LDA PFData2+1		; 4 cycles
-	STA PF2_L2
-	LDA PFData3+1		; 4 cycles
-	STA PF3_L2
-	LDA PFData4+1		; 4 cycles
-	STA PF4_L2
-	LDA PFData5+1		; 4 cycles
-	STA PF5_L2
-	LDA PFData6+1		; 4 cycles
-	STA PF_TEMP
-	LDA Screen_Location+1
-	AND #%00000011
-	CLC
-	ADC #1
-	TAY
-ROTATE2	ROL PF_TEMP
-	ROR PF5_L2
-	ROL PF4_L2
+
+
+;NEED to reverse pf2
+
+	ldx PF1_L1
+	lda SwapTable,x
+	STA PF1_L1
+
+
+	LDX #1
+
+	LDA PFData0 ,x		; 4 cycles
+	STA PF0_L2 ;B
+	STA PF1_L2 ;B
+	LDA PFData1 ,x		; 4 cycles
+	STA PF2_L2 ;C
+	LDA PFData2,x		; 4 cycles
+	STA PF3_L2 ;d
+;	LDA PFData3 ,x		; 4 cycles
+;	STA PF3_L2 ;E
+;	LDA PFData4 ,x		; 4 cycles
+;	STA PF4_L2 ;F
+
+;	LDA #0 ;Screen_Location+1
+;	LSR
+;	LSR
+;	LSR
+;	LSR
+
+;	CLC
+;	ADC #$4
+;	TAY
+	LDY Pos
+ROTATE2
+;	ROL PF4_L2
 	ROL PF3_L2
-	ROR PF2_L2
+	ROL PF2_L2
 	ROL PF1_L2
-	ROL PF0_L2
-	DEY
+;	ROL PF0_L2
+ 	DEY
 	BNE ROTATE2	
 	
+
+
+;NEED to reverse pf2
+
+	ldx PF1_L2
+	lda SwapTable,x
+	STA PF1_L2
+
+
 	
-	LDA PFData0+2		; 4 cycles
-	STA PF0_L3
-	LDA PFData1+2		; 4 cycles
-	STA PF1_L3
-	LDA PFData2+2		; 4 cycles
-	STA PF2_L3
-	LDA PFData3+2		; 4 cycles
-	STA PF3_L3
-	LDA PFData4+2		; 4 cycles
-	STA PF4_L3
-	LDA PFData5+2		; 4 cycles
-	STA PF5_L3
-	LDA PFData6+2		; 4 cycles
-	STA PF_TEMP
-	LDA Screen_Location+1
-	AND #%00000011
-	CLC
-	ADC #1	
-	TAY
-ROTATE3	ROL PF_TEMP
-	ROR PF5_L3
-	ROL PF4_L3
+	ldx #2
+
+
+	LDA PFData0 ,x		; 4 cycles
+	STA PF0_L3 ;B
+	STA PF1_L3 ;B
+	LDA PFData1 ,x		; 4 cycles
+	STA PF2_L3 ;C
+	LDA PFData2 ,x		; 4 cycles
+	STA PF3_L3 ;d
+;	LDA PFData3 ,x		; 4 cycles
+;	STA PF3_L3 ;E
+;	LDA PFData4 ,x		; 4 cycles
+;	STA PF4_L3 ;F
+
+;	LDA #0 ;Screen_Location+1
+;	LSR
+;	LSR
+;	LSR
+;	LSR
+
+;	CLC
+;	ADC #$4
+;	TAY
+	LDY Pos
+ROTATE3
+;	ROL PF4_L3
 	ROL PF3_L3
-	ROR PF2_L3
+	ROL PF2_L3
 	ROL PF1_L3
-	ROL PF0_L3
-	DEY
+;	ROL PF0_L3
+ 	DEY
 	BNE ROTATE3	
 	
 
-	
-	LDA PFData0+3		; 4 cycles
-	STA PF0_L4
-	LDA PFData1+3		; 4 cycles
-	STA PF1_L4
-	LDA PFData2+3		; 4 cycles
-	STA PF2_L4
-	LDA PFData3+3		; 4 cycles
-	STA PF3_L4
-	LDA PFData4+3		; 4 cycles
-	STA PF4_L4
-	LDA PFData5+3		; 4 cycles
-	STA PF5_L4
-	LDA PFData6+3		; 4 cycles
-	STA PF_TEMP
-	LDA Screen_Location+1
-	AND #%00000011
-	CLC
-	ADC #1
-	TAY
-ROTATE4	ROL PF_TEMP
-	ROR PF5_L4
-	ROL PF4_L4
+
+;NEED to reverse pf2
+
+	ldx PF1_L3
+	lda SwapTable,x
+	STA PF1_L3
+
+
+	ldx #3
+
+	LDA PFData0,x		; 4 cycles
+	STA PF0_L4 ;B
+	STA PF1_L4 ;B
+	LDA PFData1,x		; 4 cycles
+	STA PF2_L4 ;C
+	LDA PFData2,x		; 4 cycles
+	STA PF3_L4 ;d
+;	LDA PFData3,x		; 4 cycles
+;	STA PF3_L4 ;E
+;	LDA PFData4,x		; 4 cycles
+;	STA PF4_L4 ;F
+
+;	LDA #0 ;Screen_Location+1
+;	LSR
+;	LSR
+;	LSR
+;	LSR
+
+;	CLC
+;	ADC #$4
+;	TAY
+	LDY Pos
+ROTATE4
+;	ROL PF4_L4
 	ROL PF3_L4
-	ROR PF2_L4
+	ROL PF2_L4
 	ROL PF1_L4
-	ROL PF0_L4
-	DEY
-	BNE ROTATE4		
+;	ROL PF0_L4
+ 	DEY
+	BNE ROTATE4	
+	
+
+
+;NEED to reverse pf2
+
+	ldx PF1_L4
+	lda SwapTable,x
+	STA PF1_L4
+
+
 	
 ;setup php ball trick
 
@@ -831,7 +881,7 @@ PreScanLoop
 
 ;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 	LDA PFCOLOR-1,Y		; 4 cycles
-	STA COLUBK		;and store as the bgcolor ; 3 cycles	LDA PF0_L1		; 4 cycles
+	STA COLUBK		;and store as the bgcolor ; 3 cycles	 
 	LDA PF0_L1		; 4 cycles
 	STA PF0			; 3 cycles
 	LDA PF1_L1		; 4 cycles
@@ -909,50 +959,23 @@ PreScanLoop
 
 	STA WSYNC 						 ;3 cycles =74
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
-;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
-;	LDA PFCOLOR-1,Y		; 4 cycles
-;	STA COLUBK		;and store as the bgcolor ; 3 cycles
-;	LDA PF0_L4		; 4 cycles
-;	STA PF0			; 3 cycles
-;	LDA PF1_L4		; 4 cycles
-;	STA PF1			; 3 cycles
-;	LDA PF2_L4		; 4 cycles
-;	STA PF2			; 3 cycles
-;	NOP
-;	NOP
-;	NOP
-;	NOP
-;	NOP
-;	NOP
-;	NOP
-;	NOP
-;	LDA PF3_L4		; 4 cycles
-;	STA PF0			; 3 cycles
-;	LDA PF4_L4		; 4 cycles
-;	STA PF1			; 3 cycles
-;	LDA PF5_L4		; 4 cycles
-;	STA PF2			; 3 cycles
-;	
-;
-;	STA WSYNC 						 ;3 cycles =74
-;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
-;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
+ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 	LDA PFCOLOR-1,Y		; 4 cycles
 	STA COLUBK		;and store as the bgcolor ; 3 cycles
-	LDA #%00000000		; 3 cycles
+	LDA PF0_L4		; 4 cycles
 	STA PF0			; 3 cycles
-	LDA #%01010101		; 3 cycles
+	LDA PF1_L4		; 4 cycles
 	STA PF1			; 3 cycles
-	LDA #%01010101		; 3 cycles
+	LDA PF2_L4		; 4 cycles
 	STA PF2			; 3 cycles
-	STA RESM1
-	NOP
-	STA RESM0
-	NOP
-	STA RESM0
 	NOP
 	NOP
-	STA RESM1
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
+	NOP
 	LDA PF3_L4		; 4 cycles
 	STA PF0			; 3 cycles
 	LDA PF4_L4		; 4 cycles
@@ -1894,353 +1917,352 @@ MainPlayerGraphics3
 	.byte #%01110000
 
 	
-;PFData0 
-;        .byte #%11011111
-;        .byte #%10001111
-;        .byte #%10001111
-;        .byte #%00001111 
-
-;PFData1
-;        .byte #%11111111
-;        .byte #%11111111
-;        .byte #%00111011
-;        .byte #%00010001
-
-;PFData2
-;        .byte #%11100111
-;        .byte #%11100111
-;        .byte #%11000011
-;        .byte #%00000000
-
-;PFData3
-;        .byte #%11111111
-;        .byte #%10111011
-;        .byte #%10011001
-;        .byte #%00000000 
-
-PFData0
-	.byte #%00000001
-	.byte #%00000001
-	.byte #%00000001
-	.byte #%00000001
+PFData0 
+        .byte #%11011111
+        .byte #%10001111
+        .byte #%10001111
+        .byte #%00001111 
 
 PFData1
-	.byte #%00000011
-	.byte #%00000011
-	.byte #%00000011
-	.byte #%00000011
+        .byte #%11111111
+        .byte #%11111111
+        .byte #%00111011
+        .byte #%00010001
 
 PFData2
-	.byte #%00000111
-	.byte #%00000111
-	.byte #%00000111
-	.byte #%00000111
-	
-PFData3
-	.byte #%00001111
-	.byte #%00001111
-	.byte #%00001111
-	.byte #%00001111
+        .byte #%11100111
+        .byte #%11100111
+        .byte #%11000011
+        .byte #%00000000
 
-PFData4
-	.byte #%00011111
-	.byte #%00011111
-	.byte #%00011111
-	.byte #%00011111
+PFData3
+        .byte #%11111111
+        .byte #%10111011
+        .byte #%10011001
+        .byte #%00000000 
+
+;PFData0
+;	.byte #%00000001
+;	.byte #%00000001
+;	.byte #%00000001
+;	.byte #%00000001
+;
+;PFData1
+;	.byte #%00000011
+;	.byte #%00000011
+;	.byte #%00000011
+;	.byte #%00000011
+;
+;PFData2
+;	.byte #%00000111
+;	.byte #%00000111
+;	.byte #%00000111
+;	.byte #%00000111
+;	
+;PFData3
+;	.byte #%00001111
+;	.byte #%00001111
+;	.byte #%00001111
+;	.byte #%00001111
+;
+;PFData4
+;	.byte #%00011111
+;	.byte #%00011111
+;	.byte #%00011111
+;	.byte #%00011111
+;
+;PFData5
+;	.byte #%00111111
+;	.byte #%00111111
+;	.byte #%00111111
+;	.byte #%00111111
+;
+;PFData6
+;        .byte #%01111111
+ ;       .byte #%01111111
+;        .byte #%01111111
+;        .byte #%01111111                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+;        
+PFData4 
+        .byte #%11111111
+        .byte #%11101111
+        .byte #%11000111
+        .byte #%10000011
 
 PFData5
-	.byte #%00111111
-	.byte #%00111111
-	.byte #%00111111
-	.byte #%00111111
-
+        .byte #%11100111
+        .byte #%11000011
+        .byte #%10000001
+        .byte #%00000000
+        
 PFData6
-        .byte #%01111111
-        .byte #%01111111
-        .byte #%01111111
-        .byte #%01111111
-        
-;PFData4 
-;        .byte #%11111111
-;        .byte #%11101111
-;        .byte #%11000111
-;        .byte #%10000011
-
-;PFData5
-;        .byte #%11100111
-;        .byte #%11000011
-;        .byte #%10000001
-;        .byte #%00000000
-        
-;PFData6
-;        .byte #%11111111
-;        .byte #%11111111
-;        .byte #%10111011
-;        .byte #%00010001
+        .byte #%11111111
+        .byte #%11111111
+        .byte #%10111011
+        .byte #%00010001
         
 ;SwapTable 
 ; .byte 0,$80,$40,$C0,$20 
 ;... etc. for values 5-256
 
 SwapTable
- .byte #$0
- .byte #$80
- .byte #$40
- .byte #$C0
- .byte #$20
- .byte #$A0
- .byte #$60
- .byte #$E0
- .byte #$10
- .byte #$90
- .byte #$50
- .byte #$D0
- .byte #$30
- .byte #$B0
- .byte #$70
- .byte #$F0
- .byte #$8
- .byte #$88
- .byte #$48
- .byte #$C8
- .byte #$28
- .byte #$A8
- .byte #$68
- .byte #$E8
- .byte #$18
- .byte #$98
- .byte #$58
- .byte #$D8
- .byte #$38
- .byte #$B8
- .byte #$78
- .byte #$F8
- .byte #$4
- .byte #$84
- .byte #$44
- .byte #$C4
- .byte #$24
- .byte #$A4
- .byte #$64
- .byte #$E4
- .byte #$14
- .byte #$94
- .byte #$54
- .byte #$D4 
- .byte #$34
- .byte #$B4
- .byte #$74
- .byte #$F4
- .byte #$C 
- .byte #$8C
- .byte #$4C
- .byte #$CC
- .byte #$2C
- .byte #$AC
- .byte #$6C
- .byte #$EC
- .byte #$1E
- .byte #$9E
- .byte #$5E
- .byte #$DE
- .byte #$3E
- .byte #$BE
- .byte #$7E
- .byte #$FE
- .byte #$2 
- .byte #$82 
- .byte #$42 
- .byte #$C2
- .byte #$22
- .byte #$A2
- .byte #$62
- .byte #$E2
- .byte #$12
- .byte #$92
- .byte #$52
- .byte #$D2
- .byte #$32
- .byte #$B2
- .byte #$72
- .byte #$F2
- .byte #$A 
- .byte #$8A
- .byte #$4A
- .byte #$CA
- .byte #$2A
- .byte #$AA
- .byte #$6A
- .byte #$EA
- .byte #$1A
- .byte #$9A
- .byte #$5A
- .byte #$DA
- .byte #$3A
- .byte #$BA
- .byte #$7A
- .byte #$FA
- .byte #$6 
- .byte #$86
- .byte #$46
- .byte #$C6
- .byte #$26
- .byte #$A6
- .byte #$66
- .byte #$E6
- .byte #$16
- .byte #$96
- .byte #$56
- .byte #$D6
- .byte #$36
- .byte #$B6
- .byte #$76
- .byte #$F6
- .byte #$E
- .byte #$8E
- .byte #$4E
- .byte #$CE
- .byte #$2E
- .byte #$AE
- .byte #$6E
- .byte #$EE
- .byte #$1E
- .byte #$9E
- .byte #$5E
- .byte #$DE
- .byte #$3E
- .byte #$BE
- .byte #$7E
- .byte #$FE
- .byte #$1 
- .byte #$81
- .byte #$41
- .byte #$C1
- .byte #$21
- .byte #$A1
- .byte #$61
- .byte #$E1
- .byte #$11
- .byte #$91
- .byte #$51
- .byte #$D1
- .byte #$31
- .byte #$B1
- .byte #$71
- .byte #$F1
- .byte #$9 
- .byte #$89
- .byte #$49
- .byte #$C9
- .byte #$29
- .byte #$A9
- .byte #$69
- .byte #$E9
- .byte #$19
- .byte #$99
- .byte #$59
- .byte #$D9
- .byte #$39
- .byte #$B9
- .byte #$79
- .byte #$F9
- .byte #$5
- .byte #$85
- .byte #$45
- .byte #$C5
- .byte #$25
- .byte #$A5
- .byte #$65
- .byte #$E5
- .byte #$15
- .byte #$95
- .byte #$55
- .byte #$D5
- .byte #$35
- .byte #$B5
- .byte #$75
- .byte #$F5
- .byte #$D
- .byte #$8D
- .byte #$4D
- .byte #$CD
- .byte #$2D
- .byte #$AD
- .byte #$6D
- .byte #$ED
- .byte #$1F
- .byte #$9F
- .byte #$5F
- .byte #$DF
- .byte #$3F
- .byte #$BF
- .byte #$7F
- .byte #$FF
- .byte #$3 
- .byte #$83
- .byte #$43
- .byte #$C3
- .byte #$23
- .byte #$A3
- .byte #$63
- .byte #$E3
- .byte #$13
- .byte #$93
- .byte #$53
- .byte #$D3
- .byte #$33
- .byte #$B3
- .byte #$73
- .byte #$F3
- .byte #$B 
- .byte #$8B
- .byte #$4B
- .byte #$CB
- .byte #$2B
- .byte #$AB
- .byte #$6B
- .byte #$EB
- .byte #$1B
- .byte #$9B
- .byte #$5B
- .byte #$DB
- .byte #$3B
- .byte #$BB
- .byte #$7B
- .byte #$FB
- .byte #$7 
- .byte #$87
- .byte #$47
- .byte #$C7
- .byte #$27
- .byte #$A7
- .byte #$67
- .byte #$E7
- .byte #$17
- .byte #$97
- .byte #$57
- .byte #$D7
- .byte #$37
- .byte #$B7
- .byte #$77
- .byte #$F7
- .byte #$F
- .byte #$8F
- .byte #$4F
- .byte #$CF
- .byte #$2F
- .byte #$AF
- .byte #$6F
- .byte #$EF
- .byte #$1F
- .byte #$9F
- .byte #$5F
- .byte #$DF
- .byte #$3F
- .byte #$BF
- .byte #$7F
- .byte #$FF
-
-
+ .byte #$0		;0  00000000
+ .byte #$80		;1  00000001
+ .byte #$40		;2  00000010
+ .byte #$C0		;3  00000011
+ .byte #$20		;4  00000100
+ .byte #$A0		;5  00000101
+ .byte #$60		;6  00000110
+ .byte #$E0		;7  00000111
+ .byte #$10		;8  00001000
+ .byte #$90		;9  00001001
+ .byte #$50		;A  00001010
+ .byte #$D0		;B  00001011
+ .byte #$30		;C  00001100
+ .byte #$B0		;D  00001101
+ .byte #$70		;E  00001110
+ .byte #$F0		;F  00001111
+ .byte #$8		;10 00010000
+ .byte #$88		;11 00010001
+ .byte #$48		;12 00010010
+ .byte #$C8		;13 00010011
+ .byte #$28		;14 00010100
+ .byte #$A8		;15 00010101
+ .byte #$68		;16 00010110
+ .byte #$E8		;17 00010111
+ .byte #$18		;18 00011000
+ .byte #$98		;19 00011001
+ .byte #$58		;1A 00011010
+ .byte #$D8		;1B 00011011
+ .byte #$38		;1C 00011100
+ .byte #$B8		;1D 00011101
+ .byte #$78		;1E 00011110
+ .byte #$F8		;1F 00011111
+ .byte #$4		;20 00100000
+ .byte #$84		;21 00100001
+ .byte #$44		;22 00100010
+ .byte #$C4		;23 00100011
+ .byte #$24		;24 00100100
+ .byte #$A4		;25 00100101
+ .byte #$64		;26 00100110
+ .byte #$E4		;27 00100111
+ .byte #$14		;28 00101000 
+ .byte #$94		;29 00101001
+ .byte #$54		;2A 00101010
+ .byte #$D4 		;2B 00101011
+ .byte #$34		;2C 00101100
+ .byte #$B4		;2D 00101101
+ .byte #$74		;2E 00101110
+ .byte #$F4		;2F 00101111
+ .byte #$C 		;30 00110000
+ .byte #$8C		;31 00110001
+ .byte #$4C		;32 00110010	
+ .byte #$CC		;33 00110011
+ .byte #$2C		;34 00110100
+ .byte #$AC		;35 00110101
+ .byte #$6C		;36 00110110
+ .byte #$EC		;37 00110111
+ .byte #$1E		;38 00111000
+ .byte #$9E		;39 00111001
+ .byte #$5E		;3A 00111010
+ .byte #$DE		;3B 00111011
+ .byte #$3E		;3C 00111100
+ .byte #$BE		;3D 00111101
+ .byte #$7E		;3E 00111110
+ .byte #$FE		;3F 00111111
+ .byte #$2 		;40 01000000
+ .byte #$82 		;41 01000001
+ .byte #$42 		;42 01000010
+ .byte #$C2		;43 01000011
+ .byte #$22		;44 01000100
+ .byte #$A2		;45 01000101
+ .byte #$62		;46 01000110
+ .byte #$E2		;47 01000111
+ .byte #$12		;48 01001000
+ .byte #$92		;49 01001001
+ .byte #$52		;4A 01001010
+ .byte #$D2		;4B 01001011
+ .byte #$32		;4C 01001100
+ .byte #$B2		;4D 01001101
+ .byte #$72		;4E 01001110
+ .byte #$F2		;4F 01001111
+ .byte #$A 		;50 01010000
+ .byte #$8A		;51 01010001
+ .byte #$4A		;52 01010010
+ .byte #$CA		;53 01010011
+ .byte #$2A		;54 01010100
+ .byte #$AA		;55 01010101
+ .byte #$6A		;56 01010110
+ .byte #$EA		;57 01010111
+ .byte #$1A		;58 01011000
+ .byte #$9A		;59 01011001
+ .byte #$5A		;5A 01011010
+ .byte #$DA		;5B 01011011
+ .byte #$3A		;5C 01011100
+ .byte #$BA		;5D 01011101
+ .byte #$7A		;5E 01011110
+ .byte #$FA		;5F 01011111
+ .byte #$6 		;60 01100000
+ .byte #$86		;61 01100001
+ .byte #$46		;62 01100010
+ .byte #$C6		;63 01100011
+ .byte #$26		;64 01100100
+ .byte #$A6		;65 01100101
+ .byte #$66		;66 01100110
+ .byte #$E6		;67 01100111
+ .byte #$16		;68 01101000
+ .byte #$96		;69 01101001
+ .byte #$56		;6A 01101010
+ .byte #$D6		;6B 01101011
+ .byte #$36		;6C 01101100
+ .byte #$B6		;6D 01101101
+ .byte #$76		;6E 01101110
+ .byte #$F6		;6F 01101111
+ .byte #$E		;70 01110000
+ .byte #$8E		;71 01110001
+ .byte #$4E		;72 01110010
+ .byte #$CE		;73 01110011
+ .byte #$2E		;74 01110100
+ .byte #$AE		;75 01110101
+ .byte #$6E		;76 01110110
+ .byte #$EE		;77 01110111
+ .byte #$1E		;78 01111000
+ .byte #$9E		;79 01111001
+ .byte #$5E		;7A 01111010
+ .byte #$DE		;7B 01111011
+ .byte #$3E		;7C 01111100
+ .byte #$BE		;7D 01111101
+ .byte #$7E		;7E 01111110
+ .byte #$FE		;7F 01111111
+ .byte #$1 		;80 10000000
+ .byte #$81		;81 10000001
+ .byte #$41		;82 10000010
+ .byte #$C1    		;83  10000011
+ .byte #$21     	;84  10000100
+ .byte #$A1     	;85  10000101
+ .byte #$61     	;86  10000110
+ .byte #$E1     	;87  10000111
+ .byte #$11     	;88  10001000
+ .byte #$91     	;89  10001001
+ .byte #$51     	;8A  10001010
+ .byte #$D1     	;8B  10001011
+ .byte #$31     	;8C  10001100
+ .byte #$B1     	;8D  10001101
+ .byte #$71     	;8E  10001110
+ .byte #$F1     	;8F  10001111
+ .byte #$9      	;90  10010000
+ .byte #$89     	;91  10010001
+ .byte #$49     	;92  10010010
+ .byte #$C9     	;93  10010011
+ .byte #$29     	;94  10010100
+ .byte #$A9     	;95  10010101
+ .byte #$69     	;96  10010110
+ .byte #$E9     	;97  10010111
+ .byte #$19     	;98  10011000
+ .byte #$99     	;99  10011001
+ .byte #$59     	;9A  10011010
+ .byte #$D9     	;9B  10011011
+ .byte #$39     	;9C  10011100
+ .byte #$B9     	;9D  10011101
+ .byte #$79     	;9E  10011110
+ .byte #$F9     	;9F  10011111
+ .byte #$5      	;A0  10100000
+ .byte #$85     	;A1  10100001
+ .byte #$45     	;A2  10100010
+ .byte #$C5      	;A3  10100011
+ .byte #$25      	;A4  10100100
+ .byte #$A5      	;A5  10100101
+ .byte #$65      	;A6  10100110
+ .byte #$E5      	;A7  10100111
+ .byte #$15      	;A8  10101000
+ .byte #$95      	;A9  10101001
+ .byte #$55      	;AA  10101010
+ .byte #$D5      	;AB  10101011
+ .byte #$35      	;AC  10101100
+ .byte #$B5      	;AD  10101101
+ .byte #$75      	;AE  10101110
+ .byte #$F5      	;AF  10101111
+ .byte #$D       	;B0  10110000
+ .byte #$8D      	;B1  10110001
+ .byte #$4D      	;B2  10110010
+ .byte #$CD      	;B3  10110011
+ .byte #$2D      	;B4  10110100
+ .byte #$AD      	;B5  10110101
+ .byte #$6D      	;B6  10110110
+ .byte #$ED      	;B7  10110111
+ .byte #$1F      	;B8  10111000
+ .byte #$9F      	;B9  10111001
+ .byte #$5F      	;BA  10111010
+ .byte #$DF      	;BB  10111011
+ .byte #$3F      	;BC  10111100
+ .byte #$BF      	;BD  10111101
+ .byte #$7F      	;BE  10111110
+ .byte #$FF      	;BF  10111111
+ .byte #$3       	;C0  11000000
+ .byte #$83      	;C1  11000001
+ .byte #$43      	;C2  11000010
+ .byte #$C3      	;C3  11000011
+ .byte #$23      	;C4  11000100
+ .byte #$A3      	;C5  11000101
+ .byte #$63      	;C6  11000110
+ .byte #$E3      	;C7  11000111
+ .byte #$13      	;C8  11001000
+ .byte #$93      	;C9  11001001
+ .byte #$53      	;CA  11001010
+ .byte #$D3      	;CB  11001011
+ .byte #$33      	;CC  11001100
+ .byte #$B3      	;CD  11001101
+ .byte #$73      	;CE  11001110
+ .byte #$F3      	;CF  11001111
+ .byte #$B       	;D0  11010000
+ .byte #$8B      	;D1  11010001
+ .byte #$4B      	;D2  11010010
+ .byte #$CB      	;D3  11010011
+ .byte #$2B      	;D4  11010100
+ .byte #$AB      	;D5  11010101
+ .byte #$6B      	;D6  11010110
+ .byte #$EB      	;D7  11010111
+ .byte #$1B      	;D8  11011000
+ .byte #$9B      	;D9  11011001
+ .byte #$5B      	;DA  11011010
+ .byte #$DB      	;DB  11011011
+ .byte #$3B      	;DC  11011100
+ .byte #$BB      	;DD  11011101
+ .byte #$7B      	;DE  11011110
+ .byte #$FB      	;DF  11011111
+ .byte #$7       	;E0  11100000
+ .byte #$87      	;E1  11100001
+ .byte #$47      	;E2  11100010
+ .byte #$C7      	;E3  11100011
+ .byte #$27      	;E4  11100100
+ .byte #$A7      	;E5  11100101
+ .byte #$67      	;E6  11100110
+ .byte #$E7      	;E7  11100111
+ .byte #$17      	;E8  11101000
+ .byte #$97      	;E9  11101001
+ .byte #$57      	;EA  11101010
+ .byte #$D7      	;EB  11101011
+ .byte #$37      	;EC  11101100
+ .byte #$B7      	;ED  11101101
+ .byte #$77      	;EE  11101110
+ .byte #$F7      	;EF  11101111
+ .byte #$F       	;F0  11110000
+ .byte #$8F      	;F1  11110001
+ .byte #$4F      	;F2  11110010
+ .byte #$CF      	;F3  11110011
+ .byte #$2F      	;F4  11110100
+ .byte #$AF      	;F5  11110101
+ .byte #$6F      	;F6  11110110
+ .byte #$EF      	;F7  11110111
+ .byte #$1F      	;F8  11111000
+ .byte #$9F      	;F9  11111001
+ .byte #$5F      	;FA  11111010
+ .byte #$DF      	;FB  11111011
+ .byte #$3F      	;FC  11111100
+ .byte #$BF      	;FD  11111101
+ .byte #$7F      	;FE  11111110
+ .byte #$FF      	;FF  11111111
+	
 PFCOLOR
 	.byte #$29
 	.byte #$5D
