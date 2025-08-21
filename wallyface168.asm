@@ -24,6 +24,8 @@
 ;allow creatures to move to a different lane if overeyes > 0
 ;make sure points are scored for potion killed baddies
 ;Can I remove duration, and calculate based on is it a boss, then use rand+level for duration???
+;need to pause when starting, and also stop when dead
+;reduce max potions, so that you can increase timer length, 
 
 ;BUGS
 ;1 line of player is discolored
@@ -32,16 +34,16 @@
 ;Rat is miscolored
 ;Touching an enemy causes one less line, will this cause TV distortion?
 ;if you use potion on enemy too far right, they will stop and you can't continue
+;Touching Boss causes an extra line
+;sometimes number of potions doesn't decrease, when they are used
+
 
 ;IMPROVED
 ;when you hit a monster on lane 3, the screen flickers for a moment
 
 
 ;FIXED
-;Skyline is messed up, when monsters on screen, need to adjust color palette
-;Just top of skyline color is changed, now it cycles with overeyes
-;Multi-Sprite bad guy has one line that slide, this is because it's reinitialzing the hor position
-;Roman number 6 was was showing instead of 4, for potion when player had 4 potions.
+;Potion was not always affecting each lane
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -477,7 +479,7 @@ NS3
 	BNE NS4
 	JMP SLICE1 ;Baddie Movement is twice as fast
 NS4
-;	CMP #7 ;Bumped this to triple potency of potions
+;	CMP #5
 ;	BNE NS5
 	JMP SLICE4 ;Baddie Movement is twice as fast
 NS5
@@ -499,14 +501,18 @@ NS7
 
 
 SLICE4
+	lda #0
+
+	sta New_Hit
+	sta Other_Hit
 
 	LDA Potion
-	CMP #10	
+	CMP #%00001000	
 	bcc OverPotionB
 	sec 
-	sbc #%00010000
+	sbc #%00001000
 	sta Potion
-	lda #$FF
+	lda ROLLING_COUNTER ;#$FF
 	sta Other_Hit
 	sta New_Hit
 	
@@ -1032,7 +1038,7 @@ notalive1b
 
 
 	lda Potion
-	cmp #$10
+	cmp #%00001000
 	bcc AdjustTableForColorHitTest
 	LDA #<EnemyFireColor
 	JMP AdjustTableForColor
@@ -1177,13 +1183,19 @@ resetx
 ;music section ------------------------------------------------------------------------
 
 
+	
 
 
+	
+;	ldx Potion
+;	cpx #10
+;	bcs Dontresetpotion
 
-	lda #0
-	sta New_Hit
-	sta Other_Hit
+;	lda #0
 
+;	sta New_Hit
+;	sta Other_Hit
+Dontresetpotion
 	
 
 	bit SWCHB
@@ -2327,25 +2339,26 @@ NOQUAKE2
 	LDA NUM0,y
 	SAX E0_Ptr
 	
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+1,y
 	SAX E1_Ptr
 
-	iny
-	LDA NUM0,y
+;	iny
+	LDA NUM0+2,y
 	SAX E2_Ptr
 
-	iny
-	LDA NUM0,y
+;	iny
+	LDA NUM0+3,y
 	SAX E3_Ptr
 	
-	iny
-	LDA NUM0,y
+;	iny
+	LDA NUM0+4,y
 	SAX E4_Ptr
 
 	LDA Score1
 	AND #$F0
 	LSR
+
 
 
 LINEA
@@ -2362,8 +2375,8 @@ LINEA
 	ORA E0_Ptr
 	STA E0_Ptr
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+1,y
 	AND #$F0
 	ORA E1_Ptr
 	STA E1_Ptr
@@ -2371,21 +2384,21 @@ LINEA
 	
 	STA WSYNC  
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+2,y
 	AND #$F0
 	ORA E2_Ptr
 	STA E2_Ptr
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+3,y
 	AND #$F0
 	ORA E3_Ptr
 	STA E3_Ptr
 
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+4,y
 	AND #$F0
 	ORA E4_Ptr
 	STA E4_Ptr
@@ -2403,32 +2416,32 @@ LINEA
 
 
 LINEB
-;	STA WSYNC  
+	STA WSYNC  
 
 
 
 	
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+1,y
 	SAX E6_Ptr
 
-	iny
-	LDA NUM0,y
+;	iny
+	LDA NUM0+2,y
 	SAX E7_Ptr
 
-	iny
-	LDA NUM0,y
+;	iny
+	LDA NUM0+3,y
 	SAX E0_Ptr2
 	
-	iny
-	LDA NUM0,y
+;	iny
+	LDA NUM0+4,y
 	SAX E1_Ptr2
 
 
 
 LINEC
-;	STA WSYNC  
+	STA WSYNC  
 
 	LDA Score
 	AND #$0F ;Because this is a reversed PF
@@ -2443,14 +2456,14 @@ LINEC
 	ORA E5_Ptr
 	STA E5_Ptr
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+1,y
 	AND #$F0
 	ORA E6_Ptr
 	STA E6_Ptr
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+2,y
 	AND #$F0
 	ORA E7_Ptr
 	STA E7_Ptr
@@ -2460,14 +2473,14 @@ LINED
 
 
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+3,y
 	AND #$F0
 	ORA E0_Ptr2
 	STA E0_Ptr2
 
-	INY
-	LDA NUM0,y
+;	INY
+	LDA NUM0+4,y
 	AND #$F0
 	ORA E1_Ptr2
 	STA E1_Ptr2
@@ -2513,26 +2526,26 @@ LINEE
 	LDA NUM0_,y
 	STA EnemyGraphicsColorPtr_E2
 	
-	INY
-	LDA NUM0_,y
+;	INY
+	LDA NUM0_+1,y
 	STA EnemyGraphicsColorPtr_E3
 
-	INY
-	LDA NUM0_,y
+;	INY
+	LDA NUM0_+2,y
 	STA EnemyGraphicsColorPtr_E4
 
-	INY
-	LDA NUM0_,y
+;	INY
+	LDA NUM0_+3,y
 	STA EnemyGraphicsColorPtr_E5
 	
-	INY
-	LDA NUM0_,y
+;	INY
+	LDA NUM0_+4,y
 	STA EnemyGraphicsColorPtr_E6
 LINEF
-;	STA WSYNC  
+	STA WSYNC  
 
 	LDA Potion
-	AND #$0F
+	AND #%00000111
 	ASL
 	ASL
 	ASL
@@ -2614,7 +2627,7 @@ EnemyLife
      .byte #5 ;;25,Dragon A
      .byte #5 ;;26,Dragon B
      .byte #3 ;;27,Will O Wisp
-     .byte #6 ;;28,Vampire a ;Need to add it
+;     .byte #6 ;;28,Vampire a ;Need to add it
  ;    .byte #6 ;;29,Vampire b ;Need to add it
 ;     .byte #7 ;;30,Minotaur a;Need to add it
 ;     .byte #7 ;;31,Minotaur b;Need to add it might not need this value since it's a copy of monster ;30
@@ -2752,14 +2765,14 @@ horseknife
 
 	lda Potion
 	beq NoPotion
-	cmp #$10
+	cmp #%00001000
 	bcs OverPotion	
 
 
 	ldx INPT5
 	bmi NoPotion
-	asl
-	asl
+;	asl
+;	asl
 	asl
 	asl
 	asl
