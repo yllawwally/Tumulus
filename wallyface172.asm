@@ -23,12 +23,17 @@
 ;Can I remove duration, and calculate based on is it a boss, then use rand+level for duration???
 
 
+;dragon lake
+
+
 ;BUGS
 ;1 line of player is discolored
 ;make dragon not move
 ;make dragon fire move
 ;Touching an enemy causes one less line, will this cause TV distortion?
 ;if you use potion on enemy too far right, they will stop and you can't continue
+;reintroduced bug that bounces screen if you hit bad guy, maybe related to timing of collision detection .nop
+
 
 ;IMPROVED
 ;when you hit a monster on lane 3, the screen flickers for a moment
@@ -44,6 +49,7 @@
 ;need to pause when starting, and also stop when dead
 ;Rat is miscolored
 ;removed unused code
+;Need to read CXP1FB ,Pf(10000000) and Ball (01000000)
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -615,17 +621,21 @@ ENDSLICES
 ;	STA PF1			; 3 cycles
 ;	STA PF2			; 3 cycles
 ;-------------------------
-	LDA #0
-	STA HMP1 ;Set Hero to stand still
+;	LDA #0
+;	STA HMP1 ;Set Hero to stand still
 ;	STA ENABL ;clear pits
 
 ;	STA WSYNC ;//////////////////////////////////////////////
 ;	STA HMOVE
 
-	
+	LDA Grapple
+	BEQ NOPFHIT 
+	asl Player_Health
+NOPFHIT
 	LDA Direction
 	STA Multi_Temp
 	LDY #0
+	STY Grapple
 	LDX Link
 	BCC NotBossLevel
 	LDX Other_Hit
@@ -753,7 +763,7 @@ BOSS1
 	sta PF_TEMP
 	lda #0
 	sta E0_Health-1,x
-	sta E0_Type-1,x
+;	sta E0_Type-1,x
 	LDA Mask-1,x
 	AND Enemy_Life
 	STA Enemy_Life
@@ -810,8 +820,6 @@ notsnake
 	and Player_Hit
 	beq notsmacked
 	asl Player_Health
-;	lda #1
-;	sta Grapple
 ;	this is where to put grappling stuff
 notsmacked
 
@@ -961,7 +969,7 @@ Enemies_Alive
 	;to Vertical Position (0 = top) + height of sprite - 1.
 	;we're storing distance from bottom, not top, so we have
 	;to start with the kernal height and YPosFromBot...
-	lda #C_KERNAL_HEIGHT + #C_P1_HEIGHT - #2
+	lda #C_KERNAL_HEIGHT + #C_P1_HEIGHT - #2 
 	sec
 	sbc Hero_YPosFromBot ;subtract integer byte of distance from bottom
 	sta Hero_Y
@@ -1363,7 +1371,6 @@ loadbellycolor
 	NOP
 
 
-
 	STA HMCLR
 	LDA MOV_STAT
 	CMP #1
@@ -1486,16 +1493,18 @@ MTNRANGE2
 donjump2
 	LDA Level_Color,x
 	STA COLUBK	;and store as the bgcolor
-	LDY #C_KERNAL_HEIGHT; 
-	LDA #0
-	STA PF_TEMP
+	LDY #C_KERNAL_HEIGHT;
+
+	LDA #$01 ;Dragon Lake
+	STA CTRLPF 
+	LDA #$0
 	STA PF0			; 3 cycles
 	STA PF1			; 3 cycles
 	STA PF2			; 3 cycles
+;	LDA #$0
+	LDX #$0
+	STA PF_TEMP
 	STA GRP0
-	TAX
-
-
 
 	STA WSYNC 
 	STA HMOVE
@@ -1901,7 +1910,11 @@ No_Hit_the_Pit
 ;This allows us to do the calculation early, but must move dey to before routine
 
 
-
+	BIT CXP1FB
+	BPL NOHITTING
+	LDA #1
+	STA Grapple
+NOHITTING
 	lda     (HeroGraphicsColorPtr),y      ; 5
 ;        DEY             ;2 count down number of scan lines          2 cycles
 
@@ -1909,7 +1922,6 @@ No_Hit_the_Pit
 
 
 	inc PF_TEMP
-
 
 
 
@@ -1960,20 +1972,17 @@ Draw_Enemy_E2
 .doDrawHero_E2_eb8:
 	lax     (Hero_Ptr),y     
 
-
-
-
-
 	lda     (HeroGraphicsColorPtr),y     
- 
-
-
 
 	cpy Row_1
 	bcc EndLine4
+
+
+
 	STA WSYNC
 	JMP Draw_Enemy_E2
 EndLine4 
+
 	  	;this is where the arm color is being messed up
 EndLin4b STA WSYNC 
 ;-----------------------this needs to run for 8 lines, the size of an enemy
@@ -2003,13 +2012,21 @@ collisionplayermissle
 	STA Other_Hit  ;4 cycles
 	JMP Hit_Baddie
 No_Hit_the_Baddie
+	lda Grapple
+	beq NotHitPf
+	STA Player_Hit	
+
+NotHitPf
 	BIT CXPPMM ;3 cycles
 	BPL Hit_Baddie ;2 cycles
 	LDA Multi_Temp ; 3 cycles
-	ORA Player_Hit ;4 cycles`
+;	ORA Player_Hit ;4 cycles`
 	STA Player_Hit  ;4 cycles
+
 	.NOP
 	.NOP
+NOCOLLISIONPF2
+
 Hit_Baddie
 ;--------New Collision Detection Style
 
@@ -2116,6 +2133,27 @@ pitposition
 	sta COLUP0
 
 
+
+	
+NOCOLLISIONPF
+;PFCOLLISION
+;---------collision
+;	BIT CXP1FB
+;	BPL No_Hit_the_Fire ;2 cycles
+;	LDA #%10000000
+;	ORA Grapple ;4 cycles
+;	STA Grapple  ;4 cycles
+;No_Hit_the_Fire
+;---------collision
+;BALLCOLLISION
+;---------collision
+;	BIT CXP1FB
+;	BPL No_Hit_the_Ball ;2 cycles
+;	LDA #%01000000
+;	ORA Grapple ;4 cycles
+;	STA Grapple  ;4 cycles
+;No_Hit_the_Ball
+;---------collision
 
 ;	lda TempPit_XPos ;3
 ;	clc	;2
@@ -2351,8 +2389,8 @@ EndScanLoop_E0_cz
 
 
 ;php sword stuff
-  cpy Hero_Sword_Pos  ;3
-  php
+;  cpy Hero_Sword_Pos  ;3
+;  php
 ; php sword stuff
 
 
@@ -2369,14 +2407,14 @@ EndScanLoop_E0_cz
 ALWAYSQUAKE
 	STA WSYNC
 	STA WSYNC
-
-
-
-	
 NOQUAKE2
 
 
-
+	LDA #0
+	STA PF0
+	STA PF1
+	STA PF2
+	
 	LDX #$0F
 	LDA #%01101000
 	STA CTRLPF
@@ -2391,19 +2429,19 @@ NOQUAKE2
 	LDA NUM0,y
 	SAX E0_Ptr
 	
-;	INY
+
 	LDA NUM0+1,y
 	SAX E1_Ptr
 
-;	iny
+
 	LDA NUM0+2,y
 	SAX E2_Ptr
 
-;	iny
+
 	LDA NUM0+3,y
 	SAX E3_Ptr
 	
-;	iny
+
 	LDA NUM0+4,y
 	SAX E4_Ptr
 
@@ -2414,7 +2452,7 @@ NOQUAKE2
 
 
 LINEA
-;	STA WSYNC  
+ 
 
 	LDA Score1
 	AND #$F0
@@ -2427,29 +2465,26 @@ LINEA
 	ORA E0_Ptr
 	STA E0_Ptr
 
-;	INY
+
 	LDA NUM0+1,y
 	AND #$F0
 	ORA E1_Ptr
 	STA E1_Ptr
 
 	
-	STA WSYNC  
 
-;	INY
 	LDA NUM0+2,y
 	AND #$F0
 	ORA E2_Ptr
 	STA E2_Ptr
 
-;	INY
 	LDA NUM0+3,y
 	AND #$F0
 	ORA E3_Ptr
 	STA E3_Ptr
 
 
-;	INY
+
 	LDA NUM0+4,y
 	AND #$F0
 	ORA E4_Ptr
@@ -2468,10 +2503,6 @@ LINEA
 
 
 LINEB
-	STA WSYNC  
-
-
-
 	
 
 
@@ -2559,7 +2590,7 @@ KILLLINKS
 
 ;	STA #E1_Health,y
 
-	STA #Pit1_XPos,y
+;	STA #Pit1_XPos,y
 	STA Link
 	STA Enemy_Life ;Kills all life on screen, only bosses and related monsters should be on screen
 
@@ -2593,7 +2624,7 @@ LINEE
 	LDA NUM0_+4,y
 	STA EnemyGraphicsColorPtr_E6
 LINEF
-	STA WSYNC  
+;	STA WSYNC  
 
 	LDA Potion
 	AND #%00000111
@@ -2605,28 +2636,28 @@ LINEF
 	LDA ARNUM0,y
 	STA E2_Ptr2
 
-;	INY
+
 	LDA ARNUM0+1,y
 	STA E3_Ptr2
 
-;	INY
+
 	LDA ARNUM0+2,y
 	STA E4_Ptr2
 
-;	INY
+
 	LDA ARNUM0+3,y
 	STA E5_Ptr2
 
-;	INY
+
 	LDA ARNUM0+4,y
 	STA E6_Ptr2
 
 
 
-	LDA #$FF
-	STA COLUPF
+;	LDA #$FF
+;	STA COLUPF
 
-	STA WSYNC
+;	STA WSYNC
 rand_8
 	LDA	RNG		; get seed
 	BNE Not_Zero
@@ -2640,12 +2671,20 @@ no_eor
 	STA	RNG		; save number as next seed
 
 	
-	STA WSYNC
+
 
  ;EnemyGraphicsColorPtr_E2
 
+
 	LDY #5
+
+WSYNCAMT
 	STA WSYNC
+	DEY
+	BNE WSYNCAMT
+	
+	LDY #5
+	
 
 
 	JMP CalcScore
@@ -3341,12 +3380,13 @@ CalcScore
 
 
 
+
 	NOP
 	NOP
 
 
 
-	LDA #0		; 4 cycles
+	LDA #00		; 4 cycles
 	STA PF0			; 3 cycles
 	LDA Player_Health		; 4 cycles
 	STA PF1			; 3 cycles
@@ -3369,7 +3409,7 @@ CalcScore
 	BNE CalcScore
 
 
-	LDA #0		
+	LDA #$00		
 	STA PF0
 	STA PF1
 	STA PF2
@@ -3436,15 +3476,15 @@ P0left
 	SET 
 	ROR PF_TEMP
 
-	LDA Pause
-	BNE DontmovePit
+;	LDA Pause
+;	BNE DontmovePit
 	 
 DontmovePit
-	LDA Pit0_XPos-1,x 
-	CMP #Far_Right
-	BCC PAUSED2
-	LDA #0
-	STA Pit0_XPos-1,x 
+;	LDA Pit0_XPos-1,x 
+;	CMP #Far_Right
+;	BCC PAUSED2
+;	LDA #0
+;	STA Pit0_XPos-1,x 
 PAUSED2
 
 
@@ -3466,7 +3506,7 @@ PAUSED2
 	LDA Player_Health
 	BNE Dont_Reset
 
-	LDA $0F
+	LDA #$F0
 	STA Player_Health
 	STA Hero_YPosFromBot
 Dont_Reset
