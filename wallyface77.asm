@@ -1,8 +1,4 @@
 ;--------------------------------------------------------------
-;make two sets of top data. First set is just the first screen
-;the second set is where you grab a bit at a time to shift in.
-;or start all zero and shift in the bits
-;maybe make random mountains, look at last 2 bits of five and random next?
 ;enemys still using skip draw, can remove some calculations from top now.
 ;Add Score HHH  XX  SSSSS
 ;--------------------------------------------------------------
@@ -16,10 +12,10 @@ C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 12	;height of hero sprite
 C_KERNAL_HEIGHT 	= 181	;height of kernal/actually the largest line on the screen ;was 186
 Far_Left		= 36
-Far_Right		= 140
+Far_Right		= 126
 Far_Right_Hero		= 148
 Far_Up_Hero		= C_KERNAL_HEIGHT-6
-Far_Down_Hero		= 1+C_P1_HEIGHT
+Far_Down_Hero		= 7+C_P1_HEIGHT
 Enemy_Far_Left		= 1
 Enemy_Row_0		= 181  ;185
 Enemy_Row_E0		= 125  ;160
@@ -40,35 +36,27 @@ ROLLING_COUNTER 	ds 1
 Pos			ds 1
 
 
-E0_YPosFromBot 		ds 1	;Vertical position
-E0_XPos 		ds 1	;horizontal position
-E0_Y 			ds 1	;needed for skipdraw
 E0_Ptr 			ds 2	;ptr to current graphic
-E0_Hit			ds 1	;collision detection
-
-E1_YPosFromBot 		ds 1	;Vertical position
-E1_XPos 		ds 1	;horizontal position
-E1_Y 			ds 1	;needed for skipdraw
 E1_Ptr 			ds 2	;ptr to current graphic
-E1_Hit			ds 1	;collision detection
-
-E2_YPosFromBot 		ds 1	;Vertical position
-E2_XPos 		ds 1	;horizontal position
-E2_Y 			ds 1	;needed for skipdraw
 E2_Ptr 			ds 2	;ptr to current graphic
-E2_Hit			ds 1	;collision detection
-
-E3_YPosFromBot 		ds 1	;Vertical position
-E3_XPos 		ds 1	;horizontal position
-E3_Y 			ds 1	;needed for skipdraw
 E3_Ptr 			ds 2	;ptr to current graphic
-E3_Hit			ds 1	;collision detection
-
-E4_YPosFromBot 		ds 1	;Vertical position
-E4_XPos 		ds 1	;horizontal position
-E4_Y 			ds 1	;needed for skipdraw
 E4_Ptr 			ds 2	;ptr to current graphic
+EnemyGraphicsColorPtr_E0	ds 2
+EnemyGraphicsColorPtr_E1	ds 2
+EnemyGraphicsColorPtr_E2	ds 2
+EnemyGraphicsColorPtr_E3	ds 2
+EnemyGraphicsColorPtr_E4	ds 2
+E0_XPos 		ds 1	;horizontal position
+E1_XPos 		ds 1	;horizontal position
+E2_XPos 		ds 1	;horizontal position
+E3_XPos 		ds 1	;horizontal position
+E4_XPos 		ds 1	;horizontal position
+E0_Hit			ds 1	;collision detection
+E1_Hit			ds 1	;collision detection
+E2_Hit			ds 1	;collision detection
+E3_Hit			ds 1	;collision detection
 E4_Hit			ds 1	;collision detection
+
 
 Hero_YPosFromBot 	ds 2	;Vertical position
 Hero_XPos 		ds 2	;horizontal position
@@ -76,11 +64,6 @@ Hero_Y 			ds 1	;needed for skipdraw
 Hero_Ptr 		ds 2	;ptr to current graphic
 Hero_Sword_Pos		ds 1
 HeroGraphicsColorPtr	ds 2
-EnemyGraphicsColorPtr_E0	ds 2
-EnemyGraphicsColorPtr_E1	ds 2
-EnemyGraphicsColorPtr_E2	ds 2
-EnemyGraphicsColorPtr_E3	ds 2
-EnemyGraphicsColorPtr_E4	ds 2
 
 
 Graphics_Buffer		ds 1	;buffer for graphics
@@ -132,7 +115,14 @@ SavedStackPointer	ds 1
 
 Score			ds 1	;player Score
 
-ScoreTemp		ds 6	;temp for score lines
+ScoreTempA		ds 5	;temp for score lines
+ScoreTempB		ds 5	;temp for score lines
+ScoreTempC		ds 5	;temp for score lines
+ScoreTempD		ds 5	;temp for score lines
+ScoreTempE		ds 5	;temp for score lines
+
+
+
 	seg code
 	org $F000
 
@@ -158,25 +148,12 @@ ClearMem
 	STA COLUBK	
 
 ;Setting some variables...
-	LDA #Enemy_Row_0-#10 
-	STA E0_YPosFromBot
-	LDA #50
+
+	LDA #Far_Right
 	STA E0_XPos
-	LDA #Enemy_Row_E0-#10 
-	STA E1_YPosFromBot
-	LDA #50
 	STA E1_XPos
-	LDA #Enemy_Row_E1-#10 
-	STA E2_YPosFromBot
-	LDA #50
 	STA E2_XPos
-	LDA #Enemy_Row_E2-#10 
-	STA E3_YPosFromBot
-	LDA #50
 	STA E3_XPos
-	LDA #Enemy_Row_E3-#10 
-	STA E4_YPosFromBot
-	LDA #50
 	STA E4_XPos
 
 	LDA #0
@@ -449,6 +426,8 @@ MOVESET1
 
 ;----------lots of time
 
+
+
 ;----------Scroll Screen in X Axis
 	lda Screen_Location
 	adc #<Screen_Rate
@@ -458,120 +437,79 @@ MOVESET1
 	sta Screen_Location+1	
 ;----------Scroll Screen in X Axis
 
+
 ;collisions
-	LDA #%10000000
 	BIT E0_Hit		
-	BEQ NoCollisionP0	;skip if not hitting...	
+	BPL NoCollisionP0	;skip if not hitting...	
 	LDA #%11111110
 	AND Enemy_Life
 	STA Enemy_Life
 NoCollisionP0
+	
 
 ;collisions
-	LDA #%10000000
 	BIT E1_Hit		
-	BEQ NoCollisionP1	;skip if not hitting...	
+	BPL NoCollisionP1	;skip if not hitting...	
 	LDA #%11111101
 	AND Enemy_Life
 	STA Enemy_Life
 NoCollisionP1
 
 ;collisions
-	LDA #%10000000
 	BIT E2_Hit		
-	BEQ NoCollisionP2	;skip if not hitting...	
+	BPL NoCollisionP2	;skip if not hitting...	
 	LDA #%11111011
 	AND Enemy_Life
 	STA Enemy_Life
 NoCollisionP2
 
 ;collisions
-	LDA #%10000000
 	BIT E3_Hit		
-	BEQ NoCollisionP3	;skip if not hitting...	
+	BPL NoCollisionP3	;skip if not hitting...	
 	LDA #%11110111
 	AND Enemy_Life
 	STA Enemy_Life
 NoCollisionP3
 
 ;collisions
-	LDA #%10000000
 	BIT E4_Hit		
-	BEQ NoCollisionP4	;skip if not hitting...	
+	BPL NoCollisionP4	;skip if not hitting...	
 	LDA #%11101111
 	AND Enemy_Life
 	STA Enemy_Life
 NoCollisionP4
 
+;------------------------------------------
+
 
 	lda #%00000001
+	sta PF_TEMP
+	ldx #0
+;------------------------
+RESSURECT
 	and Enemy_Life
 	BNE alive0
-	LDA ROLLING_COUNTER
-	CMP #$C0 ;doesn't matter just want each to be different
+	CPX ROLLING_COUNTER
 	BNE alive0
-	lda #%00000001
+	lda #Far_Right-#1
+	sta E0_XPos,x
+	lda PF_TEMP
 	ora Enemy_Life
 	sta Enemy_Life
-	lda #Far_Right-#1
-	sta E0_XPos
-	
+
 alive0
-
-
-	lda #%00000010
-	and Enemy_Life
-	BNE alive2
-	LDA ROLLING_COUNTER
-	CMP #$1 ;doesn't matter just want each to be different
-	BNE alive2
-	lda #%00000010
-	ora Enemy_Life
-	sta Enemy_Life
-	lda #Far_Right-#1
-	sta E1_XPos
 	
-alive2
+	INX
+	lda PF_TEMP
+	CLC
+	ROL
+	sta PF_TEMP
+	cmp #%00100000
+	bne RESSURECT
+	
 
-	lda #%00000100
-	and Enemy_Life
-	BNE alive3
-	LDA ROLLING_COUNTER
-	CMP #$10 ;doesn't matter just want each to be different
-	BNE alive3
-	lda #%00000100
-	ora Enemy_Life
-	sta Enemy_Life
-	lda #Far_Right-#1
-	sta E2_XPos
+;---------------------------------------
 
-alive3
-
-	lda #%00001000
-	and Enemy_Life
-	BNE alive4
-	LDA ROLLING_COUNTER
-	CMP #$40 ;doesn't matter just want each to be different
-	BNE alive4
-	lda #%00001000
-	ora Enemy_Life
-	sta Enemy_Life
-	lda #Far_Right-#1
-	sta E3_XPos
-alive4
-
-	lda #%00010000
-	and Enemy_Life
-	BNE alive5
-	LDA ROLLING_COUNTER
-	CMP #$80 ;doesn't matter just want each to be different
-	BNE alive5
-	lda #%00010000
-	ora Enemy_Life
-	sta Enemy_Life
-	lda #Far_Right-#1
-	sta E4_XPos
-alive5
 
 ;setup pic animations ----------------------------------------------
 
@@ -663,16 +601,9 @@ alive1
 
 notalive1	
 
-	lda #Enemy_Row_0 + #C_P0_HEIGHT - #1
-	sec
-	sbc E0_YPosFromBot ;subtract integer byte of distance from bottom
-	sta E0_Y
-
 	lda E0_Ptr
 	sec
-	sbc E0_YPosFromBot	;integer part of distance from bottom
-	clc
-	adc #C_P0_HEIGHT - #6
+	sbc #Enemy_Row_0 -#C_P0_HEIGHT - #4	;integer part of distance from bottom
 	sta E0_Ptr	;2 byte
 
 	LDA #<EnemyGraphicsColor0
@@ -682,9 +613,7 @@ notalive1
  
 	lda EnemyGraphicsColorPtr_E0
 	sec
-	sbc E0_YPosFromBot
-	clc
-	adc #C_P0_HEIGHT - #6
+	sbc #Enemy_Row_0-#4-#C_P0_HEIGHT
 	STA EnemyGraphicsColorPtr_E0
 ;setup pic animations ----------------------------------------------
 
@@ -715,17 +644,10 @@ alive2b
 
 notalive2b
 
-	lda #Enemy_Row_E0 + #C_P0_HEIGHT - #1
-	sec
-	sbc E1_YPosFromBot ;subtract integer byte of distance from bottom
-	sbc #3 ;subtract extra because not enough time to dec in kernal
-	sta E1_Y
 
 	lda E1_Ptr
 	sec
-	sbc E1_YPosFromBot	;integer part of distance from bottom
-	clc
-	adc #C_P0_HEIGHT - #5
+	sbc #Enemy_Row_E0-#5-#C_P0_HEIGHT	;integer part of distance from bottom
 	sta E1_Ptr	;2 byte
 
 	LDA #<EnemyGraphicsColor4
@@ -735,9 +657,7 @@ notalive2b
  
 	lda EnemyGraphicsColorPtr_E1
 	sec
-	sbc E1_YPosFromBot
-	clc
-	adc #C_P0_HEIGHT - #5
+	sbc #Enemy_Row_E0-#5-#C_P0_HEIGHT
 	STA EnemyGraphicsColorPtr_E1
 
 ;setup pic animations ----------------------------------------------
@@ -770,18 +690,10 @@ notalive3
 
 
 
-	lda #Enemy_Row_E1 + #C_P0_HEIGHT - #1
-	sec
-	sbc E2_YPosFromBot ;subtract integer byte of distance from bottom
-	sbc #3 ;subtract extra because not enough time to dec in kernal
-	sta E2_Y
-
 
 	lda E2_Ptr
 	sec
-	sbc E2_YPosFromBot	;integer part of distance from bottom
-	clc
-	adc #C_P0_HEIGHT - #5
+	sbc #Enemy_Row_E1-#5-#C_P0_HEIGHT	;integer part of distance from bottom
 	sta E2_Ptr	;2 byte
 
 
@@ -792,9 +704,7 @@ notalive3
  
 	lda EnemyGraphicsColorPtr_E2
 	sec
-	sbc E2_YPosFromBot
-	clc
-	adc #C_P0_HEIGHT - #5
+	sbc #Enemy_Row_E1-#5-#C_P0_HEIGHT
 	STA EnemyGraphicsColorPtr_E2
 
 ;setup pic animations ----------------------------------------------
@@ -824,18 +734,9 @@ alive4b
 notalive4	
 
 
-	lda #Enemy_Row_E2 + #C_P0_HEIGHT - #1
-	sec
-	sbc E3_YPosFromBot ;subtract integer byte of distance from bottom
-	sbc #3 ;subtract extra because not enough time to dec in kernal
-	sta E3_Y
-
-
 	lda E3_Ptr
 	sec
-	sbc E3_YPosFromBot	;integer part of distance from bottom
-	clc
-	adc #C_P0_HEIGHT - #5
+	sbc #Enemy_Row_E2 -#5 -  #C_P0_HEIGHT	;integer part of distance from bottom
 	sta E3_Ptr	;2 byte
 
 	LDA #<EnemyGraphicsColor2
@@ -845,9 +746,7 @@ notalive4
  
 	lda EnemyGraphicsColorPtr_E3
 	sec
-	sbc E3_YPosFromBot
-	clc
-	adc #C_P0_HEIGHT - #5	
+	sbc #Enemy_Row_E2-#5-#C_P0_HEIGHT
 	STA EnemyGraphicsColorPtr_E3
 
 ;setup pic animations ----------------------------------------------
@@ -872,18 +771,11 @@ alive5b
 	sta E4_Ptr+1	;store in high byte of graphic pointer
 notalive5	
 
-	lda #Enemy_Row_E3 + #C_P0_HEIGHT - #1
-	sec
-	sbc E4_YPosFromBot ;subtract integer byte of distance from bottom
-	sbc #4 ;subtract extra because not enough time to dec in kernal
-	sta E4_Y
 
 
 	lda E4_Ptr
 	sec
-	sbc E4_YPosFromBot	;integer part of distance from bottom
-	clc
-	adc #C_P0_HEIGHT-#5
+	sbc #Enemy_Row_E3-#5-#C_P0_HEIGHT	;integer part of distance from bottom
 	sta E4_Ptr	;2 byte
 
 	LDA #<EnemyGraphicsColor3
@@ -893,9 +785,7 @@ notalive5
  
 	lda EnemyGraphicsColorPtr_E4
 	sec
-	sbc E4_YPosFromBot
-	clc
-	adc #C_P0_HEIGHT - #5	
+	sbc #Enemy_Row_E3-#5-#C_P0_HEIGHT
 	STA EnemyGraphicsColorPtr_E4
 
 ;setup pic animations ----------------------------------------------
@@ -1097,8 +987,8 @@ MTNRANGE3
 	STA PF1			; 3 cycles
 	LDA PF2_L3		; 4 cycles
 	STA PF2			; 3 cycles
-	NOP
-	NOP
+	nop
+	nop
 	LDA PF3_L3		; 4 cycles
 	STA PF0			; 3 cycles
 	LDA PF4_L3		; 4 cycles
@@ -1182,17 +1072,17 @@ ScanLoopHero ;start of kernal +++++++++++++++++++++++ for Hero positioning
 EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 .100:
 ;this is to align sword
-	DEC E0_Y
+	nop.w ;these 2 nops allow the hero to do fine positioning???? I don't know why.....
 	DEC Hero_Y
         DEY             ;count down number of scan lines          2 cycles = 
         DEY             ;count down number of scan lines          2 cycles = 
-	DEC E0_Y ;He is decremented because he's within his domain
+	nop.w
 	DEY
 	STA HMCLR
 	LDA MOV_STAT
 	CMP #1
 	BCS MLEFT
-	STA HMCLR
+	;STA HMCLR
 
 	LDA #0
 	JMP MRIGHT
@@ -1251,7 +1141,6 @@ MRIGHT	STA HMM1
 ;skipDraw
 
 	
-;	dec E0_Y
 
 	STA CXCLR   ;3
 
@@ -1459,7 +1348,6 @@ EndScanLoop_E0_c
 ;skipDraw
 
 	
-	dec E1_Y
 
 	LDA CXM1P   ;3
 	STA E0_Hit  ;this line must refer to previous enemy
@@ -1667,8 +1555,7 @@ EndScanLoop_E1_c
 ;skipDraw
 
 	
-	dec E2_Y
-
+	nop.w ;needed to prevent bent sword after commenting out previous line
 	LDA CXM1P   ;3
 	STA E1_Hit  ;this line must refer to previous enemy
 	STA CXCLR   ;3
@@ -1871,7 +1758,6 @@ EndScanLoop_E2_c
 ;skipDraw
 
 	
-	dec E3_Y
 
 	LDA CXM1P   ;3
 	STA E2_Hit  ;this line must refer to previous enemy
@@ -2083,7 +1969,6 @@ EndScanLoop_E3_c
 ;skipDraw
 
 	
-	dec E4_Y
 
 	LDA CXM1P   ;3
 	STA E3_Hit  ;this line must refer to previous enemy
@@ -2194,7 +2079,7 @@ ScanLoop_E4_c
 
         DEY             ;2 count down number of scan lines          2 cycles
 
-	CPY #1 ;3
+	CPY #6 ;3
 
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E4_c                                             ;2 cycles =
@@ -2262,6 +2147,115 @@ EndScanLoop_E4_c
 
 	STA WSYNC  	
 
+	LDA #$00
+	STA CTRLPF
+
+	LDA (#NUM8),Y		; 4 cycles
+	STA PF0			; 3 cycles
+	LDA (#NUM7),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA #$00		; 4 cycles
+	STA PF2			; 3 cycles
+	NOP
+	NOP
+	LDA #$00		; 4 cycles 
+	STA PF0			; 3 cycles
+	LDA (#NUM4),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA (#NUM3),Y		; 4 cycles
+	STA PF2			; 3 cycles
+
+	DEY
+	STA WSYNC  
+
+	
+
+	LDA (#NUM8),Y		; 4 cycles
+	STA PF0			; 3 cycles
+	LDA (#NUM7),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA (#NUM6),Y		; 4 cycles
+	STA PF2			; 3 cycles
+	NOP
+	NOP
+	LDA #$00		; 4 cycles 
+	STA PF0			; 3 cycles
+	LDA (#NUM4),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA (#NUM3),Y		; 4 cycles
+	STA PF2			; 3 cycles
+
+	DEY
+	STA WSYNC    
+
+
+
+
+	LDA (#NUM8),Y		; 4 cycles
+	STA PF0			; 3 cycles
+	LDA (#NUM7),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA #$00		; 4 cycles
+	STA PF2			; 3 cycles
+	NOP
+	NOP
+	LDA #$00		; 4 cycles 
+	STA PF0			; 3 cycles
+	LDA (#NUM4),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA (#NUM3),Y		; 4 cycles
+	STA PF2			; 3 cycles
+
+	DEY
+	STA WSYNC   
+
+
+
+	LDA (#NUM8),Y		; 4 cycles
+	STA PF0			; 3 cycles
+	LDA (#NUM7),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA #$00		; 4 cycles
+	STA PF2			; 3 cycles
+	NOP
+	NOP
+	LDA #$00		; 4 cycles 
+	STA PF0			; 3 cycles
+	LDA (#NUM4),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA (#NUM3),Y		; 4 cycles
+	STA PF2			; 3 cycles
+
+	DEY
+	STA WSYNC  
+
+
+
+	LDA (#NUM8),Y		; 4 cycles
+	STA PF0			; 3 cycles
+	LDA (#NUM7),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA #$00		; 4 cycles
+	STA PF2			; 3 cycles
+	NOP
+	NOP
+	LDA #$00		; 4 cycles 
+	STA PF0			; 3 cycles
+	LDA (#NUM4),Y		; 4 cycles
+	STA PF1			; 3 cycles
+	LDA (#NUM3),Y		; 4 cycles
+	STA PF2			; 3 cycles
+	LDA #0
+	STA PF0
+	STA PF1
+	STA PF2
+	DEY
+	STA WSYNC   
+		
+
+
+	LDA #$00
+	STA CTRLPF
 
 
 
@@ -2280,7 +2274,7 @@ EndScanLoop_E4_c
 	LDA E0_XPos	;2
 	CMP #Far_Right	;2
 	BCC P0Right	;2(3)
-	LDA #Enemy_Far_Left+1 ;2
+	LDA #Far_Right-#1 ;2
 	STA E0_XPos	;3
 P0Right
 
@@ -2291,7 +2285,7 @@ P0Right
 	LDA E1_XPos	;2
 	CMP #Far_Right	;2
 	BCC P1Right	;2(3)
-	LDA #Enemy_Far_Left+1 ;2
+	LDA #Far_Right-#1 ;2
 	STA E1_XPos	;3
 P1Right
 
@@ -2303,7 +2297,7 @@ P1Right
 	LDA E2_XPos	;2
 	CMP #Far_Right	;2
 	BCC P2Right	;2(3)
-	LDA #Enemy_Far_Left+1 ;2
+	LDA #Far_Right-#1 ;2
 	STA E2_XPos	;3
 P2Right
 
@@ -2315,7 +2309,7 @@ P2Right
 	LDA E3_XPos	;2
 	CMP #Far_Right	;2
 	BCC P3Right	;2(3)
-	LDA #Enemy_Far_Left+1 ;2
+	LDA #Far_Right-#1 ;2
 	STA E3_XPos	;3
 P3Right
 
@@ -2327,7 +2321,7 @@ P3Right
 	LDA E4_XPos	;2
 	CMP #Far_Right	;2
 	BCC P4Right	;2(3)
-	LDA #Enemy_Far_Left+1 ;2
+	LDA #Far_Right-#1 ;2
 	STA E4_XPos	;3
 P4Right
 
@@ -2343,6 +2337,8 @@ P4Right
 	lda #%11111110
 	and Enemy_Life
 	sta Enemy_Life
+	LDA Far_Right
+	STA E0_XPos
 P0left
 
 	STA WSYNC
@@ -2355,6 +2351,8 @@ P0left
 	lda #%11111101
 	and Enemy_Life
 	sta Enemy_Life
+	LDA Far_Right
+	STA E1_XPos
 
 P1left
 
@@ -2368,6 +2366,8 @@ P1left
 	lda #%11111011
 	and Enemy_Life
 	sta Enemy_Life
+	LDA Far_Right
+	STA E2_XPos
 
 P2left
 
@@ -2381,6 +2381,8 @@ P2left
 	lda #%11110111
 	and Enemy_Life
 	sta Enemy_Life
+	LDA Far_Right
+	STA E3_XPos
 P3left
 	STA WSYNC
 	DEY
@@ -2392,9 +2394,34 @@ P3left
 	lda #%11101111
 	and Enemy_Life
 	sta Enemy_Life
+	LDA Far_Right
+	STA E4_XPos
 P4left
 	STA WSYNC
 	DEY
+
+;calculate score to display on next screen
+
+;ScoreTempA		ds 4	;temp for score lines
+;need to setup ScoreTempA just like graphics, with pointer
+
+	ldx Score
+	stx ScoreTempA
+	stx ScoreTempA,1
+	stx ScoreTempA,2
+	stx ScoreTempA,3
+	stx ScoreTempA,4
+	stx ScoreTempA,5
+	stx ScoreTempA,6
+	stx ScoreTempA,7
+	stx ScoreTempA,8
+	stx ScoreTempA,9
+
+
+
+	STA WSYNC
+	DEY
+	
 
 OverScanWait
 	STA WSYNC
@@ -2402,12 +2429,69 @@ OverScanWait
 	BNE OverScanWait
 	JMP  MainLoop   
 
+ ;           ORG $F0E0;F9C6
 
+NUM0
+        .byte #%11101110;
+        .byte #%10101010;
+        .byte #%10101010;
+        .byte #%10101010;
+        .byte #%11101110;
+NUM1
+        .byte #%00100010;
+        .byte #%00100010;
+        .byte #%00100010;
+        .byte #%00100010;
+        .byte #%00100010;
+NUM2
+        .byte #%11101110;
+        .byte #%00100010;
+        .byte #%11101110;
+        .byte #%10001000;
+        .byte #%11101110;
+NUM3
+        .byte #%11101110;
+        .byte #%00100010;
+        .byte #%11101110;
+        .byte #%00100010;
+        .byte #%11101110;
+NUM4
+        .byte #%00100010;
+        .byte #%00100010;
+        .byte #%11101110;
+        .byte #%10101010;
+        .byte #%10101010;
+NUM5
+        .byte #%11101110;
+        .byte #%00100010;
+        .byte #%10101110;
+        .byte #%10001000;
+        .byte #%11101110;
+NUM6
+        .byte #%11101110;
+        .byte #%10101010;
+        .byte #%11101110;
+        .byte #%00100010;
+        .byte #%11101110;
+NUM7
+        .byte #%00100010;
+        .byte #%00100010;
+        .byte #%00100010;
+        .byte #%00100010;
+        .byte #%11101110;
+NUM8
+        .byte #%11101110;
+        .byte #%10101010;
+        .byte #%11101110;
+        .byte #%10101010;
+        .byte #%11101110;
+NUM9
+        .byte #%00100010;
+        .byte #%00100010;
+        .byte #%11101110;
+        .byte #%10101010;
+        .byte #%11101110;
 
-
-
-
-;	org $FDD0 ;f94a is the min that can be used
 
 
 ;-----------------------------
