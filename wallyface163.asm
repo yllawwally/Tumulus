@@ -22,7 +22,7 @@
 ;slide ceratures up and down
 ;allow creatures to move to a different lane if overeyes > 0
 ;Need to move monsters order around so that the proper ones damage player
-
+;make sure points are scored for potion killed baddies
 
 
 ;BUGS
@@ -30,15 +30,14 @@
 ;tree doesn't damage player
 ;make dragon not move
 ;make dragon fire move
-;bottom part of boss changes direction when hit.
-;when you kill a monster on lane 3, the screen flickers for a moment
 ;Skyline is messed up, when monsters on screen, need to adjust color palette
-;fire potion doesn't kill only brings them down to zero(artificially say they are hit to kill?)
 ;Using potion sometimes messes up creature, perhaps only on last lane
 ;Rat is miscolored
+;Potion once again destroys creatures
+;Multi-Sprite bad guy has one line that slide, this is because it's reinitialzing the hor position
 
 ;FIXED
-
+;when you kill a monster on lane 3, the screen flickers for a moment
 
 
 ;--------------------------------------------------------------
@@ -143,7 +142,7 @@ Enemy_Row_E7		= 23   ;35
 Min_Eye_Trigger		= 15   ;was 8
 Min_Damage		= 8    ;was 8
 LVL1BOSS			= 27
-LVL2BOSS			= 25 ;14 ;This is somehow causing the rolling
+LVL2BOSS			= 25 ;This is somehow causing the rolling
 LVL3BOSS			= 26
 LVL4BOSS			= 28
 LVL5BOSS			= 30
@@ -315,6 +314,7 @@ Baddie_Num		ds 1	;current baddie displayed
 Potion			ds 1	;Potions player currently has
 RNG			ds 1
 Pit_Color		ds 1
+
 	seg code
 	org $F000
 
@@ -450,6 +450,7 @@ PICSET3
 
 
 
+
 	LDA ROLLING_COUNTER
 	AND #7
 	CMP #0
@@ -493,6 +494,7 @@ NS7
 
 
 
+
 SLICE4
 
 	LDA Potion
@@ -503,6 +505,7 @@ SLICE4
 	sta Potion
 	lda #$FF
 	sta Other_Hit
+	sta New_Hit
 	
 OverPotionB	
 	JMP ENDSLICES
@@ -608,7 +611,8 @@ ENDSLICES
 ;	STA HMOVE
 
 	
-
+	LDA Direction
+	STA Multi_Temp
 	LDY #0
 	LDX Link
 	BCC NotBossLevel
@@ -849,6 +853,13 @@ Did_Not_Hit_Pit
 
 not_on_horse 
 
+
+
+	LDA Link
+	BEQ LinkZero
+	LDA Multi_Temp
+	STA Direction
+LinkZero
 ;setup pic animations ----------------------------------------------
 
 	lda ROLLING_COUNTER
@@ -1347,7 +1358,7 @@ NOTONHORSEKNIFE
 	LDA #$44
 	STA COLUP0
 
-	LDA #%00000001	
+	LDA #%00000001
 	STA VDELBL
 	LDX #0
 
@@ -1490,8 +1501,9 @@ New_E2_Start
 	
 	lda Pit0_XPos,x
 	sta TempPit_XPos
-	CMP #0
+	CMP #$0
 	beq NOPITTHISLEVEL
+	jmp NOPITTHISLEVEL ;This may need to be removed to fix pit problems
 	clc ;this is needed beacause of the subtract, and the sword compare
 	lda Enemy_Row_Data,x
 	sbc #14 ;was 14
@@ -1591,7 +1603,8 @@ new_E1_line1  ;   STA WSYNC
         DEY             ;2 count down number of scan lines          2 cycles
 
 	
-
+;You have about 16 cycles here.
+;	sta PF_TEMP
 
 
 new_E1_line2     STA WSYNC                ;not enough time                               
@@ -1712,7 +1725,7 @@ new_E1_line3     STA WSYNC
 	stx COLUP1
  	php	;2
 	DEY
-	
+;Need to jump to Endline2 if in the middle of linked monster	
 EndLine1   STA WSYNC  
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .600: SUBROUTINE
@@ -1734,6 +1747,7 @@ EndLine1   STA WSYNC
 ;sword php style	
 EndLine2        STA WSYNC                                                ;3 cycles =
 	STA HMOVE
+AfterEndLine2
 
 ;---------------------------------------------
 
@@ -1911,7 +1925,7 @@ Hit_Baddie
 	lax     (Hero_Ptr),y      ; 5
 	
 	lda 	TempPit_XPos	
-	BEQ	MidLine5
+	BEQ	MidLine5 ;this sets up the boss mid section
 	lda 	#$0F      ;2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 MidLine5
@@ -1933,8 +1947,8 @@ EndLine5 ;	sta WSYNC
 	php	
 	stx	GRP1	;3
 
-	lda	Pit_Color
-	sta 	COLUP0
+;	lda	Pit_Color
+;	sta 	COLUP0
 
 	pla
 
@@ -2530,7 +2544,6 @@ no_eor
 
 	JMP CalcScore
 
-
 DragonGraphicsb .byte #%00000100;$0C ;now a dragon head
         .byte #%00001111;$0E
         .byte #%00001101;$0C
@@ -2549,6 +2562,7 @@ DragonGraphics1b .byte #%00000100;$0C ;now a dragon head
         .byte #%01111111;$0E
         .byte #%01100111;$0C
         .byte #%01100111;$0E
+
 
 EnemyLife
      .byte #100 ;;0,Tree
@@ -2681,7 +2695,7 @@ BADDIEVALUE
      .byte #0 ;;9,Large Pit
      .byte #0 ;;10,Small Pit
      .byte #2 ;;11,Snake
-     .byte #2 ;;12,Bat ;Need to add it
+     .byte #2 ;;12,Bat 
      .byte #1 ;;13,Rat
      .byte #1 ;;14,Homonoculus
      .byte #1 ;;15,Goblin
@@ -3193,7 +3207,6 @@ MandrakeManGraphicsb
         .byte #%00010100;$30
 
 
-
 HeroGraphics2
         .byte #%00000000;$F4
         .byte #%11011000;$F4
@@ -3617,10 +3630,10 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%11000010
      .byte #%00000010
      .byte #%00100010
-     .byte #%01001000
+     .byte #%01001100
      .byte #%01101011
-     .byte #%10000111
-     .byte #%10101000
+     .byte #%10001111
+     .byte #%10101011
      .byte #%11001011
      .byte #%11001110
      .byte #255 ;This is to reset to beginning
@@ -3681,7 +3694,7 @@ NOMOVESET
 	LDA RNG
 	ADC #10
 ;AND #%01111111
-	STA #Pit0_XPos-1,x	 
+;	STA #Pit0_XPos-1,x	 
 
 NOPITCREATION	
 	CMP #11
@@ -3710,6 +3723,7 @@ Level_Color ;One level per monster
 
 
 	org #$FCC0 ;HeroGraphicsColor + #256
+
 
 
 TreeGraphics ;Tree
