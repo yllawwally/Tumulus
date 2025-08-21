@@ -14,16 +14,17 @@
 ;for linked creatures need to set them to same position at the beginning of each frame
 
 
+
+;Dragon's name is scar??? So that way I don't have to fix black line
+
 ;FUTURE FEATURES
 ;Need to add grappling
-;differentiate levels more, not sure there is much I can do
 ;add more creatures
-;maybe monsters shouldn't attack when on fire
 ;slide ceratures up and down
 ;allow creatures to move to a different lane if overeyes > 0
 ;Need to move monsters order around so that the proper ones damage player
 ;make sure points are scored for potion killed baddies
-
+;Can I remove duration, and calculate based on is it a boss, then use rand+level for duration???
 
 ;BUGS
 ;1 line of player is discolored
@@ -31,13 +32,17 @@
 ;make dragon not move
 ;make dragon fire move
 ;Skyline is messed up, when monsters on screen, need to adjust color palette
-;Using potion sometimes messes up creature, perhaps only on last lane
 ;Rat is miscolored
 ;Potion once again destroys creatures
 ;Multi-Sprite bad guy has one line that slide, this is because it's reinitialzing the hor position
+;Touching an enemy causes an extra line
+
+;IMPROVED
+;when you hit a monster on lane 3, the screen flickers for a moment
+
 
 ;FIXED
-;when you kill a monster on lane 3, the screen flickers for a moment
+;killing the guy on 6, also killed the guy on the first lane
 
 
 ;--------------------------------------------------------------
@@ -65,7 +70,7 @@
 ;
 
 ;(Section of don't damage players, but will scare away horse)
-;0,00000,Tree 
+;0,00000,Blank 
 ;1,00001,Horse
 ;2,00010,Mandrake Red Plant
 ;3,00011,Mandrake Blue Plant
@@ -73,7 +78,7 @@
 ;5,00101,Mandrake Blue Man
 ;6,00110,Treasure Chest
 ;7,00111,Weapon Upgrade???
-;8,01000,
+;8,01000, Tree
 ;(Section of monsters that can exit the screen)
 ;9,01001,Large Pit
 ;10,01010,Small Pit
@@ -140,7 +145,7 @@ Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
 Min_Eye_Trigger		= 15   ;was 8
-Min_Damage		= 8    ;was 8
+Min_Damage		= 7    ;was 8
 LVL1BOSS			= 27
 LVL2BOSS			= 25 ;This is somehow causing the rolling
 LVL3BOSS			= 26
@@ -619,7 +624,7 @@ ENDSLICES
 	LDX Other_Hit
 	BEQ HITSCORE
 	INX 
-	DEC E0_Health-1,x
+	DEC E0_Health,x
 	JMP NOSCORE
 HITSCORE
 	LDX Link
@@ -649,8 +654,8 @@ NoCoPo
 	CMP #6
 	BEQ Type4
 
-	CMP #7
-	BEQ Type5
+	CMP #8
+	BEQ Type4
 
 
 ;	CMP #LVL2BOSS+1 ;this is probably what's needed to stop bottom
@@ -845,7 +850,7 @@ KEEPPAUSE
 	LDA #0 ;to fix issue with player corruption from monster touching
 	sta Grapple
 	BCC Did_Not_Hit_Pit 
-	ASL Player_Health
+;	ASL Player_Health
 Hit_Pit
 	sta onhorse
 Did_Not_Hit_Pit
@@ -1907,7 +1912,7 @@ No_Hit_the_Baddie
 	BIT CXPPMM ;3 cycles
 	BPL Hit_Baddie ;2 cycles
 	LDA Multi_Temp ; 3 cycles
-	ORA Player_Hit ;4 cycles
+	ORA Player_Hit ;4 cycles`
 	STA Player_Hit  ;4 cycles
 Hit_Baddie
 ;--------New Collision Detection Style
@@ -1924,11 +1929,13 @@ Hit_Baddie
 .doDrawHero_E0_eb21az:
 	lax     (Hero_Ptr),y      ; 5
 	
+
+
 	lda 	TempPit_XPos	
-	BEQ	MidLine5 ;this sets up the boss mid section
+	BEQ	MidLine5a ;this sets up the boss mid section
 	lda 	#$0F      ;2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-MidLine5
+MidLine5a
 	sta 	GRP0    ;3
 
 
@@ -1939,7 +1946,9 @@ MidLine5
 	cpy Hero_Sword_Pos  ;3
 	sta 	COLUP1 ;3
 
-EndLine5 ;	sta WSYNC
+	;.nop
+
+EndLine5 	sta WSYNC
 
 ;---------------------line for setting up pits-----------------------------------------
 ;sword php style
@@ -2012,9 +2021,8 @@ pitposition
 
 
 
-
-	lda TempPit_XPos ;3
-	clc	;2
+;	lda TempPit_XPos ;3
+;	clc	;2
 
 
 .Div15_Pit   
@@ -2565,7 +2573,7 @@ DragonGraphics1b .byte #%00000100;$0C ;now a dragon head
 
 
 EnemyLife
-     .byte #100 ;;0,Tree
+     .byte #100 ;;0,Empty
      .byte #1 ;;1,Horse
      .byte #1 ;;2,Mandrake Red Plant
      .byte #1 ;;3,Mandrake Blue Plant
@@ -2573,7 +2581,7 @@ EnemyLife
      .byte #1 ;;5,Mandrake Blue Man
      .byte #1 ;;6,Treasure Chest
      .byte #1 ;;7,
-     .byte #1 ;;8,
+     .byte #100 ;;8,Tree
      .byte #100 ;;9,Large Pit
      .byte #100 ;;10,Small Pit
      .byte #1 ;;11,Snake
@@ -2594,9 +2602,9 @@ EnemyLife
      .byte #5 ;;26,Dragon B
      .byte #3 ;;27,Will O Wisp
      .byte #6 ;;28,Vampire a ;Need to add it
-     .byte #6 ;;29,Vampire b ;Need to add it
-     .byte #7 ;;30,Minotaur a;Need to add it
-;     .byte #7 ;;31,Minotaur b;Need to add it might not need this value since it's a copy of monster 30
+ ;    .byte #6 ;;29,Vampire b ;Need to add it
+;     .byte #7 ;;30,Minotaur a;Need to add it
+;     .byte #7 ;;31,Minotaur b;Need to add it might not need this value since it's a copy of monster ;30
 
 
             ORG $F8C0 
@@ -2749,7 +2757,7 @@ nobonus
 	ora Potion
 	sta Potion
 	dec Potion
-	lda Enemy_Life
+	lda #$FF ;Enemy_Life
 	sta Other_Hit
 	jmp NoPotion
 OverPotion
@@ -3342,7 +3350,7 @@ No_Hit_the_Baddie3
 	STA New_Hit  ;4 cycles
 No_Hit_the_Pit2
 
-	LDX #8
+	LDX #8 
 	LDA #%01111111
 	STA PF_TEMP
 
@@ -3356,7 +3364,6 @@ Check_Pos
 	LDA #Far_Left ;2
 	STA E0_XPos-1,x	;3
 P0Right
-
 
 	
 ;Don't allow P0 past Position 160
@@ -3435,7 +3442,24 @@ SkipMoveUp
 	JMP PreOverScanWait
 
 
-
+BlankGraphics
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	
 
 
 	org $FBC0 
@@ -3574,7 +3598,7 @@ HeroGraphics1
 
 
 ;(Section of don't damage players, but will scare away horse)
-;0,00000,Tree 
+;0,00000,Blank 
 ;1,00001,Horse
 ;2,00010,Mandrake Red Plant
 ;3,00011,Mandrake Blue Plant
@@ -3582,17 +3606,17 @@ HeroGraphics1
 ;5,00101,Mandrake Blue Man
 ;6,00110,Treasure Chest
 ;7,00111,Weapon Upgrade???
-;8,01000,
+;8,01000, Tree
 ;(Section of monsters that can exit the screen)
 ;9,01001,Large Pit
 ;10,01010,Small Pit
 ;11,01011,Snake
-;12,01100,Bat ;need to fix color
-;13,01101,Rat ;Need to add it
-;14,01110,Homonoculus
-;15,01111,Goblin ;Need to add it
+;12,01100,Bat 
+;13,01101,Rat 
+;14,01110,Homonoculus 
+;15,01111,Goblin
 ;(Section of monsters that must be defeated)
-;16,10000,RedCap ;Need to add it
+;16,10000,RedCap ;Palette swap of Goblin???
 ;17,10001,Orc
 ;18,10010,Ghost
 ;19,10011,Snake Man
@@ -3612,12 +3636,12 @@ HeroGraphics1
 
 
 NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
-     .byte #%00001011
+     .byte #%00001000
      .byte #%00101100 
      .byte #%10011001 ;mummy arms
      .byte #%10111010 ;mummy legs
      .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
-     .byte #%01100010
+     .byte #%01100001
      .byte #%11000011 
      .byte #%11001011
      .byte #%00001011
@@ -3720,7 +3744,7 @@ Level_Color ;One level per monster
 		.byte #$E4
 		.byte #$F4
 
-
+;You have 41 bytes here. But it will be needed at add more monsters, for nextbaddie.
 
 	org #$FCC0 ;HeroGraphicsColor + #256
 
@@ -3907,7 +3931,7 @@ LEFTAUD
 
 
 ;(Section of don't damage players, but will scare away horse)
-;0,00000,Tree 
+;0,00000,Blank 
 ;1,00001,Horse
 ;2,00010,Mandrake Red Plant
 ;3,00011,Mandrake Blue Plant
@@ -3915,17 +3939,17 @@ LEFTAUD
 ;5,00101,Mandrake Blue Man
 ;6,00110,Treasure Chest
 ;7,00111,Weapon Upgrade???
-;8,01000,
+;8,01000, Tree
 ;(Section of monsters that can exit the screen)
 ;9,01001,Large Pit
 ;10,01010,Small Pit
 ;11,01011,Snake
 ;12,01100,Bat 
 ;13,01101,Rat 
-;14,01110,Homonoculus
-;15,01111,Goblin ;Need to add it
+;14,01110,Homonoculus 
+;15,01111,Goblin
 ;(Section of monsters that must be defeated)
-;16,10000,RedCap ;Need to add it
+;16,10000,RedCap ;Palette swap of Goblin???
 ;17,10001,Orc
 ;18,10010,Ghost
 ;19,10011,Snake Man
@@ -3943,7 +3967,7 @@ LEFTAUD
 ;31,11111,Minotaur b;Need to add it
 
 GraphicsTableLow
-     .byte #<TreeGraphics ;0
+     .byte #<BlankGraphics ;0
 
      .byte #<PonyGraphics ;1
 
@@ -3959,7 +3983,7 @@ GraphicsTableLow
 
      .byte #<UpgradeGraphics ;7
 
-     .byte #<UnusedGraphics ;8
+     .byte #<TreeGraphics ;8
 
      .byte #<LPitGraphics ;9
 
@@ -4010,7 +4034,7 @@ GraphicsTableLow
 
 
 GraphicsTableHigh
-     .byte #>TreeGraphics ;0
+     .byte #>BlankGraphics ;0
 
      .byte #>PonyGraphics ;1
 
@@ -4026,7 +4050,7 @@ GraphicsTableHigh
 
      .byte #>UpgradeGraphics ;7
 
-     .byte #>UnusedGraphics ;8
+     .byte #>TreeGraphics ;8
 
      .byte #>LPitGraphics ;9
 
@@ -4093,7 +4117,7 @@ GraphicsColorTableLow
 
      .byte #<GhostColor ;7
 
-     .byte #<BatColor ;8
+     .byte #<TreeGraphicsColor ;8
 
      .byte #<WarriorColor ;9
 
