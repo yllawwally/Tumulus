@@ -22,12 +22,11 @@
 
 
 ;BUGS
-;Moving and attacking causes an addition line to be added
 ;player has corruption on far right
 ;1 line of player is discolored
 ;snakes don't damage player
 ;tree doesn't damage player
-;screen rolls when touching enemy
+;Mummy has moving middle section
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -313,12 +312,11 @@ ClearMem
 	STA Enemy_Life
 	LDA #%11111111
 	STA Player_Health
-	STA Pit_Color
 
 	LDA #%00010000 ;set playfield to not reflected
 	STA CTRLPF
 	sta duration
-
+	STA Pit_Color
 
 	LDA #%11111000	;The last 3 bits control number and size of players
 			;the second 2 bits control missle size
@@ -326,6 +324,7 @@ ClearMem
 	STA NUSIZ1
 
 	LDX #3
+
 
 LOADPFDATA
 
@@ -354,10 +353,10 @@ LOADPFDATA
 
 MainLoop ;+++++++++++++++++++++++++++The start of a new screen
 MainLoopStart
-	LDA #0
- 	STA PF0
-	STA PF1
-	STA PF2
+;	LDA #0
+ ;	STA PF0
+;	STA PF1
+;	STA PF2
 	LDA #30
 	STA VSYNC	
 	
@@ -1508,7 +1507,7 @@ new_E1_line2     STA WSYNC                ;not enough time
 ;--------------need to setup all enemy variables--------------------
 
 	ldx #0
-	stx GRP0
+;	stx GRP0
 
 
 
@@ -1797,10 +1796,12 @@ Hit_Baddie
 .doDrawHero_E0_eb21az:
 	lax     (Hero_Ptr),y      ; 5
 	
-	lda 	#$0      ;2
+	lda 	TempPit_XPos	
+	BEQ	MidLine5
+	lda 	#$0F      ;2 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+MidLine5
 	sta 	GRP0    ;3
-
-
 
 
 	lda     (HeroGraphicsColorPtr),y      ; 5
@@ -1888,8 +1889,8 @@ pitposition
 
 	tax
 	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
-	sta HMP0 
-	sta RESP0 
+;	sta HMP0 
+;	sta RESP0 ;Disabling pit movement, because no longer use pits.
 
 ;sword php style	
 EndLine7        STA WSYNC                                                ;3 cycles =
@@ -2384,6 +2385,26 @@ no_eor
 	JMP CalcScore
 
 
+	    ORG $F890
+Mummy0b .byte #%00001110;$0E
+        .byte #%01111110;$0C
+        .byte #%00001110;$0E
+        .byte #%00001110;$0C
+        .byte #%00000100;$0E
+        .byte #%00011100;$0C
+        .byte #%00001100;$0E
+        .byte #%00011100;$0C
+
+
+Mummy1b .byte #%00001110;$0E
+        .byte #%00001110;$0C
+        .byte #%01111110;$0E
+        .byte #%00001110;$0C
+        .byte #%00000100;$0E
+        .byte #%00011100;$0C
+        .byte #%00001100;$0E
+        .byte #%00011100;$0C
+
             ORG $F8C0 
 
 MainPlayerGraphics7
@@ -2527,19 +2548,19 @@ NoPotion
 	;check Hero Sword Attack
 	ldx INPT4
 	bmi NoSwordAttack2 ;(button not pressed)
+	inc swordduration
 	lda swordduration
 	cmp #11
 	bcs NoSwordAttack
 SwordAttack
-	inc swordduration
-	lda swordduration
+;	lda swordduration
 	lsr
 	lsr
 	sta PF_TEMP
 	lda Hero_YPosFromBot
 ;	clc ;carry will always be set because of earlier compare
 	sbc #C_P1_HEIGHT - 10
-	clc
+;	sec
 	sbc PF_TEMP
 	jmp DoneWithSwordAttack
 NoSwordAttack2
@@ -2571,7 +2592,7 @@ DoneWithSwordAttack
 
 ;; moving left, so we need the mirror image
 	LDA #%00001000   ;a 1 in D3 of REFP0 says make it mirror
-	STA REFP0
+;	STA REFP0
 	STA REFP1
 	LDA #%00000001
 	STA MOV_STAT
@@ -2593,7 +2614,7 @@ SkipMoveLeft
 	lda Hero_XPos
 	CMP #Far_Right_Hero
 	BCS TOOFARTOMOVE
-	clc
+;	clc ;carry can never be set here, because it would have jumped from previous statement
 	adc #<HERO_SPEED_HOR
 	sta Hero_XPos
 	lda Hero_XPos+1
@@ -2602,7 +2623,7 @@ SkipMoveLeft
 TOOFARTOMOVE
 ;; moving right, cancel any mirrorimage
 	LDA #%00000000
-	STA REFP0
+;	STA REFP0
 	STA REFP1
 	STA MOV_STAT
 
@@ -2683,6 +2704,8 @@ MainPlayerGraphics9b
         .byte #%00010000;
         .byte #%01110000;
         .byte #%01110000;
+
+
 
 PonyGraphics
 
@@ -2804,6 +2827,8 @@ ARNUM5
  .byte #%00101000;
  .byte #%00101000;
  .byte #%01111100;
+
+
 
 DistFromBottom
 	.byte #Enemy_Row_0-#8-#C_P0_HEIGHT	
@@ -3247,6 +3272,25 @@ HeroGraphicsColor3
      .byte #$08
 
 
+Mummy0a
+        .byte #%00000110;$0E
+        .byte #%00000010;$0C
+        .byte #%00110010;$0E
+        .byte #%00011110;$0C
+        .byte #%00001110;$0E
+        .byte #%00000110;$0C
+        .byte #%00000110;$0E
+	.byte #%00001110;$0C
+Mummy1a
+        .byte #%00001100;$0E
+        .byte #%00001110;$0C
+        .byte #%00000110;$0E
+        .byte #%00000110;$0C
+        .byte #%00000110;$0E
+        .byte #%00000110;$0C
+        .byte #%00000110;$0E
+        .byte #%00001110;$0C
+
 HeroGraphics0
         .byte #%00000000;$22
         .byte #%11011000;$F4
@@ -3355,12 +3399,15 @@ MainPlayerGraphics1
 
 
 
+
+
+
 NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%00000111
-     .byte #%00100001
-     .byte #%01000010
-     .byte #%01100011
-     .byte #%10000100
+     .byte #%00100001 
+     .byte #%10001111 ;mummy arms
+     .byte #%10110000 ;mummy legs
+     .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
      .byte #%01101110
      .byte #%11000100
      .byte #%11000100
@@ -3386,10 +3433,10 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
 NEXTBADDIEDUR
 	.byte #$0
 	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
-	.byte #$10
+	.byte #$0
+	.byte #$0
+	.byte #$0
+	.byte #$1
 	.byte #$10
 	.byte #$10
 	.byte #$10
@@ -3560,7 +3607,6 @@ MainPlayerGraphics3
 
 
 
-
 LEFTAUD     
      .byte     #%10000100
      .byte     #%10000100
@@ -3680,9 +3726,9 @@ GraphicsTableLow
 
      .byte #<MainPlayerGraphics30 ;14
 
-     .byte #<TreeGraphics ;15
+     .byte #<Mummy0b ;15
 
-     .byte #<TreeGraphics ;16
+     .byte #<Mummy0a ;16
 
      .byte #<TreeGraphics ;17
 
@@ -3723,9 +3769,9 @@ GraphicsTableHigh
 
      .byte #>MainPlayerGraphics30 ;14
 
-     .byte #>TreeGraphics ;15
+     .byte #>Mummy0b ;15
 
-     .byte #>TreeGraphics ;16
+     .byte #>Mummy0a ;16
 
      .byte #>TreeGraphics ;17
 
@@ -3765,11 +3811,11 @@ GraphicsColorTableLow
 
      .byte #<EnemyGraphicsColor5 ;15 blue
 
-     .byte #<EnemyFireColor ;16
+     .byte #<MummyColor ;16
 
-     .byte #<TreeGraphicsColor ;17
+     .byte #<MummyColor ;17
 
-     .byte #<TreeGraphicsColor ;18
+     .byte #<EnemyFireColor ;18
 
      .byte #<TreeGraphicsColor ;19
 
@@ -4006,6 +4052,18 @@ EnemyFireColor
         .byte #$02
 
 
+MummyColor
+        .byte #$0E;
+        .byte #$0C;
+        .byte #$0E;
+        .byte #$0C;
+        .byte #$0E;
+        .byte #$0C;
+        .byte #$0E;
+        .byte #$0C;
+
+
+
 
 SLICE0
 	LDA #0
@@ -4041,11 +4099,19 @@ DONTLOOP
 
 	LDA NEXTBADDIETYPE,x
 	AND #%00011111 
+	CMP #%00011111
+	BNE NotPit
+;Setup Pit
+
+	LDA #Far_Right -#1
+	STA Pit0_XPos,y
+	JMP AddingPit
+NotPit
 	STA E0_Type,y
 	LDA EnemyLife
 	STA E0_Health,y
 
-
+AddingPit
 	lda #Far_Right-1
 	sta E0_XPos,y
 
@@ -4457,6 +4523,19 @@ BITMASK
 	org $FFFC
 	.word Start
 	.word Start
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;NOTES from Golden Axe Game
 ;MAP of Golden Axe http://maps.speccy.cz/map.php?id=GoldenAxe&sort=0&part=10&ath= 
