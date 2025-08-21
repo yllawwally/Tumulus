@@ -7,27 +7,26 @@
 ;certain pallettes don't work on lanes 6 and 7, The colors for monster types (3,4,5,6,7)
 ;Boss portion really needs a way for monster to travel whole screen.
 ;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
-;a dot rolls accross the ground where monsters were, which hits player sometimes. Does this still happen
-;bad guys are messed up on left
+;player monster collisions add a line
+;color is not delayed by vdel
+;top line of baddie is wrong because it needs to be loaded in prior line
 ;--------------------------------------------------------------
-;add a variable every x monsters then boss, with smaller monsters defined by a formula???
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
 ;level 1 : 20, level 2 : 25, level 3 : 30, level 4 : 35, level 5 40, 155 monsters in whole game.  
-;function input, baddine number, level, output delay, and baddie
-;Max baddie types per level 6+level*2
+;Num baddie types per level 6+level*2
 ;--------------------------------------------------------------
 ;5 different level masters
 ;NAGA, can summon snakes
 ;Griffon
 ;Vampire, summon undead???, drain life
-;Saytr
+;Saytr, summon goats
 ;Giant, can create craters that move accross screen
 ;Dragon, breath fire
 ;Minotaur
 ;Sirens, control player
 ;Gorgon, causes player death if on same level facing her
-;Fairy, can teleport
+;Fairy, can teleport, teleports past you, you must hit her from behind.
 ;--------------------------------------------------------------
 
 
@@ -39,13 +38,13 @@
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 12	;height of hero sprite
 C_KERNAL_HEIGHT 	= 182	;height of kernal/actually the largest line on the screen ;was 186
-Far_Left		= 12
+Far_Left		= 8
 Far_Right		= 140
-Far_Right_Hero		= 134
+Far_Right_Hero		= 130
 Far_Up_Hero		= 180
 Far_Down_Hero		= 21+C_P1_HEIGHT
-Enemy_Far_Left		= 8
-Enemy_Pause_Left	= 12
+Enemy_Far_Left		= 4
+Enemy_Pause_Left	= 6
 HERO_SPEED_VER		= 1
 HERO_SPEED_HOR		= 1
 Screen_Rate		= 20	;How fast screen is scrolling in X-Axis, for introducing enemy, not used yet
@@ -284,7 +283,8 @@ LOADPFDATA
 	DEx	
 	BNE LOADPFDATA
 
-
+	LDA #40
+	STA Hero_XPos
 
 ;VSYNC time
 
@@ -408,7 +408,7 @@ TOOLARGE
 	CMP #255
 	BNE DONTLOOP
 	LDX #0
-	STA Baddie_Num
+	STX Baddie_Num
 DONTLOOP
 
 ;Lane choice increments with baddie_num,and then use switch to mess with it.
@@ -469,10 +469,10 @@ NOTHORSE
 
 	CLC
 	ROL
-	ROL Baddie_Duration+1
+	ROL Baddie_Duration
 	CLC
 	ROL
-	ROL Baddie_Duration+1
+	ROL Baddie_Duration
  
 
 	
@@ -791,8 +791,8 @@ KEEPPAUSE
 	
 ;---------------------------------------
 
-	lda onhorse
-	bne Did_Not_Hit_Pit
+;	lda onhorse
+;	bne Did_Not_Hit_Pit
 	lda Player_Hit
 	cmp #1
 	lda #0
@@ -1371,7 +1371,7 @@ New_E2_Start
 	beq NOPITTHISLEVEL
 	clc ;this is needed beacause of the subtract, and the sword compare
 	lda Enemy_Row_Data,x
-	sbc #15 ;was 15
+	sbc #14 ;was 15
 	sta	Row_1	
 
 	lda Enemy_Row_Data+1,x
@@ -1384,7 +1384,7 @@ New_E2_Start
 NOPITTHISLEVEL
 	clc ;this is needed beacause of the subtract, and the sword compare
 	lda Enemy_Row_Data,x
-	sbc #15 ;was 15
+	sbc #14 ;was 15
 	sta	Row_1	
 
 	lda Enemy_Row_Data+1,x
@@ -1662,39 +1662,47 @@ No_Hit_the_Pit
 
 
 	lda     (HeroGraphicsColorPtr),y      ; 5
-        DEY             ;2 count down number of scan lines          2 cycles
+;        DEY             ;2 count down number of scan lines          2 cycles
 
 
 
-
-
-
-
-
-EndLine3       STA WSYNC                                                ;3 cycles =
-;------------------------------------------------------------
 
 	inc PF_TEMP
+
+
+
+
 	STA CXCLR   ;3
+
+EndLine3    ;   STA WSYNC                                                ;3 cycles =
+;------------------------------------------------------------
 
 
 Draw_Enemy_E2
 .608:
 ;-----------------------this needs to run for 8 lines, the size of an enemy
-	stx	GRP1	;3
+;sword php style
+
 	sta 	COLUP1
 
+	lda     (TempGraphicsColor),y      ; This is for monster because color is not delayed
+	sta	COLUP0	;3 Needs to be as late in the line as possible
 
-;sword php style
+
+	DEY
+
+
 	cpy Hero_Sword_Pos  ;3
 	php	
 ;skipDraw
 
 
+	stx	GRP1	;3
+
+
 	lda     (Temp_Ptr),y      ; 5
 	sta 	GRP0	;3
-	lda     (TempGraphicsColor),y      ; 5
-	sta	COLUP0	;3
+
 
 
 	pla 		;3
@@ -1703,33 +1711,38 @@ Draw_Enemy_E2
 
 ;skipDraw
 ; draw Hero sprite:
-	lda     #C_P1_HEIGHT-1     ; 2 
-	dcp     Hero_Y            ; 5 (DEC and CMP)                                                                                                                                                                                                                                                                               
-	bcs     .doDrawHero_E2_eb8       ; 2/3 ; should be bcs
-	ldx     #0              ; 2
-	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+	lda     #C_P1_HEIGHT-1    
+	dcp     Hero_Y                                                                                                                                                                                                                                                                                    
+	bcs     .doDrawHero_E2_eb8      
+	ldx     #0              
+	.byte   $2c             
 .doDrawHero_E2_eb8:
-	lax     (Hero_Ptr),y      ; 5
-	
-;This allows us to do the calculation early, but must move dey to before routine
-	lda     (HeroGraphicsColorPtr),y      ; 5
+	lax     (Hero_Ptr),y     
 
 
 
-        DEY             ;2 count down number of scan lines          2 cycles
+
+
+	lda     (HeroGraphicsColorPtr),y     
+ 
+
+
+
 	cpy Row_1
 	bcc EndLine4
 	STA WSYNC
 	JMP Draw_Enemy_E2
-EndLine4 NOP
-	 NOP 	
+EndLine4 
+	  	
 	sta 	COLUP1 ;3
-        STA WSYNC 
+EndLin4b STA WSYNC 
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 
 ;---------------------line for setting up pits-----------------------------------------
 ;sword php style
 	stx	GRP1	;3
+        DEY             
+
 	cpy Hero_Sword_Pos  ;3
 	php			;3
 	pla 
@@ -1771,6 +1784,12 @@ Hit_Baddie
 	
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	dey
+
+
+
+
+	NOP
+	NOP 
 
 
 	cpy Hero_Sword_Pos  ;3
@@ -2737,6 +2756,13 @@ DistFromBottom
 	
 
 SLICE2
+
+	LDA ROLLING_COUNTER
+	AND #%01111000
+
+
+	CMP #%01111000
+	BNE SKIPMTN	
 
 	LDA #%00010000
 	AND PF0_L1
