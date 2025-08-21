@@ -1,7 +1,7 @@
 ;--------------------------------------------------------------
-;fixed top scroll messing up screen, lda and and where swapped
-;player can travel whole screen now.  Enemy's can go lef and right properly
+;sword shift one line down when moving left
 ;should make this 3d by adjusting the colors, change bg color to to bottom.
+;http://www.atariage.com/forums/topic/167608-best-way-to-swap-bits-within-a-byte/
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -163,6 +163,7 @@ ClearMem
 	LDA #50
 	STA E4_XPos
 	
+ 
 
 	
 	LDA #0
@@ -673,7 +674,8 @@ alive4
 alive5
 
 
-
+;ldx ByteToSwap 
+;lda SwapTable,x
 
 
 
@@ -1023,7 +1025,7 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 	STA HMCLR
 	LDA #0
 	JMP MRIGHT
-MLEFT	LDA #%01001111 ;Atari only looks at 4 most significant bits in 2's compliment
+MLEFT	LDA #%01110000 ;Atari only looks at 4 most significant bits in 2's compliment
 MRIGHT	STA HMM1
 
 	STA CXCLR	;reset the collision detection for next time
@@ -1150,7 +1152,7 @@ ScanLoop_E1_a
 ;sword php style
   	txs                    ; Set the top of the stack to ENAM1+1
 ;sword php style 
-
+	STA CXCLR
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E1_a
 ;------------------------------------------------
@@ -1280,6 +1282,7 @@ ScanLoop_E2_a
 ;sword php style
   	txs                    ; Set the top of the stack to ENAM1+1
 ;sword php style 
+	STA CXCLR
 
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E2_a
@@ -1408,6 +1411,7 @@ ScanLoop_E3_a
 ;sword php style
   	txs                    ; Set the top of the stack to ENAM1+1
 ;sword php style 
+	STA CXCLR
 
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E3_a
@@ -1539,6 +1543,7 @@ ScanLoop_E4_a
 ;sword php style
   	txs                    ; Set the top of the stack to ENAM1+1
 ;sword php style 
+	STA CXCLR
 
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E4_a
@@ -1973,6 +1978,269 @@ PFData6
 ;        .byte #%10111011
 ;        .byte #%00010001
         
+;SwapTable 
+; .byte 0,$80,$40,$C0,$20 
+;... etc. for values 5-256
+
+SwapTable
+ .byte #$0
+ .byte #$80
+ .byte #$40
+ .byte #$C0
+ .byte #$20
+ .byte #$A0
+ .byte #$60
+ .byte #$E0
+ .byte #$10
+ .byte #$90
+ .byte #$50
+ .byte #$D0
+ .byte #$30
+ .byte #$B0
+ .byte #$70
+ .byte #$F0
+ .byte #$8
+ .byte #$88
+ .byte #$48
+ .byte #$C8
+ .byte #$28
+ .byte #$A8
+ .byte #$68
+ .byte #$E8
+ .byte #$18
+ .byte #$98
+ .byte #$58
+ .byte #$D8
+ .byte #$38
+ .byte #$B8
+ .byte #$78
+ .byte #$F8
+ .byte #$4
+ .byte #$84
+ .byte #$44
+ .byte #$C4
+ .byte #$24
+ .byte #$A4
+ .byte #$64
+ .byte #$E4
+ .byte #$14
+ .byte #$94
+ .byte #$54
+ .byte #$D4 
+ .byte #$34
+ .byte #$B4
+ .byte #$74
+ .byte #$F4
+ .byte #$C 
+ .byte #$8C
+ .byte #$4C
+ .byte #$CC
+ .byte #$2C
+ .byte #$AC
+ .byte #$6C
+ .byte #$EC
+ .byte #$1E
+ .byte #$9E
+ .byte #$5E
+ .byte #$DE
+ .byte #$3E
+ .byte #$BE
+ .byte #$7E
+ .byte #$FE
+ .byte #$2 
+ .byte #$82 
+ .byte #$42 
+ .byte #$C2
+ .byte #$22
+ .byte #$A2
+ .byte #$62
+ .byte #$E2
+ .byte #$12
+ .byte #$92
+ .byte #$52
+ .byte #$D2
+ .byte #$32
+ .byte #$B2
+ .byte #$72
+ .byte #$F2
+ .byte #$A 
+ .byte #$8A
+ .byte #$4A
+ .byte #$CA
+ .byte #$2A
+ .byte #$AA
+ .byte #$6A
+ .byte #$EA
+ .byte #$1A
+ .byte #$9A
+ .byte #$5A
+ .byte #$DA
+ .byte #$3A
+ .byte #$BA
+ .byte #$7A
+ .byte #$FA
+ .byte #$6 
+ .byte #$86
+ .byte #$46
+ .byte #$C6
+ .byte #$26
+ .byte #$A6
+ .byte #$66
+ .byte #$E6
+ .byte #$16
+ .byte #$96
+ .byte #$56
+ .byte #$D6
+ .byte #$36
+ .byte #$B6
+ .byte #$76
+ .byte #$F6
+ .byte #$E
+ .byte #$8E
+ .byte #$4E
+ .byte #$CE
+ .byte #$2E
+ .byte #$AE
+ .byte #$6E
+ .byte #$EE
+ .byte #$1E
+ .byte #$9E
+ .byte #$5E
+ .byte #$DE
+ .byte #$3E
+ .byte #$BE
+ .byte #$7E
+ .byte #$FE
+ .byte #$1 
+ .byte #$81
+ .byte #$41
+ .byte #$C1
+ .byte #$21
+ .byte #$A1
+ .byte #$61
+ .byte #$E1
+ .byte #$11
+ .byte #$91
+ .byte #$51
+ .byte #$D1
+ .byte #$31
+ .byte #$B1
+ .byte #$71
+ .byte #$F1
+ .byte #$9 
+ .byte #$89
+ .byte #$49
+ .byte #$C9
+ .byte #$29
+ .byte #$A9
+ .byte #$69
+ .byte #$E9
+ .byte #$19
+ .byte #$99
+ .byte #$59
+ .byte #$D9
+ .byte #$39
+ .byte #$B9
+ .byte #$79
+ .byte #$F9
+ .byte #$5
+ .byte #$85
+ .byte #$45
+ .byte #$C5
+ .byte #$25
+ .byte #$A5
+ .byte #$65
+ .byte #$E5
+ .byte #$15
+ .byte #$95
+ .byte #$55
+ .byte #$D5
+ .byte #$35
+ .byte #$B5
+ .byte #$75
+ .byte #$F5
+ .byte #$D
+ .byte #$8D
+ .byte #$4D
+ .byte #$CD
+ .byte #$2D
+ .byte #$AD
+ .byte #$6D
+ .byte #$ED
+ .byte #$1F
+ .byte #$9F
+ .byte #$5F
+ .byte #$DF
+ .byte #$3F
+ .byte #$BF
+ .byte #$7F
+ .byte #$FF
+ .byte #$3 
+ .byte #$83
+ .byte #$43
+ .byte #$C3
+ .byte #$23
+ .byte #$A3
+ .byte #$63
+ .byte #$E3
+ .byte #$13
+ .byte #$93
+ .byte #$53
+ .byte #$D3
+ .byte #$33
+ .byte #$B3
+ .byte #$73
+ .byte #$F3
+ .byte #$B 
+ .byte #$8B
+ .byte #$4B
+ .byte #$CB
+ .byte #$2B
+ .byte #$AB
+ .byte #$6B
+ .byte #$EB
+ .byte #$1B
+ .byte #$9B
+ .byte #$5B
+ .byte #$DB
+ .byte #$3B
+ .byte #$BB
+ .byte #$7B
+ .byte #$FB
+ .byte #$7 
+ .byte #$87
+ .byte #$47
+ .byte #$C7
+ .byte #$27
+ .byte #$A7
+ .byte #$67
+ .byte #$E7
+ .byte #$17
+ .byte #$97
+ .byte #$57
+ .byte #$D7
+ .byte #$37
+ .byte #$B7
+ .byte #$77
+ .byte #$F7
+ .byte #$F
+ .byte #$8F
+ .byte #$4F
+ .byte #$CF
+ .byte #$2F
+ .byte #$AF
+ .byte #$6F
+ .byte #$EF
+ .byte #$1F
+ .byte #$9F
+ .byte #$5F
+ .byte #$DF
+ .byte #$3F
+ .byte #$BF
+ .byte #$7F
+ .byte #$FF
+
+
 PFCOLOR
 	.byte #$29
 	.byte #$5D
