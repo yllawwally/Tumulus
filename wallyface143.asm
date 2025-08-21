@@ -126,7 +126,7 @@ E3_Ptr 			ds 1	;ptr to current graphic
 E4_Ptr 			ds 1	;ptr to current graphic
 E5_Ptr 			ds 1	;ptr to current graphic
 E6_Ptr 			ds 1	;ptr to current graphic
-E7_Ptr 			ds 1	;ptr to current graphic
+E7_Ptr 			ds 1	;this is a temp variable for displaying score only
 
 E0_Ptr2 		ds 1	;ptr to current graphic
 E1_Ptr2 		ds 1	;ptr to current graphic
@@ -135,7 +135,7 @@ E3_Ptr2 		ds 1	;ptr to current graphic
 E4_Ptr2 		ds 1	;ptr to current graphic
 E5_Ptr2 		ds 1	;ptr to current graphic
 E6_Ptr2 		ds 1	;ptr to current graphic
-E7_Ptr2 		ds 1	;ptr to current graphic
+;E7_Ptr2 		ds 1	;ptr to current graphic
 Temp_Ptr		ds 2	;ptr for temp holding
 Direction		ds 1	;direction character moving
 
@@ -147,7 +147,7 @@ EnemyGraphicsColorPtr_E3	ds 1
 EnemyGraphicsColorPtr_E4	ds 1
 EnemyGraphicsColorPtr_E5	ds 1
 EnemyGraphicsColorPtr_E6	ds 1
-EnemyGraphicsColorPtr_E7	ds 1
+;EnemyGraphicsColorPtr_E7	ds 1
 TempGraphicsColor		ds 2
 
 E0_XPos 		ds 1	;horizontal position
@@ -157,7 +157,7 @@ E3_XPos 		ds 1	;horizontal position
 E4_XPos 		ds 1	;horizontal position
 E5_XPos 		ds 1	;horizontal position
 E6_XPos 		ds 1	;horizontal position
-E7_XPos 		ds 1	;horizontal position
+;E7_XPos 		ds 1	;horizontal position
 Temp_XPos		ds 1	;temp horizontal position
 
 
@@ -168,7 +168,7 @@ E3_Type			ds 1	;Enemy Type
 E4_Type			ds 1	;Enemy Type
 E5_Type			ds 1	;Enemy Type
 E6_Type			ds 1	;Enemy Type
-E7_Type			ds 1	;Enemy Type
+;E7_Type			ds 1	;Enemy Type
 
 E0_Health		ds 1	;Enemy Life Stat
 E1_Health		ds 1	;Enemy Life Stat
@@ -177,7 +177,7 @@ E3_Health		ds 1	;Enemy Life Stat
 E4_Health		ds 1	;Enemy Life Stat
 E5_Health		ds 1	;Enemy Life Stat
 E6_Health		ds 1	;Enemy Life Stat
-E7_Health		ds 1	;Enemy Life Stat
+;E7_Health		ds 1	;Enemy Life Stat
 
 Pit0_XPos		ds 1	;where pit is currently
 Pit1_XPos		ds 1	;where pit is currently
@@ -186,7 +186,8 @@ Pit3_XPos		ds 1	;where pit is currently
 Pit4_XPos		ds 1	;where pit is currently
 Pit5_XPos		ds 1	;where pit is currently
 Pit6_XPos		ds 1	;where pit is currently
-Pit7_XPos		ds 1	;where pit is currently
+;Pit7_XPos		ds 1	;where pit is currently
+Offset			ds 1
 TempPit_XPos		ds 1	;where next pit is
 
 Hero_YPosFromBot 	ds 2	;Vertical position
@@ -290,6 +291,8 @@ ClearMem
 ;Setting some variables...
 
 
+	lda #17
+	sta Offset
 
 	LDA #%11111111
 	STA Enemy_Life
@@ -462,7 +465,7 @@ SLICE1
 	
 	
 
-	LDX #8
+	LDX #6
 
 ;Eneamy Movement---------------------------------------------------
 
@@ -571,7 +574,7 @@ no_eor
 
 
 	LDY #0
-	LDX #8
+	LDX #7
 Collision
 
 	LDA Multiplexer-1,x
@@ -673,6 +676,10 @@ BOSS1
 	STA Enemy_Life
 	lda RNG
 	and #%00000111
+	cmp #%00000111
+	bne NotOutsideBOSSRange
+	and #%00000110	
+NotOutsideBOSSRange
 	tax
 	LDA Multiplexer-1,x
 	ORA Enemy_Life
@@ -1289,7 +1296,7 @@ MTNRANGE2
 	STA GRP1
 	STA HMCLR
 
-	LDA Multiplexer ;This is where you control number of critters on screen //////////////////////////////////
+	LDA Multiplexer,1 ;This is where you control number of critters on screen //////////////////////////////////
 	sta Multi_Temp	
 
 	
@@ -1305,6 +1312,17 @@ MTNRANGE2
 	
 NOQUAKE
 	
+	clc
+	lda Offset
+	sbc #15
+SHIFTING2
+	sbc #1	
+	bcc NOQUAKE4
+	STA WSYNC
+	JMP SHIFTING2
+NOQUAKE4
+
+
 	cpy Hero_Sword_Pos  ;3
 	
 	STA WSYNC
@@ -2005,7 +2023,7 @@ EndScanLoop_E2_c
 	asl Multi_Temp
 
 	lda Multi_Temp
-	cmp #%00001000     ;Set this to number of monsters you want ////////////////////////////////
+	cmp #%01000000     ;Set this to number of monsters you want ////////////////////////////////
 
 	lda     (HeroGraphicsColorPtr),y      ; 5
 
@@ -2062,7 +2080,7 @@ ScanLoop_E0_cz
 
         DEY             ;2 count down number of scan lines          2 cycles
 
-	CPY #16 ;3 was 2
+	CPY Offset ;3 was 2
 
         STA WSYNC    
                                             ;3 cycles =
@@ -2097,6 +2115,8 @@ ALWAYSQUAKE
 	STA WSYNC
 	
 NOQUAKE2
+
+
 
 	LDX #$0F
 	LDA #%01101000
@@ -3311,7 +3331,7 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%10000100
      .byte #%01101110
      .byte #%11000100
-     .byte #%11100100
+     .byte #%11000100
      .byte #%00001000
      .byte #%00101001
      .byte #%01001010
@@ -3319,7 +3339,7 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%10001100
      .byte #%10101101
      .byte #%11000001
-     .byte #%11100010
+     .byte #%11000010
      .byte #%00000011
      .byte #%00100100
      .byte #%01001000
