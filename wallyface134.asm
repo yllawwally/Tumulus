@@ -11,8 +11,8 @@
 ;Killing baddies is causing screen to get extra lines, and sometimes to switch to pit
 ;bad guys are messed up on left
 ;player is smacked immediatly, and reduced to 7 bars.
-;need to split time in slices.  
-;enemy attack only on slice 1, mtn move slice 2, etc
+;all lanes now have trees at start
+;moving and attacking simultaeously causes extra line
 ;--------------------------------------------------------------
 ;add a variable every x monsters then boss, with smaller monsters defined by a formula???
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -220,7 +220,7 @@ Other_Hit		ds 1	;collision detection
 New_Hit			ds 1	;collision detection
 Player_Hit		ds 1	;collision detection
 
-Baddie_Duration		ds 2 	;time till next baddie
+Baddie_Duration		ds 1	;time till next baddie
 Baddie_Num		ds 1	;current baddie displayed
 
 Potion			ds 1	;Potions player currently has
@@ -330,13 +330,77 @@ MORECALCSRET
 ;------------------------------------------
 
 
+
+
+;setup pic animations ----------------------------------------------
+	INC ROLLING_COUNTER
+	BNE RCROLLOVER
+	INC ROLLING_COUNTER+1
+RCROLLOVER
+
+
+
+
+
+	LDA ROLLING_COUNTER
+
+	AND #15		;every 8th screen swap to next image of player
+	CMP #8
+	BNE PICSET3
+PICSET4	LDA  PICS
+	CMP  #8
+	BEQ PICSET
+	LDA  #8
+	JMP PICSET2
+PICSET	LDA  #0
+PICSET2	STA PICS
+PICSET3
+
+
+	LDA ROLLING_COUNTER
+	AND #7
+	CMP #0
+	BNE NS0
+	JMP SLICE0
+NS0
+	CMP #1
+	BNE NS1
+	JMP SLICE1
+NS1
+	CMP #2
+	BNE NS2
+	JMP SLICE2
+NS2
+	CMP #3
+	BNE NS3
+	JMP SLICE3
+NS3
+
+	CMP #4
+	BNE NS4
+	JMP SLICE1 ;Baddie Movement is twice as fast
+NS4
+	CMP #5
+	BNE NS5
+;	JMP SLICE1 ;Baddie Movement is twice as fast
+NS5
+	CMP #6
+	BNE NS6
+;	JMP SLICE1 ;Baddie Movement is twice as fast
+NS6
+	CMP #7
+	BNE NS7
+;	JMP SLICE1 ;Baddie Movement is twice as fast
+NS7
+
+	JMP ENDSLICES
+
+SLICE0
 	LDA #0
 	cmp Pause ;If screen paused because ceratures going backwords, pause
 	bcc NotYet
 RESSURECT
-	DEC Baddie_Duration
-	bne NotYet
-	DEC Baddie_Duration + 1
+	DEC Baddie_Duration 
 	bmi TOOLARGE
 	bne NotYet
 
@@ -396,17 +460,13 @@ NOTHORSE
 	sta E0_XPos,y
 
 	lda #0
-	sta Baddie_Duration+1
 	sta Direction
 
 	lda Baddie_Num
-	EOR #$FF
 	AND #%00001111
-	ADC #1
 	ASL
 	ASL
 	ASL
-	ADC #10
 	
 	
 	sta Baddie_Duration
@@ -426,107 +486,12 @@ NOTHORSE
 
 	INC Baddie_Num
 NotYet
+	JMP ENDSLICES
 
-
-;setup pic animations ----------------------------------------------
-	INC ROLLING_COUNTER
-	BNE RCROLLOVER
-	INC ROLLING_COUNTER+1
-RCROLLOVER
-
-
-
-
-
-	LDA ROLLING_COUNTER
-
-	AND #15		;every 8th screen swap to next image of player
-	CMP #8
-	BNE PICSET3
-PICSET4	LDA  PICS
-	CMP  #8
-	BEQ PICSET
-	LDA  #8
-	JMP PICSET2
-PICSET	LDA  #0
-PICSET2	STA PICS
-PICSET3
-
-
-
-;------------------------- setup backgrounds 20 pixels accross
-	LDA #255		; 3 cycles
-	STA PF0			; 3 cycles
-	STA PF1			; 3 cycles
-	STA PF2			; 3 cycles
-;-------------------------
-	LDA #0
-	STA HMP1 ;Set Hero to stand still
-;	STA ENABL ;clear pits
-
-	STA WSYNC ;//////////////////////////////////////////////	
-	STA HMOVE
-
+SLICE1
 	
-rand_8
-	LDA	RNG		; get seed
-	BNE Not_Zero
-	LDA ROLLING_COUNTER
-Not_Zero
-	ASL			; shift byte
-	BCC	no_eor		; branch if no carry
-
-	EOR	#$CF		; else EOR with $CF
-no_eor
-	STA	RNG		; save number as next seed
-
-
 	
-MOVESECTION
-	LDA ROLLING_COUNTER
-	AND #3		;every 8th screen move
-	CMP #2
-	BEQ NOMOVESET
-	LDA Pause
-	CMP #0
-	BEQ NOMAKEEYES
-	INC Overeyes
-NOMAKEEYES
-	LDA #0
-	STA Player_Hit ;Need to make it easier to live
-	STA New_Hit
-	JMP MOVESET1
-NOMOVESET
 
-	LDA Overeyes
-	CMP #240
-	BCC NOPITCREATION
-	LDA RNG
-	CMP #120
-	BCS NOPITCREATION
-	CMP #Far_Right
-	BCS NOPITCREATION
-	AND #%00000111
-	tax
-	LDA RNG
-	ADC #10
-;AND #%01111111
-	STA #Pit0_XPos-1,x	 
-
-NOPITCREATION	
-	CMP #11
-	BNE NOLOSEHORSE
-	LDA #0
-	STA onhorse
-NOLOSEHORSE
-
-
-	LDA Player_Hit
-	BEQ HORSENOTLOST
-	LDA #0
-	STA onhorse
-HORSENOTLOST
-	
 	LDX #8
 
 ;Eneamy Movement---------------------------------------------------
@@ -600,7 +565,82 @@ DONTCHANGEDIR
 
 MOVESET1
 
+
 	
+	JMP ENDSLICES
+
+SLICE3
+MOVESECTION
+	LDA Pause
+	CMP #0
+	BEQ NOMAKEEYES
+	INC Overeyes
+NOMAKEEYES
+	LDA #0
+	STA Player_Hit ;Need to make it easier to live
+	STA New_Hit
+	JMP MOVESET1
+NOMOVESET
+
+	LDA Overeyes
+	CMP #240
+	BCC NOPITCREATION
+	LDA RNG
+	CMP #120
+	BCS NOPITCREATION
+	CMP #Far_Right
+	BCS NOPITCREATION
+	AND #%00000111
+	tax
+	LDA RNG
+	ADC #10
+;AND #%01111111
+	STA #Pit0_XPos-1,x	 
+
+NOPITCREATION	
+	CMP #11
+	BNE NOLOSEHORSE
+	LDA #0
+	STA onhorse
+NOLOSEHORSE
+
+
+	LDA Player_Hit
+	BEQ HORSENOTLOST
+	LDA #0
+	STA onhorse
+HORSENOTLOST
+	JMP ENDSLICES
+
+ENDSLICES
+
+;------------------------- setup backgrounds 20 pixels accross
+	LDA #255		; 3 cycles
+	STA PF0			; 3 cycles
+	STA PF1			; 3 cycles
+	STA PF2			; 3 cycles
+;-------------------------
+	LDA #0
+	STA HMP1 ;Set Hero to stand still
+;	STA ENABL ;clear pits
+
+;	STA WSYNC ;//////////////////////////////////////////////
+;	STA HMOVE
+
+	
+rand_8
+	LDA	RNG		; get seed
+	BNE Not_Zero
+	LDA ROLLING_COUNTER
+Not_Zero
+	ASL			; shift byte
+	BCC	no_eor		; branch if no carry
+
+	EOR	#$CF		; else EOR with $CF
+no_eor
+	STA	RNG		; save number as next seed
+
+
 
 
 	LDY #0
@@ -658,8 +698,8 @@ ExtraDead
 	adc PF_TEMP
 	ldy BADDIEVALUE,x
 ;	tay
-	LDA #200
-	STA Pit0_XPos-1,x
+;	LDA #200
+;	STA Pit0_XPos-1,x ;You can kill pits????
 	LDA Mask-1,x
 	AND Enemy_Life
 	STA Enemy_Life
@@ -679,6 +719,7 @@ ExtraDead
 
 	LDA #24
 	sta onhorse
+
 NoCollisionP0
 	lda E0_Type-1,x
 	cmp #1 ;Not hurt by horse
@@ -770,7 +811,7 @@ KEEPPAUSE
 Hit_Pit
 	sta onhorse
 Did_Not_Hit_Pit
-	;sta Player_Hit ;why was this here???
+
 
 not_on_horse 
 
@@ -2694,26 +2735,10 @@ DistFromBottom
 	.byte #Enemy_Row_E7-#8-#C_P0_HEIGHT
 	
 
-
-
-
-PreOverScanWait
-;Can put stuff here --------------------------------------------------
-
-
-
-	LDA ROLLING_COUNTER
-	AND #%01111111
-
-
-	CMP #%01111111
-	BNE SKIPMTN	
-
-
+SLICE2
 
 	LDA #%00010000
 	AND PF0_L1
-;	CMP #0
 	CLC
 	BEQ R1AJMP
 	SEC
@@ -2789,6 +2814,14 @@ R3JMP
 	ROR PF0_L3 
 
 SKIPMTN
+	JMP ENDSLICES
+
+
+PreOverScanWait
+;Can put stuff here --------------------------------------------------
+
+
+
 
 
 
