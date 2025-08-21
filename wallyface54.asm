@@ -1,6 +1,5 @@
 ;--------------------------------------------------------------
 ;top rolls incorrectly
-;sword does funny things during hmove lines
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -11,12 +10,12 @@
 C_P0_HEIGHT 		= 8	;height of sprite
 C_P1_HEIGHT 		= 8	;height of sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
-Far_Left		= 4
-Far_Right		= 140
+Far_Left		= 10
+Far_Right		= 148
 Far_Right_Hero		= 148
 Far_Up_Hero		= 182
 Far_Down_Hero		= 10
-Enemy_Far_Left		= 1
+Enemy_Far_Left		= 10
 Enemy_Row_0		= 185
 Enemy_Row_E0		= 150
 Enemy_Row_E1		= 115
@@ -339,7 +338,7 @@ HeroUp
 	STA Hero_YPosFromBot
 HeroDown
 
-----------------------
+;----------------------
 
 
 
@@ -370,7 +369,6 @@ PICSET3
 	DEC E4_XPos
 MOVESET1
 
-	DEC E0_XPos
 	
 
 	STA HMOVE
@@ -901,7 +899,7 @@ ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 	LDA #30;
 
 	STA COLUBK	;and store as the bgcolor
-	LDY #186; 
+	LDY #C_KERNAL_HEIGHT; 
 	LDA #0
 	STA PF0			; 3 cycles
 	STA PF1			; 3 cycles
@@ -967,15 +965,21 @@ MLEFT
 	LDA #%01100000 ;Atari only looks at 4 most significant bits in 2's compliment
 MRIGHT	STA HMM1
 
-
 	STA CXCLR	;reset the collision detection for next time
-	STA WSYNC
-	STA HMOVE
 
+	LDA #%01110000
+	STA HMM0
+
+	STA WSYNC
+	STA HMOVE ;3
+	lda #0
+	sta Graphics_Buffer
+;	STA HMCLR
+	STA WSYNC
 ;start of kernal +++++++++++++++++++++++ for player 0 positioning
-	nop
-	nop
+;the hmove above pushes it slightly
 	lda E0_XPos						 ;3
+	nop	
 .Div15a   
 	sbc #15      ; 2         
 	bcs .Div15a   ; 3(2)
@@ -985,18 +989,25 @@ MRIGHT	STA HMM1
 	sta HMP0 ;	;3
 	sta RESP0 ;	
 
-	;Can't get LAX to work here
+
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 	Ldx #0
 ;end of kernal +++++++++++++++++ for player 0 positioning
 
 
-
 ;-------------------------Enemy number E0 start---------------------------
 
 ScanLoop_E0_c 
 	stx	GRP1	
+	lda 	Graphics_Buffer
+	sta     GRP0 ; This allows us to do the calculation early, but must move dey to before routine
+;sword php style
+	cpy Hero_Sword_Pos
+	php
+  	ldx #ENAM0+1		
+  	txs                    ; Set the top of the stack to ENAM1+1
+;sword php style 
 
 ;skipDraw
 ; draw player sprite 0:
@@ -1008,14 +1019,8 @@ ScanLoop_E0_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E0_b:
 	lda     (E0_Ptr),y      ; 5
-	sta     GRP0 ; This allows us to do the calculation early, but must move dey to before routine
+	sta 	Graphics_Buffer
 
-;sword php style
-	cpy Hero_Sword_Pos
-	php
-  	ldx #ENAM0+1		
-  	txs                    ; Set the top of the stack to ENAM1+1
-;sword php style 
 
 
 ;skipDraw
@@ -1079,22 +1084,20 @@ EndScanLoop_E0_c
 
 	LDA CXM1P
 	STA E0_Hit  ;this line must refer to previous enemy
+	STA CXCLR
+
+	lda E1_XPos
 
 ;sword php style
 	cpy Hero_Sword_Pos
-	php
-
-
-
-	DEY
-	STA CXCLR
+	stx GRP1
 
         STA WSYNC                                                ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------
 ;This is not a loop, this is a one time set position for the eneamy E1
-	stx GRP1
-	lda E1_XPos
+	php
+	DEY
 
 .Div15_E1_a   
 	sbc #15      ; 2         
@@ -1197,22 +1200,20 @@ EndScanLoop_E1_c
 
 	LDA CXM1P
 	STA E1_Hit  ;this line must refer to previous enemy
+	STA CXCLR
+
+	lda E2_XPos
 
 ;sword php style
 	cpy Hero_Sword_Pos
-	php
-
-
-
-	DEY
-	STA CXCLR
+	stx GRP1
 
         STA WSYNC                                                ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------
 ;This is not a loop, this is a one time set position for the eneamy E2
-	stx GRP1
-	lda E2_XPos
+	php
+	DEY
 
 .Div15_E2_a   
 	sbc #15      ; 2         
@@ -1315,22 +1316,20 @@ EndScanLoop_E2_c
 
 	LDA CXM1P
 	STA E2_Hit  ;this line must refer to previous enemy
+	STA CXCLR
+
+	lda E3_XPos
 
 ;sword php style
 	cpy Hero_Sword_Pos
-	php
-
-
-
-	DEY
-	STA CXCLR
+	stx GRP1
 
         STA WSYNC                                                ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------
 ;This is not a loop, this is a one time set position for the eneamy E3
-	stx GRP1
-	lda E3_XPos
+	php
+	DEY
 
 .Div15_E3_a   
 	sbc #15      ; 2         
@@ -1432,23 +1431,21 @@ EndScanLoop_E3_c
 	sta Graphics_Buffer_2
 
 	LDA CXM1P
-	STA E2_Hit  ;this line must refer to previous enemy
+	STA E3_Hit  ;this line must refer to previous enemy
+	STA CXCLR
+
+	lda E4_XPos
 
 ;sword php style
 	cpy Hero_Sword_Pos
-	php
-
-
-
-	DEY
-	STA CXCLR
+	stx GRP1
 
         STA WSYNC                                                ;3 cycles =
 ;NOT A LOOP
 ;------------------------------------------------
 ;This is not a loop, this is a one time set position for the eneamy E4
-	stx GRP1
-	lda E4_XPos
+	php
+	DEY
 
 .Div15_E4_a   
 	sbc #15      ; 2         
