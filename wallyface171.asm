@@ -18,25 +18,17 @@
 ;Dragon's name is scar??? So that way I don't have to fix black line
 
 ;FUTURE FEATURES / WATCH LIST
-;Need to add grappling
 ;add more creatures
-;slide ceratures up and down
-;allow creatures to move to a different lane if overeyes > 0
 ;make sure points are scored for potion killed baddies
 ;Can I remove duration, and calculate based on is it a boss, then use rand+level for duration???
-;need to pause when starting, and also stop when dead
-;reduce max potions, so that you can increase timer length, 
-
 
 
 ;BUGS
-;1 line of player is discolored-
+;1 line of player is discolored
 ;make dragon not move
 ;make dragon fire move
-;Rat is miscolored
 ;Touching an enemy causes one less line, will this cause TV distortion?
 ;if you use potion on enemy too far right, they will stop and you can't continue
-;Pits need to appear when eyes overhead
 
 ;IMPROVED
 ;when you hit a monster on lane 3, the screen flickers for a moment
@@ -48,8 +40,10 @@
 ;Screen no longer shakes, with overeyes
 ;sometimes number of potions doesn't decrease, when they are used
 ;I actually had a line dontdecpoison, what the hell was I thinking
-
-;earthquakes
+;Pits need to appear when eyes overhead
+;need to pause when starting, and also stop when dead
+;Rat is miscolored
+;removed unused code
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -362,8 +356,8 @@ ClearMem
 
 	LDA #%11111110
 	STA Enemy_Life
-	LDA #%11111111
-	STA Player_Health
+;	LDA #%11111111
+;	STA Player_Health
 
 	LDA #%00010000 ;set playfield to not reflected
 	STA CTRLPF
@@ -461,7 +455,8 @@ PICSET2	STA PICS
 PICSET3
 
 
-
+	LDA Player_Health
+	BEQ SLICE4
 
 
 	LDA ROLLING_COUNTER
@@ -615,10 +610,10 @@ MOVESET1
 ENDSLICES
 
 ;------------------------- setup backgrounds 20 pixels accross
-	LDA #255		; 3 cycles
-	STA PF0			; 3 cycles
-	STA PF1			; 3 cycles
-	STA PF2			; 3 cycles
+;	LDA #255		; 3 cycles
+;	STA PF0			; 3 cycles
+;	STA PF1			; 3 cycles
+;	STA PF2			; 3 cycles
 ;-------------------------
 	LDA #0
 	STA HMP1 ;Set Hero to stand still
@@ -643,7 +638,7 @@ HITSCORE
 	JMP NOSCORE
 
 NotBossLevel
-	sta Grapple ;too big
+;	sta Grapple ;too big
 	LDX #7
 Collision
 
@@ -867,7 +862,7 @@ KEEPPAUSE
 	LDA New_Hit
 	CMP #1
 	LDA #0 ;to fix issue with player corruption from monster touching
-	sta Grapple
+;	sta Grapple
 	BCC Did_Not_Hit_Pit 
 ;	ASL Player_Health
 Hit_Pit
@@ -1485,6 +1480,10 @@ MTNRANGE2
 	STA COLUPF
 	;LDA #$12;
 	LDX Level
+	lda Player_Health
+	bne donjump2 
+	ldx #6
+donjump2
 	LDA Level_Color,x
 	STA COLUBK	;and store as the bgcolor
 	LDY #C_KERNAL_HEIGHT; 
@@ -1573,7 +1572,7 @@ New_E2_Start
 	
 	lda Pit0_XPos,x
 	sta TempPit_XPos
-	CMP #$0
+;	CMP #$0
 	beq NOPITTHISLEVEL
 	jmp NOPITTHISLEVEL ;This may need to be removed to fix pit problems
 	clc ;this is needed beacause of the subtract, and the sword compare
@@ -2722,7 +2721,7 @@ WillOWispGraphics
 	.byte #%01111100
 	.byte #%01111100
 	.byte #%00111000
-	.byte #%00000000
+;	.byte #%00000000
 
 BrownieaGraphics
 
@@ -2753,6 +2752,12 @@ BrownieaGraphics
 MORECALCS
 ;assum horiz speed will be zero
 
+
+	lda Player_Health
+	bne donjump 
+	JMP MORECALCSRET
+
+donjump
 	lda onhorse ;while on horse knife is always readied
 	beq horseknife
 	lda #8
@@ -2780,13 +2785,14 @@ horseknife
 nobonus
 	ora Potion
 	sta Potion
+
 ;	lda RNG
 ;	BMI DONTDECPOISION
 	dec Potion
 DONTDECPOISION
-	lda #$FF ;Enemy_Life
+	lda #$FF ;
 	sta Other_Hit
-	jmp NoPotion
+;	jmp NoPotion
 OverPotion
 
 
@@ -2822,8 +2828,8 @@ DoneWithSwordAttack
 
 
 
-	lda Grapple
-	bne HeroDown
+;	lda Grapple
+;	bne HeroDown
 
 ;	LDA #%01000000	;Left?
 	BIT SWCHA 
@@ -3451,6 +3457,19 @@ PAUSED2
 	BNE Check_Pos
 	STA WSYNC
 
+	lda INPT4
+	bmi Dont_Reset ;(button not pressed)
+
+
+	LDA Baddie_Num
+	BNE Dont_Reset
+	LDA Player_Health
+	BNE Dont_Reset
+
+	LDA $0F
+	STA Player_Health
+	STA Hero_YPosFromBot
+Dont_Reset
 
 
 ;	 for up and down, we INC or DEC
@@ -3493,23 +3512,7 @@ SkipMoveUp
 	JMP PreOverScanWait
 
 
-BlankGraphics
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
-	.byte $00
+
 	
 
 
@@ -3803,6 +3806,7 @@ Level_Color ;One level per monster
 		.byte #$D0
 		.byte #$E4
 		.byte #$F4
+		.byte #$12
 
 ;You have 41 bytes here. But it will be needed at add more monsters, for nextbaddie.
 DragonGraphicsb .byte #%00000100;$0C ;now a dragon head
@@ -3858,6 +3862,25 @@ BADDIEVALUE
 ;     .byte #8 ;;30,Monster 5a
  ;    .byte #8 ;;31,Monster 5b
 
+
+
+BlankGraphics
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
+	.byte $00
 
 	org #$FCC0 ;HeroGraphicsColor + #256
 
@@ -4299,7 +4322,6 @@ TreeGraphicsColor
 	.byte #$C2
 
 
-
 PonyGraphicsColor
 	.byte #$00
 	.byte #$00
@@ -4311,14 +4333,14 @@ PonyGraphicsColor
 	.byte #$00
 
 RatColor
-	.byte #$8A
-	.byte #$8A
-	.byte #$74
-	.byte #$72
-	.byte #$0A
-	.byte #$08
-	.byte #$80
-	.byte #$80
+	.byte #$0F
+	.byte #$0F
+	.byte #$0F
+	.byte #$2F
+	.byte #$2F
+	.byte #$4F
+	.byte #$4F
+	.byte #$4F
 
 WarriorColor
 	.byte #$40
