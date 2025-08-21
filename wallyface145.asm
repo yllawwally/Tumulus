@@ -6,22 +6,28 @@
 ;                                               -----
 ;                                                    -----
 ;Using hmove, not sure how to leave active, use player active? Maybe use ball instead of missle
+;endline1 is where players arm is miscolored
+;EndLin4b is where the color is bad for the arm now
 
 
+;Non distributed future
+;make players as large pits, that can't be jumped by horse
 
 ;FUTURE FEATURES
-;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
-;make giant ogre, out of several pieces
+;make giant ogre as level 2 boss
 ;Need to add grappling
-;need to differentiate levels, probably different colors
+;differentiate levels more
+;add more creatures
 ;maybe monsters shouldn't attack when on fire
 
 
-;BuGS
+;BUGS
 ;Moving and attacking causes an addition line to be added
-;endline1 is where players arm is miscolored
-;EndLin4b is where the color is bad for the arm now
 ;player has corruption on far right
+;1 line of player is discolored
+;snakes don't damage player
+;tree doesn't damage player
+;screen rolls when touching enemy
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -106,7 +112,7 @@ Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
 Min_Eye_Trigger		= 8
-LVL1BOSS		= 14
+LVL1BOSS			= 14
 
 ;Variables ------
 
@@ -205,6 +211,8 @@ Hero_Sword_Pos		ds 1
 HeroGraphicsColorPtr	ds 2
 Player_Health		ds 1
 MOV_STAT		ds 1 	;direction player is moving
+Level			ds 1 ;What is the current level
+Grapple		ds 1
 
 Graphics_Buffer		ds 1	;buffer for graphics
 Graphics_Buffer_2	ds 1	;buffer for graphics
@@ -391,8 +399,6 @@ RCROLLOVER
 
 
 
-
-
 	LDA ROLLING_COUNTER
 
 	AND #15		;every 8th screen swap to next image of player
@@ -406,6 +412,8 @@ PICSET4	LDA  PICS
 PICSET	LDA  #0
 PICSET2	STA PICS
 PICSET3
+
+
 
 
 	LDA ROLLING_COUNTER
@@ -582,6 +590,7 @@ no_eor
 
 
 	LDY #0
+	sty Grapple
 	LDX #7
 Collision
 
@@ -684,13 +693,17 @@ BOSS1
 	bne NotOutsideBOSSRange
 	and #%00000110	
 NotOutsideBOSSRange
+	cmp #0
+	BNE NotZeroLane
+	lda #1
+NotZeroLane
 	tax
 	LDA Multiplexer-1,x
 	ORA Enemy_Life
 	STA Enemy_Life
 	lda PF_TEMP
 	sta E0_Health-1,x
-	lda #14
+	lda #LVL1BOSS
 	sta E0_Type-1,x
 	ldx Multi_Temp
 	JMP NoCollisionP0
@@ -712,7 +725,7 @@ mandrake
 	LDA Multiplexer-1,x
 	ORA Enemy_Life
 	STA Enemy_Life	
-	LDA #3
+	LDA #1
 	sta E0_Health-1,x
 	jmp notsmacked
 nosnakepause
@@ -724,7 +737,9 @@ notsnake
 	and Player_Hit
 	beq notsmacked
 	asl Player_Health
-;	sta Pause
+;	lda #1
+;	sta Grapple
+;	this is where to put grappling stuff
 notsmacked
 
 	DEX
@@ -771,7 +786,8 @@ KEEPPAUSE
 	BCS Hit_Pit
 	LDA New_Hit
 	CMP #1
-	LDA #0
+;	LDA #0
+	sta Grapple
 	BCC Did_Not_Hit_Pit
 	ASL Player_Health
 Hit_Pit
@@ -1275,8 +1291,9 @@ MTNRANGE2
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 	
 	STA COLUPF
-	LDA #$12;
-
+	;LDA #$12;
+	LDX Level
+	LDA Level_Color,x
 	STA COLUBK	;and store as the bgcolor
 	LDY #C_KERNAL_HEIGHT; 
 	LDA #0
@@ -2526,7 +2543,8 @@ DoneWithSwordAttack
 
 
 
-
+	lda Grapple
+	bne HeroDown
 
 ;	LDA #%01000000	;Left?
 	BIT SWCHA 
@@ -4028,6 +4046,19 @@ NotYet
 
 	JMP ENDSLICES
 
+
+Level_Color
+		.byte #$C2
+		.byte #$C0
+		.byte #$D4
+		.byte #$D2
+		.byte #$D0
+		.byte #$E6
+		.byte #$E4
+		.byte #$E0
+		.byte #$F4
+		.byte #$F2
+		
 
 
 	org #$FEC0 ;HeroGraphicsColor + #768
