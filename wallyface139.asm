@@ -1,7 +1,6 @@
 ;--------------------------------------------------------------
 ;Tumulus : Burial Mound, Entrance to the underworld
 ;One can shoot down, one accross, and one up. That way fireballs don't overlap
-;Maybe player magic that destroys all monster and leaves holes in ground. Beams that kill only if hit enemy
 ;player has corruption on far right
 ;need to add way to change playfield colors, for enemy special attack, and top eye enemy attack 
 ;certain pallettes don't work on lanes 6 and 7, The colors for monster types (3,4,5,6,7)
@@ -10,8 +9,12 @@
 ;top line of baddie is wrong because it needs to be loaded in prior line, but not the color
 ;make giant ogre, out of several pieces
 ;endline1 doesn't have dey till later, which causes player knife to be off position, only on far far right
-;Potion Magic isn't clearing properly
-;may be problems with too many points at once
+;may be problems with too many points at once, with potion kill
+;add second weapon a whip, then whip goes further, but is slower, on horse it cant stay out like the knife, it 
+;straddles several lines, so it's like this -----
+;                                               -----
+;                                                    -----
+;Using hmove, not sure how to leave active, use player active?
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
@@ -384,7 +387,7 @@ NS3
 NS4
 	CMP #5
 	BNE NS5
-;	JMP SLICE1 ;Baddie Movement is twice as fast
+	JMP SLICE4 ;Baddie Movement is twice as fast
 NS5
 	CMP #6
 	BNE NS6
@@ -397,98 +400,28 @@ NS7
 
 	JMP ENDSLICES
 
-SLICE0
-	LDA #0
-	cmp Pause ;If screen paused because ceratures going backwords, pause
-	bcc NotYet
-RESSURECT
-	DEC Baddie_Duration 
-	bmi TOOLARGE
-	bne NotYet
-
-TOOLARGE
-
-	ldx Baddie_Num
-
-	LDA NEXTBADDIETYPE,x
-	CMP #255
-	BNE DONTLOOP
-	LDX #0
-	STX Baddie_Num
-DONTLOOP
-
-;Lane choice increments with baddie_num,and then use switch to mess with it.
-;	lax Baddie_Num
-;	and #%00000111
-;	tay
-;	lda Switch,y
-;	tay
-
-
-	LDA NEXTBADDIETYPE,x
-	LSR
-	LSR
-	LSR
-	LSR
-	LSR
-	AND #%00000111
-	TAY
 
 
 
-	LDA NEXTBADDIETYPE,x
-	AND #%00011111 
-	STA E0_Type,y
-	CMP #0
-	beq TREE
-	CMP #1
-	beq HORSE 
-	ASL 
-	STA E0_Health,y
-	JMP NOTHORSE	
-TREE
-	LDA #120
-	STA E0_Health,y
-	JMP NOTHORSE
 
-HORSE
-	LDA #1
-	STA E0_Health,y
-	JMP NOTHORSE
 
-NOTHORSE
+SLICE4
 
-	lda #Far_Right-1
-	sta E0_XPos,y
-
-	lda #0
-	sta Direction
-
-	lda Baddie_Num
-	AND #%00001111
-	ASL
-	ASL
-	ASL
+	LDA Potion
+	CMP #10	
+	bcc OverPotionB
+	sec 
+	sbc #%00010000
+	sta Potion
+	lda #$FF
+	sta Other_Hit
 	
-	
-	sta Baddie_Duration
-
-	CLC
-	ROL
-	ROL Baddie_Duration
-	CLC
-	ROL
-	ROL Baddie_Duration
- 
-
-	
-	LDA Multiplexer,y
-	ora Enemy_Life
-	sta Enemy_Life
-
-	INC Baddie_Num
-NotYet
+OverPotionB	
 	JMP ENDSLICES
+
+
+
+
 
 SLICE1
 	
@@ -571,48 +504,8 @@ MOVESET1
 	
 	JMP ENDSLICES
 
-SLICE3
-MOVESECTION
-	LDA Pause
-	CMP #0
-	BEQ NOMAKEEYES
-	INC Overeyes
-NOMAKEEYES
-	LDA #0
-	STA Player_Hit ;Need to make it easier to live
-	STA New_Hit
-	JMP MOVESET1
-NOMOVESET
-
-	LDA Overeyes
-	CMP #240
-	BCC NOPITCREATION
-	LDA RNG
-	CMP #120
-	BCS NOPITCREATION
-	CMP #Far_Right
-	BCS NOPITCREATION
-	AND #%00000111
-	tax
-	LDA RNG
-	ADC #10
-;AND #%01111111
-	STA #Pit0_XPos-1,x	 
-
-NOPITCREATION	
-	CMP #11
-	BNE NOLOSEHORSE
-	LDA #0
-	STA onhorse
-NOLOSEHORSE
 
 
-	LDA Player_Hit
-	BEQ HORSENOTLOST
-	LDA #0
-	STA onhorse
-HORSENOTLOST
-	JMP ENDSLICES
 
 ENDSLICES
 
@@ -652,6 +545,10 @@ Collision
 	LDA Multiplexer-1,x
 	AND Other_Hit
 	BEQ NoCollisionP0	;skip if not hitting...		
+	LDA Multiplexer-1,x
+	AND Enemy_Life	
+	BEQ NoCollisionP0	;skip if not alive
+
 	lda E0_Type-1,x
 	cmp #5
 	bcc dontpause
@@ -982,7 +879,7 @@ notalive1b
 
 
 	lda Potion
-	cmp #4
+	cmp #$10
 	bcc AdjustTableForColorHitTest
 	LDA #<EnemyFireColor
 	JMP AdjustTableForColor
@@ -2453,10 +2350,12 @@ MORECALCS
 horseknife
 
 
+
 	lda Potion
 	beq NoPotion
-	cmp #4
+	cmp #$10
 	bcs OverPotion	
+
 
 	ldx INPT5
 	bmi NoPotion
@@ -2471,15 +2370,12 @@ nobonus
 	ora Potion
 	sta Potion
 	dec Potion
-	lda #$FF
+	lda Enemy_Life
 	sta Other_Hit
 	jmp NoPotion
 OverPotion
-	sec 
-	sbc #%00010000
-	sta Potion
-	lda #$FF
-	sta Other_Hit
+
+
 
 NoPotion
 	;check Hero Sword Attack
@@ -3151,6 +3047,9 @@ SkipMoveUp
 	JMP PreOverScanWait
 
 
+
+
+
 	org $FBC0 
 
 
@@ -3334,6 +3233,84 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%11001001
      .byte #%11001010
      .byte #255 ;This is to reset to beginning
+
+
+NEXTBADDIEDUR
+	.byte #$0
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+	.byte #$10
+
+
+
+SLICE3
+MOVESECTION
+	LDA Pause
+	CMP #0
+	BEQ NOMAKEEYES
+	INC Overeyes
+NOMAKEEYES
+	LDA #0
+	STA Player_Hit ;Need to make it easier to live
+	STA New_Hit
+	JMP MOVESET1
+NOMOVESET
+
+	LDA Overeyes
+	CMP #240
+	BCC NOPITCREATION
+	LDA RNG
+	CMP #120
+	BCS NOPITCREATION
+	CMP #Far_Right
+	BCS NOPITCREATION
+	AND #%00000111
+	tax
+	LDA RNG
+	ADC #10
+;AND #%01111111
+	STA #Pit0_XPos-1,x	 
+
+NOPITCREATION	
+	CMP #11
+	BNE NOLOSEHORSE
+	LDA #0
+	STA onhorse
+NOLOSEHORSE
+
+
+	LDA Player_Hit
+	BEQ HORSENOTLOST
+	LDA #0
+	STA onhorse
+HORSENOTLOST
+	JMP ENDSLICES
+
+
+
+
+
 
 	org #$FCC0 ;HeroGraphicsColor + #256
 
@@ -3522,33 +3499,47 @@ LEFTAUD
 
 
 GraphicsTableLow
-     .byte #<TreeGraphics
+     .byte #<TreeGraphics ;0
 
-     .byte #<PonyGraphics
+     .byte #<PonyGraphics ;1
 
-     .byte #<MainPlayerGraphics2
+     .byte #<MainPlayerGraphics2 ;2
 
-     .byte #<MainPlayerGraphics8
+     .byte #<MainPlayerGraphics8 ;3
 
-     .byte #<MainPlayerGraphics8
+     .byte #<MainPlayerGraphics8 ;4
 
-     .byte #<MainPlayerGraphics5
+     .byte #<MainPlayerGraphics5 ;5
 
-     .byte #<MainPlayerGraphics5
+     .byte #<MainPlayerGraphics5 ;6
 
-     .byte #<MainPlayerGraphics7
+     .byte #<MainPlayerGraphics7 ;7
 
-     .byte #<MainPlayerGraphics6
+     .byte #<MainPlayerGraphics6 ;8
 
-     .byte #<MainPlayerGraphics5
+     .byte #<MainPlayerGraphics5 ;9
 
-     .byte #<MainPlayerGraphics4
+     .byte #<MainPlayerGraphics4 ;10
 
-     .byte #<MainPlayerGraphics3
+     .byte #<MainPlayerGraphics3 ;11
 
-     .byte #<MainPlayerGraphics1
+     .byte #<MainPlayerGraphics3 ;12
 
-     .byte #<MainPlayerGraphics0
+     .byte #<MainPlayerGraphics3 ;13
+
+     .byte #<TreeGraphics ;14
+
+     .byte #<TreeGraphics ;15
+
+     .byte #<TreeGraphics ;16
+
+     .byte #<TreeGraphics ;17
+
+     .byte #<TreeGraphics ;18
+
+     .byte #<TreeGraphics ;19
+
+
 
 GraphicsTableHigh
      .byte #>TreeGraphics
@@ -3575,10 +3566,21 @@ GraphicsTableHigh
 
      .byte #>MainPlayerGraphics3
 
-     .byte #>MainPlayerGraphics1
+     .byte #>MainPlayerGraphics3
 
-     .byte #>MainPlayerGraphics0
+     .byte #>MainPlayerGraphics3
 
+     .byte #>TreeGraphics ;14
+
+     .byte #>TreeGraphics ;15
+
+     .byte #>TreeGraphics ;16
+
+     .byte #>TreeGraphics ;17
+
+     .byte #>TreeGraphics ;18
+
+     .byte #>TreeGraphics ;19
 
 GraphicsColorTableLow
      .byte #<TreeGraphicsColor
@@ -3837,6 +3839,87 @@ EnemyFireColor
         .byte #$02
 
 
+
+SLICE0
+	LDA #0
+	cmp Pause ;If screen paused because ceratures going backwords, pause
+	bcc NotYet
+RESSURECT
+	DEC Baddie_Duration 
+	bmi TOOLARGE
+	bne NotYet
+
+TOOLARGE
+
+	ldx Baddie_Num
+
+	LDA NEXTBADDIETYPE,x
+	CMP #255
+	BNE DONTLOOP
+	LDX #0
+	STX Baddie_Num
+DONTLOOP
+
+
+	LDA NEXTBADDIETYPE,x
+	LSR
+	LSR
+	LSR
+	LSR
+	LSR
+	AND #%00000111
+	TAY
+
+
+
+	LDA NEXTBADDIETYPE,x
+	AND #%00011111 
+	STA E0_Type,y
+	CMP #0
+	beq TREE
+	CMP #1
+	beq HORSE 
+	ASL 
+	STA E0_Health,y
+	JMP NOTHORSE	
+TREE
+	LDA #120
+	STA E0_Health,y
+	JMP NOTHORSE
+
+HORSE
+	LDA #1
+	STA E0_Health,y
+	JMP NOTHORSE
+
+NOTHORSE
+
+	lda #Far_Right-1
+	sta E0_XPos,y
+
+	lda #0
+	sta Direction
+
+
+
+
+	
+	LDA Multiplexer,y
+	ora Enemy_Life
+	sta Enemy_Life
+
+	INC Baddie_Num
+
+	lda NEXTBADDIEDUR,y
+	
+	sta Baddie_Duration
+	BEQ TOOLARGE
+
+
+NotYet
+
+
+	JMP ENDSLICES
 
 
 
