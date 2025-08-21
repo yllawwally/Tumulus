@@ -8,7 +8,9 @@
 ;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
 ;top line of baddie is wrong because it needs to be loaded in prior line, but not the color
 ;make giant ogre, out of several pieces
-;endline1 doesn't have dey till later, which causes player knife to be off position, only on far far right
+;endline1 is where players arm is miscolored
+;EndLin4b is where the color is bad for the arm now
+;Need to add grappling
 ;may be problems with too many points at once, with potion kill
 ;add second weapon a whip, then whip goes further, but is slower, on horse it cant stay out like the knife, it 
 ;straddles several lines, so it's like this -----
@@ -28,7 +30,6 @@
 ;Gargoyle
 ;Griffon
 ;Vampire, summon undead???, drain life, resurrect helpers in same spot they died, but as next more powerfull?, bats
-;Saytr, summon goats
 ;Giant, can create craters that move accross screen
 ;Mummy
 ;Dragon, breath fire, uses the moving pit in mouth, change color when spit at player
@@ -38,6 +39,37 @@
 ;Fairy, can teleport, teleports past you, you must hit her from behind.
 ;--------------------------------------------------------------
 ;
+
+
+
+;Mandrake Red Plant
+;Mandrake Blue Plant
+;Mandrake Red Man
+;Mandrake Blue Man
+;Ghost
+;Snake Man
+;Snake
+;Midget Fighter
+;Horse
+;Brownie
+;Large Pit
+;Small Pit
+;blob
+
+
+
+;Will O Wisp
+;mummy will take 2 images to make him big, and change pit color
+;mummy b
+;Gargoyle, can fly straight at player quickly
+;Giant, creates moving craters. also large like mummy
+;Giant b
+;Dragon, large, shoots fire ball pits. only see head?
+;Dragon b
+
+
+
+
 
 	processor 6502
 	include vcs.h
@@ -49,7 +81,7 @@ C_P1_HEIGHT 		= 12	;height of hero sprite
 C_KERNAL_HEIGHT 	= 182	;height of kernal/actually the largest line on the screen ;was 186
 Far_Left		= 8
 Far_Right		= 140
-Far_Right_Hero		= 134
+Far_Right_Hero		= 128
 Far_Up_Hero		= 180
 Far_Down_Hero		= 21+C_P1_HEIGHT
 Enemy_Far_Left		= 4
@@ -1257,7 +1289,7 @@ MTNRANGE2
 	STA GRP1
 	STA HMCLR
 
-	LDA Multiplexer
+	LDA Multiplexer ;This is where you control number of critters on screen //////////////////////////////////
 	sta Multi_Temp	
 
 	
@@ -1311,9 +1343,9 @@ New_E2_Start
 	sta	Row_1	
 
 	lda Enemy_Row_Data+1,x
-	sbc #1 ;
+	sbc #100 ;
 	sta	Row_3
-	adc #8 ;was 5
+	adc #8 ;was 5 8
 	sta	Row_2
 	JMP YESPIT	
 	
@@ -1526,6 +1558,8 @@ new_E1_line3     STA WSYNC
  	php	;2
 	DEY
 
+
+
 EndLine1   STA WSYNC  
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .600: SUBROUTINE
@@ -1557,14 +1591,16 @@ EndLine2        STA WSYNC                                                ;3 cycl
 	cpy Hero_Sword_Pos  ;3
 	php			;3
 
+	ldx 	Graphics_Buffer  ;3
+	stx	GRP1	;3
+
+
+
 ;	INY
 
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta	COLUP1
 
-
-	ldx 	Graphics_Buffer  ;3
-	stx	GRP1	;3
 
 
 
@@ -1680,7 +1716,7 @@ Draw_Enemy_E2
 	STA WSYNC
 	JMP Draw_Enemy_E2
 EndLine4 
-	  	
+	  	;this is where the arm color is being messed up
 EndLin4b STA WSYNC 
 ;-----------------------this needs to run for 8 lines, the size of an enemy
 	sta 	COLUP1 ;3
@@ -1740,6 +1776,7 @@ Hit_Baddie
 
 	dey
 	cpy Hero_Sword_Pos  ;3
+
 	sta 	COLUP1 ;3
 EndLine5 	sta WSYNC
 
@@ -1961,15 +1998,19 @@ EndScanLoop_E2_c
 .doDrawHero_E1_eb21:
 	lax     (Hero_Ptr),y      ; 5
 
-	lda PF_TEMP
+;	lda PF_TEMP
 
-	cmp #8
-
-	lda     (HeroGraphicsColorPtr),y      ; 5
+;	cmp #8 ;this was 8, num of creatures max it's not using this it's using multitemp for bcs endline
 
 	asl Multi_Temp
 
+	lda Multi_Temp
+	cmp #%00001000     ;Set this to number of monsters you want ////////////////////////////////
+
+	lda     (HeroGraphicsColorPtr),y      ; 5
+
 	DEY
+
 
 
 	bcs end_Line  
