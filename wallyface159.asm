@@ -15,6 +15,8 @@
 
 ;146 is last version without mummy
 
+;a monster who shares the background color with head, so head is only seen when hit.
+
 ;FUTURE FEATURES
 ;Need to add grappling
 ;differentiate levels more
@@ -22,18 +24,23 @@
 ;maybe monsters shouldn't attack when on fire
 ;slide ceratures up and down
 ;allow creatures to move to a different lane if overeyes > 0
+;Need to move monsters order around so that the proper ones damage player
+;baddie values won't be correct, need 7 more bytes in that section
 
 
 ;BUGS
-;player has corruption on far right
 ;1 line of player is discolored
 ;snakes don't damage player
-;tree doesn't damage player
-;Dragon need fire to change between red and green
-;weird player graphic corruption, when touching mummy
+;tree doesn't damage player, did I want to tree to hurt player or only chase snake away.
+;ghost doesn't stay on screen
 ;make dragon not move
 ;make dragon fire move
+;bottom part of boss changes direction when hit.
+;Sometimes when you kill a monster, the screen flickers for a moment.When I lose horse? Or maybe only on that lane
+;Seems like everything on lane one is harder to kill
+;Skyline is messed up, when monsters on screen, need to adjust color palette
 
+;FIXED
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
@@ -58,25 +65,42 @@
 ;--------------------------------------------------------------
 ;
 
+;(Section of don't damage players, but will scare away horse)
+;0,00000,Tree 
+;1,00001,Horse
+;2,00010,Mandrake Red Plant
+;3,00011,Mandrake Blue Plant
+;4,00100,Mandrake Red Man
+;5,00101,Mandrake Blue Man
+;6,00110,Treasure Chest
+;7,00111,Weapon Upgrade???
+;8,01000,
+;(Section of monsters that can exit the screen)
+;9,01001,Large Pit
+;10,01010,Small Pit
+;11,01011,Snake
+;12,01100,Bat 
+;13,01101,Rat 
+;14,01110,Homonoculus ;Palette swap of Boggart???
+;15,01111,Goblin ;Need to add it
+;(Section of monsters that must be defeated)
+;16,10000,RedCap ;Palette swap of Goblin???
+;17,10001,Orc
+;18,10010,Ghost
+;19,10011,Snake Man
+;20,10100,Boggart Fighter
+;21,10101,Brownie
+;22,10110,Satyr ;Need to add it
+;23,10111,Mummy A
+;24,11000,Mummy B
+;25,11001,Dragon A
+;26,11010,Dragon B
+;27,11011,Will O Wisp
+;28,11100,Vampire a ;Need to add it
+;29,11101,Vampire b ;Need to add it
+;30,11110,Minotaur a;Need to add it
+;31,11111,Minotaur b;Need to add it
 
-
-;Mandrake Red Plant
-;Mandrake Blue Plant
-;Mandrake Red Man
-;Mandrake Blue Man
-;Ghost
-;Snake Man
-;Snake
-;Midget Fighter
-;Horse
-;Brownie
-;Large Pit
-;Small Pit
-;blob
-
-
-
-;Will O Wisp
 ;mummy will take 2 images to make him big, and change pit color
 ;mummy b
 ;Gargoyle, can fly straight at player quickly
@@ -99,9 +123,9 @@ C_P1_HEIGHT 		= 12	;height of hero sprite
 C_KERNAL_HEIGHT 	= 182	;height of kernal/actually the largest line on the screen ;was 186
 Far_Left		= 8
 Far_Right		= 140
-Far_Right_Hero		= 128
+Far_Right_Hero		= 110
 Far_Up_Hero		= 180
-Far_Down_Hero		= 21+C_P1_HEIGHT
+Far_Down_Hero		= 38+C_P1_HEIGHT
 Enemy_Far_Left		= 4
 Enemy_Pause_Left	= 6
 HERO_SPEED_VER		= 1
@@ -116,11 +140,13 @@ Enemy_Row_E4		= 85   ;109
 Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
-Min_Eye_Trigger		= 8
-LVL1BOSS			= 14
-Mummy_Num		= %01111
-
-LVL2BOSS			= 15
+Min_Eye_Trigger		= 8;was 8
+LVL1BOSS			= 27
+LVL2BOSS			= 23
+LVL3BOSS			= 25
+LVL4BOSS			= 28
+LVL5BOSS			= 30
+Mummy_Num		= LVL2BOSS
 ;Variables ------
 
 
@@ -318,6 +344,9 @@ ClearMem
 	lda #17
 	sta Offset
 
+;	LDA #40
+	STA Hero_XPos
+
 	LDA #%11111110
 	STA Enemy_Life
 	LDA #%11111111
@@ -326,7 +355,7 @@ ClearMem
 	LDA #%00010000 ;set playfield to not reflected
 	STA CTRLPF
 	sta duration
-	LDA EnemyGraphicsColor6b
+	LDA SnakeColorb
 	STA Pit_Color
 
 	LDA #%11111000	;The last 3 bits control number and size of players
@@ -334,7 +363,7 @@ ClearMem
 	STA NUSIZ0
 	STA NUSIZ1
 
-	LDX #3
+	LDX #3 ;was 3
 
 
 LOADPFDATA
@@ -356,18 +385,12 @@ LOADPFDATA
 	DEx	
 	BNE LOADPFDATA
 
-	LDA #40
-	STA Hero_XPos
 
 ;VSYNC time
 
 
 MainLoop ;+++++++++++++++++++++++++++The start of a new screen
 MainLoopStart
-;	LDA #0
- ;	STA PF0
-;	STA PF1
-;	STA PF2
 	LDA #30
 	STA VSYNC	
 	
@@ -453,12 +476,12 @@ NS4
 	BNE NS5
 	JMP SLICE4 ;Baddie Movement is twice as fast
 NS5
-	CMP #6
-	BNE NS6
+;	CMP #6
+;	BNE NS6
 ;	JMP SLICE1 ;Baddie Movement is twice as fast
 NS6
-	CMP #7
-	BNE NS7
+;	CMP #7
+;	BNE NS7
 ;	JMP SLICE1 ;Baddie Movement is twice as fast
 NS7
 
@@ -496,13 +519,13 @@ SLICE1
 ;Eneamy Movement---------------------------------------------------
 
 MOVELEFT
-	LDA Pause
-	BNE dontmovepit
-	LDA #0
-	cmp Pit0_XPos-1,x
-	beq dontmovepit
-	CMP onhorse
-	beq notonhorsepit
+;	LDA Pause
+;	BNE dontmovepit
+;	LDA #0
+;	cmp Pit0_XPos-1,x
+;	beq dontmovepit
+;	CMP onhorse
+;	beq notonhorsepit
 ;	DEC #Pit0_XPos-1,x ; Pits no longer move, they are parts of bigger monsters
 notonhorsepit
 ;	DEC #Pit0_XPos-1,x ; Pits no longer move, they are parts of bigger monsters
@@ -585,10 +608,20 @@ ENDSLICES
 
 	
 
-
-
 	LDY #0
-	sty Grapple
+	LDX Link
+	BCC NotBossLevel
+	LDX Other_Hit
+	BEQ HITSCORE
+	INX 
+	DEC E0_Health-1,x
+	JMP NOSCORE
+HITSCORE
+	LDX Link
+	JMP NOSCORE
+
+NotBossLevel
+	sta Grapple ;too big
 	LDX #7
 Collision
 
@@ -664,13 +697,13 @@ ExtraDead
 
 
 
-	CMP #6
+	CMP #4
 	BEQ RedMandrakeMan
 	BCS NoCollisionP0
 
-	CMP #3
+	CMP #2
 	BEQ RedMandrakePlant
-	CMP #4
+	CMP #3
 	BEQ BlueMandrakePlant
 	CMP #5
 	BEQ BlueMandrakeMan
@@ -685,9 +718,10 @@ ITSZERO
 
 NoCollisionP0
 	lda E0_Type-1,x
-	cmp #Min_Eye_Trigger
-	bcs nosnakepause
+	cmp #Min_Eye_Trigger ;This is causing snake to not damage player
+	bcs nosnakepause ;This is the routine that damages the player
 	JMP notsmacked 
+;	JMP nosnakepause ;this wasn't here
 
 BOSS1
 	stx Multi_Temp
@@ -793,14 +827,14 @@ KEEPPAUSE
 ;	lda onhorse
 ;	bne Did_Not_Hit_Pit
 	lda Player_Hit
-	cmp #1
+	cmp #1;if not 1, you can't get on horse
 	lda #0
 	BCS Hit_Pit
 	LDA New_Hit
 	CMP #1
-;	LDA #0
+	LDA #0 ;to fix issue with player corruption from monster touching
 	sta Grapple
-	BCC Did_Not_Hit_Pit
+	BCC Did_Not_Hit_Pit 
 	ASL Player_Health
 Hit_Pit
 	sta onhorse
@@ -911,12 +945,15 @@ Enemies_Alive
 	adc #C_P1_HEIGHT - #1
 	sta Hero_Ptr	;2 byte
 
-	LDA #<HeroGraphicsColor
-	sta HeroGraphicsColorPtr
+ 
 	LDA #>HeroGraphicsColor
 	sta HeroGraphicsColorPtr+1
  
-	lda HeroGraphicsColorPtr
+	LDA #<HeroGraphicsColor 
+;	sta HeroGraphicsColorPtr
+
+
+;	lda HeroGraphicsColorPtr
 	sec
 	sbc Hero_YPosFromBot
 	clc
@@ -924,17 +961,6 @@ Enemies_Alive
 	adc onhorse	
 	STA HeroGraphicsColorPtr
 
-
-
-;	ldx Mummy_Num
-;	lda GraphicsTableLow,x 	;low byte of ptr is graphic
-;	CLC	;clear carry
-;	ADC PICS
-;	sta MidSectionColorPtr
-
-;	lda GraphicsTableHigh,x ;high byte of graphic location
-
-;	sta MidSectionColorPtr+1
 
 ;setup pic animations ----------------------------------------------
 
@@ -951,10 +977,10 @@ setuppics
 
 	and Enemy_Life
 	BNE alive1b	
-	lda #<EmptyPlayerGraphics 	;low byte of ptr is graphic
+	lda #<PonyGraphicsColor 	;low byte of ptr is graphic
 	sta #E0_Ptr-1,y		;(high byte already set)
 
-	lda #>EmptyPlayerGraphics ;high byte of graphic location
+	lda #>PonyGraphicsColor ;high byte of graphic location
 	sta #E0_Ptr2-1,y	;store in high byte of graphic pointer
 	jmp notalive1b
 alive1b
@@ -1039,7 +1065,13 @@ TESTPOINTF
 	cmp Hero_Sword_Pos
 	bcc NoSwordSound
 
-	ldx swordduration
+
+	lda swordduration
+	asl
+	asl
+	asl
+	tax
+;	ldx swordduration
 	lda SwordSongv-1,x
 	STA AUDV1
 
@@ -1122,6 +1154,10 @@ resetx
 	
 ;music section ------------------------------------------------------------------------
 
+
+
+
+
 	lda #0
 	sta New_Hit
 	sta Other_Hit
@@ -1131,13 +1167,16 @@ resetx
 	lda #24
 	jmp nozero
 leftdif	
-;	lda #0
+	lda #0
 nozero
 ;	sta onhorse
 
 TESTPOINTG
 ;-test to start on horse
 ;	LDY #4
+
+
+
 
 	LDA #0
 
@@ -1156,9 +1195,12 @@ TESTPOINTG
 	LDA #$FF
 
 NOEyesYet	
-	;LDY #4
+	LDY #4
 NOBIGEYES
 	sta GRP0
+
+
+
 
 WaitForVblankEnd
 	LDA INTIM	
@@ -1198,17 +1240,40 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 ;this is to align sword
 	DEC Hero_Y
 
+
+;I'm not doing this right, this is halfway between seeding one color, and the pallete method 
+;	ldx Mummy_Num
+
+;	lda BellyColor,x	;low byte of ptr is graphic
+
+;	sec				;maybe last position should be used as color
+;	sbc DistFromBottom+2	;uses too much time, can we simply load the color here, instead of ptr
+
+
+;	sta MidSectionColorPtr
+
+;	lda GraphicsColorTableHigh,x ;high byte of graphic location
+;	lda #>BellyColor
+
+;	sta MidSectionColorPtr+1
+
+
+
+
+
 	ldx Mummy_Num
-	lda GraphicsTableLow,x 	;low byte of ptr is graphic
-;	sec
-	ADC PICS
-	sbc DistFromBottom+2
+
+;GraphicsTable
+loadbellycolor
+	lda BellyColor,x 	;low byte of ptr is graphic
+
 	sta MidSectionColorPtr
 
-	lda GraphicsTableHigh,x ;high byte of graphic location
 
-	sta MidSectionColorPtr+1
-
+	NOP
+	NOP
+	NOP
+	NOP
 
 
 
@@ -1222,13 +1287,14 @@ MLEFT
 MRIGHT	STA HMM1
 
 	STA CXCLR	;reset the collision detection for next time
-;
-;	LDA #%01110000 
-;	STA HMM0
+
 
 	LDA #$0
 	STA GRP1
-	LDY #4
+
+	LDY #4 
+
+
 	CMP Pause
 	BCS NOBIGEYES2
 	LDY #8
@@ -1236,10 +1302,7 @@ NOBIGEYES2
 
 	LDA #$72
 	STA COLUPF
-	LDA #%00000010	;The last 3 bits control number and size of players
 
-
-	STA NUSIZ0
 
 
 
@@ -1313,7 +1376,10 @@ MTNRANGE2
 	dey	
 	INX
 
-	
+	LDA #%00000010	;The last 3 bits control number and size of players
+
+
+	STA NUSIZ0	
 
 	LDA PFCOLOR-1,Y		; 4 cycles
 
@@ -1415,7 +1481,7 @@ New_E2_Start
 	
 	lda Pit0_XPos,x
 	sta TempPit_XPos
-	;CMP #0
+	CMP #0
 	beq NOPITTHISLEVEL
 	clc ;this is needed beacause of the subtract, and the sword compare
 	lda Enemy_Row_Data,x
@@ -1555,7 +1621,7 @@ new_E1_line2     STA WSYNC                ;not enough time
 
 ;--------------need to setup all enemy variables--------------------
 
-	ldx #0
+;	ldx #0 ;why is this here; oh, it stops the weird sliding line
 ;	stx GRP0
 
 
@@ -1613,7 +1679,7 @@ new_E1_line3     STA WSYNC
 ;This allows us to do the calculation early, but must move dey to before routine
 	sta Graphics_Buffer_2
 	lax     (HeroGraphicsColorPtr),y      ; 5
-
+	
 	dey
 
 ;skipDraw
@@ -1630,23 +1696,21 @@ new_E1_line3     STA WSYNC
 
 
 
-
+	
 	lda  Graphics_Buffer_2
 	cpy Hero_Sword_Pos  ;3
 
 	stx COLUP1
  	php	;2
 	DEY
-
-
-
+	
 EndLine1   STA WSYNC  
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .600: SUBROUTINE
 ;This is not a loop, this is a one time set position for the eneamy
-
 	clc
 	sta GRP1
+
 	lda Temp_XPos ;3
 .Div15_E2_a   
 	sbc #15      ; 2         
@@ -1676,17 +1740,9 @@ EndLine2        STA WSYNC                                                ;3 cycl
 
 
 
-;	INY
-
 	lda     (HeroGraphicsColorPtr),y      ; 5
 	sta	COLUP1
 
-
-
-
-
-
-;	DEY
 
 
 
@@ -1858,9 +1914,9 @@ MidLine5
 
 	dey
 	cpy Hero_Sword_Pos  ;3
-
 	sta 	COLUP1 ;3
-EndLine5 	sta WSYNC
+
+EndLine5 ;	sta WSYNC
 
 ;---------------------line for setting up pits-----------------------------------------
 ;sword php style
@@ -1928,11 +1984,22 @@ pitposition
 
 
 
-	lda (MidSectionColorPtr),y
+	lda MidSectionColorPtr
 	sta COLUP0
 
 
 
+
+	lda TempPit_XPos ;3
+	clc	;2
+
+
+.Div15_Pit   
+;	sbc #15      ; 2         
+;	bcs .Div15_Pit   ; 3(2)
+
+;	tax
+;	lda fineAdjustTable,x       ; 13 -> Consume 5 cycles by guaranteeing we cross a page boundary
 	lda #0
 	sta HMP0 
 
@@ -2011,7 +2078,8 @@ ScanLoop_E2_c
 	BCS NO_PIT
 	LDA TempPit_XPos
 	STA GRP0
-	lda (MidSectionColorPtr),y
+	lda (MidSectionColorPtr),y 
+;	lda MidSectionColorPtr ;What the heck now it's jumpy
 	sta COLUP0
 
 NO_PIT
@@ -2164,8 +2232,6 @@ EndScanLoop_E0_cz
 ;E0_Ptr This and the next 24 bytes can be used for temp Score storage
 	STA WSYNC  
  
-;	STA WSYNC
-;	STA WSYNC
 
 	LDA Overeyes
 	CMP #240
@@ -2344,21 +2410,30 @@ LINED
 	STA E1_Ptr2
 
 	LDY Link
-	BEQ LINEE
+	BEQ LINEE ;if link zero skip this section
 	LDA #E0_Health,y
 	BEQ KILLLINKS
-	LDA #10
-	INY
+	CMP #E1_Health,y
+
+	BEQ LINEE
+	BCC STABILIZE 
+
+	LDA #E1_Health,y
 	STA #E0_Health,y
+STABILIZE
+
+	STA #E1_Health,y
+
 	JMP LINEE
 KILLLINKS
 	LDA #0
+
 	STA #Pit0_XPos,y
-	INY
-	STA #E0_Health,y
+
+;	STA #E1_Health,y
+
+	STA #Pit1_XPos,y
 	STA Link
-;	LDA #Mask-1,y ;can just kill everything on screen because this is last on each level
-;	AND Enemy_Life ;can just kill everything on screen because this is last on each level
 	STA Enemy_Life
 
 LINEE
@@ -2370,25 +2445,25 @@ LINEE
 	ASL
 	ASL
 	TAY
-	ldx #$F0
+;	ldx #$F0 ;too big
 
 	LDA NUM0_,y
 	SAX EnemyGraphicsColorPtr_E2
 	
-	INY
-	LDA NUM0_,y
+
+	LDA NUM1_,y
 	SAX EnemyGraphicsColorPtr_E3
 
-	iny
-	LDA NUM0_,y
+
+	LDA NUM2_,y
 	SAX EnemyGraphicsColorPtr_E4
 
-	iny
-	LDA NUM0_,y
+
+	LDA NUM3_,y
 	SAX EnemyGraphicsColorPtr_E5
 	
-	iny
-	LDA NUM0_,y
+
+	LDA NUM4_,y
 	SAX EnemyGraphicsColorPtr_E6
 LINEF
 ;	STA WSYNC  
@@ -2425,8 +2500,6 @@ LINEF
 	STA COLUPF
 
 	STA WSYNC
-
-
 rand_8
 	LDA	RNG		; get seed
 	BNE Not_Zero
@@ -2449,7 +2522,6 @@ no_eor
 	JMP CalcScore
 
 
-	    ORG $F890
 Mummy0a .byte #%00000100;$0C ;now a dragon head
         .byte #%00001111;$0E
         .byte #%00001101;$0C
@@ -2469,9 +2541,44 @@ Mummy1a .byte #%00000100;$0C ;now a dragon head
         .byte #%01100111;$0C
         .byte #%01100111;$0E
 
+EnemyLife
+     .byte #100 ;;0,Tree
+     .byte #1 ;;1,Horse
+     .byte #1 ;;2,Mandrake Red Plant
+     .byte #1 ;;3,Mandrake Blue Plant
+     .byte #1 ;;4,Mandrake Red Man
+     .byte #1 ;;5,Mandrake Blue Man
+     .byte #1 ;;6,Treasure Chest
+     .byte #1 ;;7,
+     .byte #1 ;;8,
+     .byte #100 ;;9,Large Pit
+     .byte #100 ;;10,Small Pit
+     .byte #1 ;;11,Snake
+     .byte #1 ;;12,Bat ;Need to add it
+     .byte #1 ;;13,Rat ;Need to add it
+     .byte #2 ;;14,Homonoculus ;Need to add it
+     .byte #4 ;;15,Goblin ;Need to add it
+     .byte #5 ;;16,RedCap ;Need to add it
+     .byte #7 ;;17,Orc ;Need to add it
+     .byte #1 ;;18,Ghost
+     .byte #1 ;;19,Snake Man
+     .byte #1 ;;20,Boggart Fighter
+     .byte #1 ;;21,Brownie
+     .byte #1 ;;22,Satyr
+     .byte #5 ;;23,Mummy A
+     .byte #5 ;;24,Mummy B
+     .byte #5 ;;25,Dragon A
+     .byte #5 ;;26,Dragon B
+     .byte #3 ;;27,Will O Wisp
+     .byte #6 ;;28,Vampire a ;Need to add it
+     .byte #6 ;;29,Vampire b ;Need to add it
+     .byte #7 ;;30,Minotaur a;Need to add it
+;     .byte #7 ;;31,Minotaur b;Need to add it might not need this value since it's a copy of monster 30
+
+
             ORG $F8C0 
 
-MainPlayerGraphics7
+GhostGraphics
         .byte #%00000000;$0E
         .byte #%01110000;$0E
         .byte #%00111000;$0E
@@ -2480,7 +2587,7 @@ MainPlayerGraphics7
         .byte #%10010000;$0E
         .byte #%00101000;$32
         .byte #%00111000;$0E
-MainPlayerGraphics7b
+GhostGraphicsb
         .byte #%00000000;$0E
         .byte #%00011100;$0E
         .byte #%00111000;$0E
@@ -2489,7 +2596,9 @@ MainPlayerGraphics7b
         .byte #%00010010;$0E
         .byte #%00101000;$32
         .byte #%00111000;$0E
-MainPlayerGraphics6
+
+
+BoggartGraphics
         .byte #%00000110;$90
         .byte #%00110100;$AA
         .byte #%00010100;$98
@@ -2498,7 +2607,7 @@ MainPlayerGraphics6
         .byte #%00011100;$74
         .byte #%00110010;$1A
         .byte #%00111001;$74
-MainPlayerGraphics6b
+BoggartGraphicsb
         .byte #%00110000;$90
         .byte #%00100110;$AA
         .byte #%00010100;$98
@@ -2508,7 +2617,8 @@ MainPlayerGraphics6b
         .byte #%00110001;$1A
         .byte #%00111000;$74
 
-MainPlayerGraphics30
+
+WillOWispGraphics
 	.byte #%00000000
 	.byte #%00111000
 	.byte #%01111100
@@ -2526,47 +2636,43 @@ MainPlayerGraphics30
 	.byte #%01111100
 	.byte #%00111000
 	.byte #%00000000
-
-SwordSongc ;10 bytes each section
-	.byte #0
-	.byte #10
-	.byte #20
-	.byte #30
-	.byte #40
-	.byte #50
-	.byte #60
-	.byte #70
-	.byte #90
-
-SwordSongf ;10 bytes each section
-	.byte #0
-	.byte #10
-	.byte #20
-	.byte #30
-	.byte #40
-	.byte #50
-	.byte #60
-	.byte #70
-	.byte #90
 
 
 
 
 BADDIEVALUE 
-     .byte #0 ;1
-     .byte #0 ;2
-     .byte #0 ;3
-     .byte #0 ;4
-     .byte #1 ;5
-     .byte #1 ;6
-     .byte #2 ;7
-     .byte #2 ;8
-     .byte #3 ;9
-     .byte #4 ;10
-     .byte #5 ;11
-     .byte #6 ;12
-     .byte #7 ;13
-     .byte #8 ;14
+     .byte #0 ;;0,Tree
+     .byte #0 ;;1,Horse
+     .byte #1 ;;2,Mandrake Red Plant
+     .byte #1 ;;3,Mandrake Blue Plant
+     .byte #1 ;;4,Mandrake Red Man
+     .byte #1 ;;5,Mandrake Blue Man
+     .byte #3 ;;6,Treasure Chest
+     .byte #3 ;;7,Weapon Upgrade???
+     .byte #3 ;;8,
+     .byte #0 ;;9,Large Pit
+     .byte #0 ;;10,Small Pit
+     .byte #2 ;;11,Snake
+     .byte #2 ;;12,Bat ;Need to add it
+     .byte #1 ;;13,Rat
+     .byte #1 ;;14,Homonoculus
+     .byte #1 ;;15,Goblin
+     .byte #1 ;;16,RedCap
+     .byte #1 ;;17,Ogre
+     .byte #4 ;;18,Ghost
+     .byte #4 ;;19,Snake Man
+     .byte #4 ;;20,Boggart Fighter
+     .byte #4 ;;21,Brownie
+     .byte #4 ;;22,Satyr
+     .byte #4 ;;23,Mummy A
+     .byte #5 ;;24,Mummy B
+     .byte #5 ;;25,Dragon A
+     .byte #5 ;;26,Dragon B
+     .byte #6 ;;27,Will O Wisp
+     .byte #7 ;;28,Monster 4a
+     .byte #7 ;;29,Monster 4b
+     .byte #8 ;;30,Monster 5a
+     .byte #8 ;;31,Monster 5b
 
 
 
@@ -2725,10 +2831,9 @@ HeroDown
 
 
 
-
             ORG $F9C0 
 
-MainPlayerGraphics8
+MandrakePlantGraphics
         .byte #%00000000;$D2
         .byte #%00111100;$D2
         .byte #%00011000;$D2
@@ -2738,7 +2843,7 @@ MainPlayerGraphics8
         .byte #%11000011;$C4
         .byte #%11000011;$30
 
-MainPlayerGraphics8b
+MandrakePlantGraphicsb
         .byte #%00000000;$D2
         .byte #%00111100;$D2
         .byte #%00011000;$D2
@@ -2749,7 +2854,7 @@ MainPlayerGraphics8b
         .byte #%01100110;$30
 
 
-MainPlayerGraphics9
+OrcGraphics
         .byte #%00000000;
         .byte #%01001000;
         .byte #%00101000;
@@ -2759,7 +2864,7 @@ MainPlayerGraphics9
         .byte #%01110000;
         .byte #%01110000;
 
-MainPlayerGraphics9b
+OrcGraphicsb
         .byte #%00000000;
         .byte #%00100000;
         .byte #%00101000;
@@ -2794,17 +2899,25 @@ PonyGraphics
 
 
 
-SwordSongv ;10 bytes each section
-	.byte #0
-	.byte #1
-	.byte #2
-	.byte #3
-	.byte #4
-	.byte #5
-	.byte #6
-	.byte #7
-	.byte #9
 
+BatGraphics
+        .byte #%00000000;--
+        .byte #%10000001;--
+        .byte #%10111101;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11011011;--
+        .byte #%01011010;--
+        .byte #%00000000;--
+BatGraphicsb
+        .byte #%00000000;--
+        .byte #%00111100;--
+        .byte #%01111110;--
+        .byte #%11111111;--
+        .byte #%11111111;--
+        .byte #%11011011;--
+        .byte #%11000011;--
+        .byte #%10000001;--
 
 
 ;-----------------------------
@@ -3005,27 +3118,20 @@ OverScanWait
 	BNE OverScanWait
 	JMP  MainLoop   
 
+NotBellyColor
+	org NotBellyColor-#20 ;This is because only the end bosses have belly color, saves 20 bytes
+BellyColor ;could save some byte by having two orgs, one for the label and one where the data starts
+	org NotBellyColor
+	.byte #$30 ;Monster 23
+	.byte #$30 ;Monster 24
+	.byte #$30 ;Monster 25
+	.byte #$30 ;Monster 26
+	.byte #$30 ;Monster 27
+	.byte #$30 ;Monster 28
+	.byte #$30 ;Monster 29
+	.byte #$30 ;Monster 30
+	.byte #$30 ;Monster 31
 
-	org $FAC0 
-MainPlayerGraphics5
-        .byte #%00000000;$D2
-        .byte #%00010110;$D2
-        .byte #%00011100;$D2
-        .byte #%00011101;$C2
-        .byte #%00111110;$C4
-        .byte #%01001000;$D2
-        .byte #%00011100;$C4
-        .byte #%00010100;$30
-
-MainPlayerGraphics5b
-        .byte #%00000000;$D2
-        .byte #%00110100;$D2
-        .byte #%00011100;$D2
-        .byte #%01011100;$C2
-        .byte #%00111110;$C4
-        .byte #%00001001;$D2
-        .byte #%00011100;$C4
-        .byte #%00010100;$30
 
 Multiplexer
 	.byte #%00000001
@@ -3037,15 +3143,28 @@ Multiplexer
 	.byte #%01000000
 	.byte #%10000000
 
-Mask
-	.byte #%11111110
-	.byte #%11111101
-	.byte #%11111011
-	.byte #%11110111
-	.byte #%11101111
-	.byte #%11011111
-	.byte #%10111111
-	.byte #%01111111
+	org $FAC0 
+MandrakeManGraphics
+        .byte #%00000000;$D2
+        .byte #%00010110;$D2
+        .byte #%00011100;$D2
+        .byte #%00011101;$C2
+        .byte #%00111110;$C4
+        .byte #%01001000;$D2
+        .byte #%00011100;$C4
+        .byte #%00010100;$30
+
+MandrakeManGraphicsb
+        .byte #%00000000;$D2
+        .byte #%00110100;$D2
+        .byte #%00011100;$D2
+        .byte #%01011100;$C2
+        .byte #%00111110;$C4
+        .byte #%00001001;$D2
+        .byte #%00011100;$C4
+        .byte #%00010100;$30
+
+
 
 HeroGraphics2
         .byte #%00000000;$F4
@@ -3105,9 +3224,6 @@ HeroGraphics3
         .byte #%11110000;$0E
         .byte #%11000000;$0E
         .byte #%11110000;$22
-
-
-
 
 
 
@@ -3350,6 +3466,7 @@ Mummy1b .byte #%01100111;$0E ;now a dragon head
         .byte #%00000100;$0C
 
 
+
 HeroGraphics0
         .byte #%00000000;$22
         .byte #%11011000;$F4
@@ -3411,7 +3528,8 @@ HeroGraphics1
 
 
 
-MainPlayerGraphics0
+SkullGraphics
+
 
 	.byte #%00000000
 	.byte #%00010100
@@ -3433,7 +3551,7 @@ MainPlayerGraphics0
 	.byte #%00111000
 
 
-MainPlayerGraphics1
+BrownieGraphics
 
 	.byte #%00000000
 	.byte #%00010100
@@ -3457,7 +3575,41 @@ MainPlayerGraphics1
 
 
 
-
+;(Section of don't damage players, but will scare away horse)
+;0,00000,Tree 
+;1,00001,Horse
+;2,00010,Mandrake Red Plant
+;3,00011,Mandrake Blue Plant
+;4,00100,Mandrake Red Man
+;5,00101,Mandrake Blue Man
+;6,00110,Treasure Chest
+;7,00111,Weapon Upgrade???
+;8,01000,
+;(Section of monsters that can exit the screen)
+;9,01001,Large Pit
+;10,01010,Small Pit
+;11,01011,Snake
+;12,01100,Bat ;Need to add it
+;13,01101,Rat ;Need to add it
+;14,01110,Homonoculus ;Need to add it
+;15,01111,Goblin ;Need to add it
+;(Section of monsters that must be defeated)
+;16,10000,RedCap ;Need to add it
+;17,10001,Orc
+;18,10010,Ghost
+;19,10011,Snake Man
+;20,10100,Boggart Fighter
+;21,10101,Brownie
+;22,10110,Satyr ;Need to add it
+;23,10111,Mummy A
+;24,11000,Mummy B
+;25,11001,Dragon A
+;26,11010,Dragon B
+;27,11011,Will O Wisp
+;28,11100,Vampire a ;Need to add it
+;29,11101,Vampire b ;Need to add it
+;30,11110,Minotaur a;Need to add it
+;31,11111,Minotaur b;Need to add it
 
 
 
@@ -3467,19 +3619,19 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%10001111 ;mummy arms
      .byte #%10110000 ;mummy legs
      .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
-     .byte #%01100001
-     .byte #%11000100
-     .byte #%11000100
-     .byte #%00001000
-     .byte #%00101001
-     .byte #%01001010
-     .byte #%01101011
-     .byte #%10001100
-     .byte #%10101101
-     .byte #%11000001
+     .byte #%01101110
+     .byte #%11001110
+     .byte #%11001110
+     .byte #%00001110
+     .byte #%00101110
+     .byte #%01010000
+     .byte #%01110001
+     .byte #%10010010
+     .byte #%10110011
      .byte #%11000010
-     .byte #%00000011
-     .byte #%00100100
+     .byte #%11000010
+     .byte #%00000010
+     .byte #%00100010
      .byte #%01001000
      .byte #%01101001
      .byte #%10000111
@@ -3563,13 +3715,19 @@ HORSENOTLOST
 
 
 
+Level_Color ;One level per monster
+		.byte #$B0
+		.byte #$D4
+		.byte #$D0
+		.byte #$E4
+		.byte #$F4
 
 
 
 	org #$FCC0 ;HeroGraphicsColor + #256
 
 
-TreeGraphics
+TreeGraphics ;Tree
 
 	.byte #%00000000
 	.byte #%00011000
@@ -3591,7 +3749,7 @@ TreeGraphics
 	.byte #%11111111
 	.byte #%00111000
 
-MainPlayerGraphics2
+SnakeGraphics ;Snake
 
 	.byte #%00000000
 	.byte #%01111000
@@ -3614,28 +3772,27 @@ MainPlayerGraphics2
 	.byte #%01110000
 
 
-MainPlayerGraphics4
+HomonoculusGraphics
+        .byte #%00000000;$0E
+        .byte #%01110000;$0E
+        .byte #%00111000;$0E
+        .byte #%00110010;$0E
+        .byte #%01111100;$0E
+        .byte #%10010000;$0E
+        .byte #%00101000;$32
+        .byte #%00111000;$0E
+HomonoculusGraphicsb
+        .byte #%00000000;$0E
+        .byte #%00011100;$0E
+        .byte #%00111000;$0E
+        .byte #%10110000;$0E
+        .byte #%01111100;$0E
+        .byte #%00010010;$0E
+        .byte #%00101000;$32
+        .byte #%00111000;$0E
 
-        .byte #%00000000;$22
-        .byte #%01111110;$C0
-        .byte #%11111000;$C0
-        .byte #%11101000;$D0
-        .byte #%01111110;$C2
-        .byte #%11011110;$D2
-        .byte #%01001000;$D2
-        .byte #%01111110;$C2
 
-
-        .byte #%00000000;$22
-        .byte #%01111110;$C0
-        .byte #%00111110;$C0
-        .byte #%00101110;$D0
-        .byte #%01111110;$C2
-        .byte #%00011110;$D2
-        .byte #%01111000;$D2
-        .byte #%01111110;$C2
-
-MainPlayerGraphics3
+SnakeManGraphics ;Snakeman
 
 	.byte #%00000000
 	.byte #%01111000
@@ -3754,46 +3911,106 @@ LEFTAUD
      .byte     #$FF
 
 
+;(Section of don't damage players, but will scare away horse)
+;0,00000,Tree 
+;1,00001,Horse
+;2,00010,Mandrake Red Plant
+;3,00011,Mandrake Blue Plant
+;4,00100,Mandrake Red Man
+;5,00101,Mandrake Blue Man
+;6,00110,Treasure Chest
+;7,00111,Weapon Upgrade???
+;8,01000,
+;(Section of monsters that can exit the screen)
+;9,01001,Large Pit
+;10,01010,Small Pit
+;11,01011,Snake
+;12,01100,Bat 
+;13,01101,Rat 
+;14,01110,Homonoculus ;Need to add it
+;15,01111,Goblin ;Need to add it
+;(Section of monsters that must be defeated)
+;16,10000,RedCap ;Need to add it
+;17,10001,Orc
+;18,10010,Ghost
+;19,10011,Snake Man
+;20,10100,Boggart Fighter
+;21,10101,Brownie
+;22,10110,Satyr ;Need to add it
+;23,10111,Mummy A
+;24,11000,Mummy B
+;25,11001,Dragon A
+;26,11010,Dragon B
+;27,11011,Will O Wisp
+;28,11100,Vampire a ;Need to add it
+;29,11101,Vampire b ;Need to add it
+;30,11110,Minotaur a;Need to add it
+;31,11111,Minotaur b;Need to add it
+
 GraphicsTableLow
      .byte #<TreeGraphics ;0
 
      .byte #<PonyGraphics ;1
 
-     .byte #<MainPlayerGraphics2 ;2
+     .byte #<MandrakePlantGraphics ;2
 
-     .byte #<MainPlayerGraphics8 ;3
+     .byte #<MandrakePlantGraphics ;3
 
-     .byte #<MainPlayerGraphics8 ;4
+     .byte #<MandrakeManGraphics ;4
 
-     .byte #<MainPlayerGraphics5 ;5
+     .byte #<MandrakeManGraphics ;5
 
-     .byte #<MainPlayerGraphics5 ;6
+     .byte #<TreeGraphics ;6
 
-     .byte #<MainPlayerGraphics7 ;7
+     .byte #<TreeGraphics ;7
 
-     .byte #<MainPlayerGraphics6 ;8
+     .byte #<TreeGraphics ;8
 
-     .byte #<MainPlayerGraphics5 ;9
+     .byte #<TreeGraphics ;9
 
-     .byte #<MainPlayerGraphics4 ;10
+     .byte #<TreeGraphics ;10
 
-     .byte #<MainPlayerGraphics3 ;11
+     .byte #<SnakeGraphics ;11
 
-     .byte #<MainPlayerGraphics3 ;12
+     .byte #<BatGraphics ;12
 
-     .byte #<MainPlayerGraphics3 ;13
+     .byte #<RatGraphics ;13
 
-     .byte #<MainPlayerGraphics30 ;14
+     .byte #<BoggartGraphics ;14
 
-     .byte #<Mummy0b ;15
+     .byte #<TreeGraphics ;15
 
-     .byte #<Mummy0a ;16
+     .byte #<TreeGraphics ;16
 
-     .byte #<TreeGraphics ;17
+     .byte #<OrcGraphics ;17
 
-     .byte #<TreeGraphics ;18
+     .byte #<GhostGraphics ;18
 
-     .byte #<TreeGraphics ;19
+     .byte #<SnakeManGraphics ;19
+
+     .byte #<BoggartGraphics ;20
+
+     .byte #<BrownieGraphics ;21
+
+     .byte #<SatyrGraphics ;22
+
+     .byte #<Mummy0b ;23
+
+     .byte #<Mummy0a ;24
+
+     .byte #<TreeGraphics ;25
+
+     .byte #<TreeGraphics ;26
+
+     .byte #<WillOWispGraphics ;27
+
+     .byte #<TreeGraphics ;28
+
+     .byte #<TreeGraphics ;29
+
+     .byte #<TreeGraphics ;30
+
+     .byte #<TreeGraphics ;31
 
 
 
@@ -3802,87 +4019,114 @@ GraphicsTableHigh
 
      .byte #>PonyGraphics ;1
 
-     .byte #>MainPlayerGraphics2 ;2
+     .byte #>MandrakePlantGraphics ;2
 
-     .byte #>MainPlayerGraphics8 ;3
+     .byte #>MandrakePlantGraphics ;3
 
-     .byte #>MainPlayerGraphics8 ;4
+     .byte #>MandrakeManGraphics ;4
 
-     .byte #>MainPlayerGraphics5 ;5
+     .byte #>MandrakeManGraphics ;5
 
-     .byte #>MainPlayerGraphics5 ;6
+     .byte #>TreeGraphics ;6
 
-     .byte #>MainPlayerGraphics7 ;7
+     .byte #>TreeGraphics ;7
 
-     .byte #>MainPlayerGraphics6 ;8
+     .byte #>TreeGraphics ;8
 
-     .byte #>MainPlayerGraphics5 ;9
+     .byte #>TreeGraphics ;9
 
-     .byte #>MainPlayerGraphics4 ;10
+     .byte #>TreeGraphics ;10
 
-     .byte #>MainPlayerGraphics3 ;11
+     .byte #>SnakeGraphics ;11
 
-     .byte #>MainPlayerGraphics3 ;12
+     .byte #>BatGraphics ;12
 
-     .byte #>MainPlayerGraphics3 ;13
+     .byte #>RatGraphics ;13
 
-     .byte #>MainPlayerGraphics30 ;14
+     .byte #>BoggartGraphics ;14
 
-     .byte #>Mummy0b ;15
+     .byte #>TreeGraphics ;15
 
-     .byte #>Mummy0a ;16
+     .byte #>TreeGraphics ;16
 
-     .byte #>TreeGraphics ;17
+     .byte #>OrcGraphics ;17
 
-     .byte #>TreeGraphics ;18
+     .byte #>GhostGraphics ;18
 
-     .byte #>TreeGraphics ;19
+     .byte #>SnakeManGraphics ;19
+
+     .byte #>BoggartGraphics ;20
+
+     .byte #>BrownieGraphics ;21
+
+     .byte #>SatyrGraphics ;22
+
+     .byte #>Mummy0b ;23
+
+     .byte #>Mummy0a ;24
+
+     .byte #>TreeGraphics ;25
+
+     .byte #>TreeGraphics ;26
+
+     .byte #>WillOWispGraphics ;27
+
+     .byte #>TreeGraphics ;28
+
+     .byte #>TreeGraphics ;29
+
+     .byte #>TreeGraphics ;30
+
+     .byte #>TreeGraphics ;31
+
 
 GraphicsColorTableLow
 
-     .byte #<TreeGraphicsColor ;1
+     .byte #<TreeGraphicsColor ;0
 
-     .byte #<PonyGraphicsColor ;2
+     .byte #<PonyGraphicsColor ;1
 
-     .byte #<EnemyGraphicsColor2 ;3 light green
+     .byte #<MandrakeColorRed ;2
 
-     .byte #<EnemyGraphicsColor8 ;4 dark green
+     .byte #<MandrakeColorBlue ;3
 
-     .byte #<EnemyGraphicsColor8b ;5 dark green
+     .byte #<MandrakeColorRed ;4 
 
-     .byte #<EnemyGraphicsColor9 ;6 green-brown matches background
+     .byte #<MandrakeColorBlue ;5
 
-     .byte #<EnemyGraphicsColor9b ;7 green-brown matches background
+     .byte #<MandrakeManColorb ;6
 
-     .byte #<EnemyGraphicsColor7 ;8 ghost white
+     .byte #<GhostColor ;7
 
-     .byte #<EnemyGraphicsColor6 ;9 green
+     .byte #<MandrakeManColor ;8
 
-     .byte #<EnemyGraphicsColor5 ;10 green
+     .byte #<EnemyGraphicsColor1 ;9
 
-     .byte #<EnemyGraphicsColor4 ;11 green
+     .byte #<SnakeColor ;10
 
-     .byte #<EnemyGraphicsColor3 ;12 red/tan
+     .byte #<SnakeColor ;11
 
-     .byte #<EnemyGraphicsColor1 ;13 red/tan
+     .byte #<EnemyGraphicsColor1 ;12
 
-     .byte #<EnemyGraphicsColor0 ;14 blue/white
+     .byte #<EnemyGraphicsColor0 ;13
 
-     .byte #<EnemyGraphicsColor5 ;15 blue
+     .byte #<EnemyGraphicsColor1 ;14
 
-     .byte #<EnemyGraphicsColor6 ;16
+     .byte #<SnakeColor ;15 This is where mummy color is pulling from was 6
 
-     .byte #<EnemyGraphicsColor6b ;17
+     .byte #<SnakeColorb ;16
 
-     .byte #<EnemyFireColor ;18
+     .byte #<EnemyFireColor ;17
 
-     .byte #<TreeGraphicsColor ;19
+     .byte #<GhostColor ;18
+
+     .byte #<SnakeColor ;19
 
      .byte #<TreeGraphicsColor ;20
 
      .byte #<TreeGraphicsColor ;21
 
-     .byte #<TreeGraphicsColor ;22
+     .byte #<MandrakeColorRed ;22
 
      .byte #<TreeGraphicsColor ;23
 
@@ -3902,46 +4146,20 @@ GraphicsColorTableLow
 
      .byte #<TreeGraphicsColor ;31
 
-     .byte #<TreeGraphicsColor ;32
-
 GraphicsColorTableHigh
 
      .byte #>TreeGraphicsColor
 
 
-EnemyLife
-	.byte #$01
-	.byte #$02
-	.byte #$03
-	.byte #$04
-	.byte #$05
-	.byte #$06
-	.byte #$07
-	.byte #$08
-	.byte #$09
-	.byte #$0A
-	.byte #$0B
-	.byte #$0C
-	.byte #$0D
-	.byte #$0E
-	.byte #$0F
-	.byte #$01
-	.byte #$02
-	.byte #$03
-	.byte #$04
-	.byte #$05
-	.byte #$06
-	.byte #$07
-	.byte #$08
-	.byte #$09
-	.byte #$0A
-	.byte #$0B
-	.byte #$0C
-	.byte #$0D
-	.byte #$0E
-	.byte #$0F
-
-
+Mask
+	.byte #%11111110
+	.byte #%11111101
+	.byte #%11111011
+	.byte #%11110111
+	.byte #%11101111
+	.byte #%11011111
+	.byte #%10111111
+	.byte #%01111111
 
 	org #$FDC0 ;HeroGraphicsColor + #512
 
@@ -4029,7 +4247,7 @@ EnemyGraphicsColor5
         .byte #$80;
         .byte #$80;
 
-EnemyGraphicsColor6
+SnakeColor
         .byte #$D2;
         .byte #$D2;
         .byte #$D2;
@@ -4039,7 +4257,8 @@ EnemyGraphicsColor6
         .byte #$C4;
         .byte #$30;
 
-EnemyGraphicsColor7 ;Ghost with Red Eyes
+
+GhostColor ;Ghost with Red Eyes
         .byte #$0E;
         .byte #$0E;
         .byte #$0E;
@@ -4050,7 +4269,7 @@ EnemyGraphicsColor7 ;Ghost with Red Eyes
         .byte #$0E;
 
 
-EnemyGraphicsColor8 ;Mandrake Plant
+MandrakeColorRed ;Mandrake Plant
         .byte #$C2;
         .byte #$C2;
         .byte #$C2;
@@ -4060,7 +4279,7 @@ EnemyGraphicsColor8 ;Mandrake Plant
         .byte #$40;
         .byte #$40;
 
-EnemyGraphicsColor8b ;Mandrake Plant
+MandrakeColorBlue ;Mandrake Plant
         .byte #$C2;
         .byte #$C2;
         .byte #$C2;
@@ -4070,7 +4289,8 @@ EnemyGraphicsColor8b ;Mandrake Plant
         .byte #$80;
         .byte #$80;
 
-EnemyGraphicsColor9 ;Mandrake Man
+
+MandrakeManColor ;Mandrake Man
         .byte #$10;
         .byte #$10;
         .byte #$12;
@@ -4080,7 +4300,7 @@ EnemyGraphicsColor9 ;Mandrake Man
         .byte #$C0;
         .byte #$C0;
 
-EnemyGraphicsColor9b ;Mandrake Man
+MandrakeManColorb ;Mandrake Man
         .byte #$10;
         .byte #$10;
         .byte #$12;
@@ -4111,7 +4331,7 @@ EnemyFireColor
         .byte #$02
 
 
-EnemyGraphicsColor6b
+SnakeColorb
         .byte #$30;
         .byte #$C4;
         .byte #$D2;
@@ -4133,7 +4353,7 @@ RESSURECT
 	DEC Baddie_Duration 
 	bmi TOOLARGE
 	bne NotYet
-
+   
 TOOLARGE
 
 
@@ -4161,25 +4381,25 @@ DONTLOOP
 
 
 	LDA NEXTBADDIETYPE,x
-	AND #%00011111 
+	AND #%00011111
 	CMP #%00011111
 	BNE NotPit
 ;Setup Pit
 
-	;LDA #Far_Right -#1 ;this is where we are changing pit to middle body
-	LDA #%00001110
+	LDA #Far_Right -#1 ;this is where we are changing pit to middle body
+	;LDA #%00001110
 	STA Pit0_XPos,y
 	JMP AddingPit
 NotPit
 
 	STA E0_Type,y
-	CMP #Mummy_Num
+	CMP #LVL2BOSS
 	BNE NOTMUMMY
 	sty Link
 	
 NOTMUMMY
-	LDA EnemyLife
-	STA E0_Health,y
+;	LDA EnemyLife,y ;Not really sure what i'm doing here
+;	STA E0_Health,y ;this was causing lane 1 to have large life total
 
 AddingPit
 	lda #Far_Right-1
@@ -4218,156 +4438,214 @@ NotYet
 	JMP ENDSLICES
 
 
-Level_Color
-		.byte #$B0
-		.byte #$C0
-		.byte #$D4
-		.byte #$D2
-		.byte #$D0
-		.byte #$E6
-		.byte #$E4
-		.byte #$E0
-		.byte #$F4
-		.byte #$F2
-		
+
+	
 
 
 	org #$FEC0 ;HeroGraphicsColor + #768
+
+
+
+RatGraphics
+        .byte #%00000000;--
+        .byte #%01001000;--
+        .byte #%00111100;--
+        .byte #%01111111;--
+        .byte #%11111000;--
+        .byte #%01000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+RatGraphicsB
+        .byte #%00000000;--
+        .byte #%11000100;--
+        .byte #%01111100;--
+        .byte #%01111111;--
+        .byte #%11111000;--
+        .byte #%01000000;--
+        .byte #%00000000;--
+        .byte #%00000000;--
+
+SatyrGraphics
+        .byte #%00000000;--
+        .byte #%00001000;--
+        .byte #%01111000;--
+        .byte #%01010000;--
+        .byte #%01111100;--
+        .byte #%00010100;--
+        .byte #%00111000;--
+        .byte #%00101000;--
+SatyrGraphicsB
+        .byte #%00000000;--
+        .byte #%00100100;--
+        .byte #%00111000;--
+        .byte #%00010100;--
+        .byte #%01111100;--
+        .byte #%01010000;--
+        .byte #%00111000;--
+        .byte #%00101000;--
 NUM0
+
         .byte #%11101110;
         .byte #%10101010;
         .byte #%10101010;
         .byte #%10101010;
         .byte #%11101110;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+PFData0 
+        .byte #%00000011
+        .byte #%00000111
+        .byte #%00001111 
 NUM1
+
         .byte #%00100010;
         .byte #%00100010;
         .byte #%00100010;
         .byte #%00100010;
         .byte #%00100010;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+PFData1
+        .byte #%01111111
+        .byte #%00111011
+        .byte #%00010001
 NUM2
+
         .byte #%11101110;
         .byte #%10001000;
         .byte #%11101110;
         .byte #%00100010;
         .byte #%11101110;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+PFData2
+        .byte #%11100111
+        .byte #%11000011
+        .byte #%00000000
 NUM3
+
         .byte #%11101110;
         .byte #%00100010;
         .byte #%11101110;
         .byte #%00100010;
         .byte #%11101110;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+PFData3
+        .byte #%10111011
+        .byte #%10011001
+        .byte #%00000000 
 NUM4
+
         .byte #%00100010;
         .byte #%00100010;
         .byte #%11101110;
         .byte #%10101010;
         .byte #%10101010;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+PFData4 
+        .byte #%11101111
+        .byte #%11000111
+        .byte #%10000011
 NUM5
+
         .byte #%11101110;
         .byte #%00100010;
         .byte #%11101110;
         .byte #%10001000;
         .byte #%11101110;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+PFData5
+        .byte #%11000011
+        .byte #%10000001
+        .byte #%00000000
+
 NUM6
+
         .byte #%11101110;
         .byte #%10101010;
         .byte #%11101110;
         .byte #%10001000;
         .byte #%11101110;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+SwordSongv ;10 bytes each section, interlaced with nums to save space.
+	.byte #0 ;SwordSongv
+SwordSongc ;10 bytes each section
+	.byte #0 ;SwordSongc
+SwordSongf ;10 bytes each section
+	.byte #0 ;SwordSongf
 NUM7
+
         .byte #%00100010;
         .byte #%00100010;
         .byte #%00100010;
         .byte #%00100010;
         .byte #%11101110;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+	.byte #1 ;SwordSongv
+	.byte #10 ;SwordSongc
+	.byte #10 ;SwordSongf
 NUM8
+
         .byte #%11101110;
         .byte #%10101010;
         .byte #%11101110;
         .byte #%10101010;
         .byte #%11101110;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+	.byte #2 ;SwordSongv
+	.byte #20 ;SwordSongc
+	.byte #20 ;SwordSongf
+
 NUM9
+
         .byte #%00100010;
         .byte #%00100010;
         .byte #%11101110;
         .byte #%10101010;
         .byte #%11101110;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+	.byte #3 ;SwordSongv
+	.byte #30 ;SwordSongc
+	.byte #30 ;SwordSongf
+
+
 NUM0_
  .byte #%01110111;
  .byte #%01010101;
  .byte #%01010101;
  .byte #%01010101;
  .byte #%01110111;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+	.byte #4 ;SwordSongv
+	.byte #40 ;SwordSongc
+	.byte #40 ;SwordSongf
+
 NUM1_
  .byte #%01000100;
  .byte #%01000100;
  .byte #%01000100;
  .byte #%01000100;
  .byte #%01000100;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+	.byte #5 ;SwordSongv
+	.byte #50 ;SwordSongc
+	.byte #50 ;SwordSongf
+
 NUM2_
  .byte #%01110111;
  .byte #%00010001;
  .byte #%01110111;
  .byte #%01000100;
  .byte #%01110111;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+	.byte #6 ;SwordSongv
+	.byte #60 ;SwordSongc
+	.byte #60 ;SwordSongf
+
 NUM3_
  .byte #%01110111;
  .byte #%01000100;
  .byte #%01110111;
  .byte #%01000100;
  .byte #%01110111;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+	.byte #7 ;SwordSongv
+	.byte #70 ;SwordSongc
+	.byte #70 ;SwordSongf
+
 NUM4_
  .byte #%01000100;
  .byte #%01000100;
  .byte #%01110111;
  .byte #%01010101;
  .byte #%01010101;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
+	.byte #9 ;SwordSongv
+	.byte #90 ;SwordSongc
+	.byte #90 ;SwordSongf
+
 NUM5_
  .byte #%01110111;
  .byte #%01000100;
@@ -4410,57 +4688,8 @@ NUM9_
  .byte #%01110111;
  .byte #%01010101;
  .byte #%01110111;
-	.byte #$FF
-	.byte #$FF
-	.byte #$FF
 
-EmptyPlayerGraphics
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
-	.byte #0
 
-PFData0 
-        .byte #%00000011
-        .byte #%00000111
-        .byte #%00001111 
-
-PFData1
-        .byte #%01111111
-        .byte #%00111011
-        .byte #%00010001
-
-PFData2
-        .byte #%11100111
-        .byte #%11000011
-        .byte #%00000000
-
-PFData3
-        .byte #%10111011
-        .byte #%10011001
-        .byte #%00000000 
-
-PFData4 
-        .byte #%11101111
-        .byte #%11000111
-        .byte #%10000011
-
-PFData5
-        .byte #%11000011
-        .byte #%10000001
-        .byte #%00000000
 	
 PFCOLOR
 	.byte #$2A
@@ -4476,26 +4705,6 @@ PFCOLORB
 	.byte #$74
 	.byte #$76
 
-RETURN
-	.byte #$1
-	.byte #$2
-	.byte #$1
-	.byte #$2
-	.byte #$1
-	.byte #$2
-	.byte #$1
-	.byte #$2
-	.byte #$1
-
-RETURNPIT
-	.byte #$1
-	.byte #$30
-	.byte #$70
-	.byte #$20
-	.byte #$110
-	.byte #$20
-	.byte #$90
-	.byte #$50
 
 Enemy_Row_Data
 	.byte Enemy_Row_0
@@ -4594,6 +4803,8 @@ RIGHTAUDF
      .byte     22
      .byte     21
      .byte     21
+
+
 
 BITMASK
 	.byte #%
