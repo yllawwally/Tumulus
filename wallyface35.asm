@@ -896,22 +896,49 @@ PreScanLoop
 	STA WSYNC 						 ;3 cycles =74
 ;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
 ;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
+;	LDA PFCOLOR-1,Y		; 4 cycles
+;	STA COLUBK		;and store as the bgcolor ; 3 cycles
+;	LDA PF0_L4		; 4 cycles
+;	STA PF0			; 3 cycles
+;	LDA PF1_L4		; 4 cycles
+;	STA PF1			; 3 cycles
+;	LDA PF2_L4		; 4 cycles
+;	STA PF2			; 3 cycles
+;	NOP
+;	NOP
+;	NOP
+;	NOP
+;	NOP
+;	NOP
+;	NOP
+;	NOP
+;	LDA PF3_L4		; 4 cycles
+;	STA PF0			; 3 cycles
+;	LDA PF4_L4		; 4 cycles
+;	STA PF1			; 3 cycles
+;	LDA PF5_L4		; 4 cycles
+;	STA PF2			; 3 cycles
+;	
+;
+;	STA WSYNC 						 ;3 cycles =74
+;EndScanLoops ;end of kernal +++++++++++++++++++++++ for skyline
+;ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 	LDA PFCOLOR-1,Y		; 4 cycles
 	STA COLUBK		;and store as the bgcolor ; 3 cycles
-	LDA PF0_L4		; 4 cycles
+	LDA #%00000000		; 3 cycles
 	STA PF0			; 3 cycles
-	LDA PF1_L4		; 4 cycles
+	LDA #%01010101		; 3 cycles
 	STA PF1			; 3 cycles
-	LDA PF2_L4		; 4 cycles
+	LDA #%01010101		; 3 cycles
 	STA PF2			; 3 cycles
+	STA RESM1
+	NOP
+	STA RESM0
+	NOP
+	STA RESM0
 	NOP
 	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
-	NOP
+	STA RESM1
 	LDA PF3_L4		; 4 cycles
 	STA PF0			; 3 cycles
 	LDA PF4_L4		; 4 cycles
@@ -1208,6 +1235,17 @@ ScanLoop_E2_a ;changed lines above in enemy 1 put sta grp1 there
 
         DEY             ;count down number of scan lines          2 cycles = 
 
+
+; draw Hero Sword:
+	lda     #C_P0_HEIGHT-4     ; 2 -5 to position near hand
+	cmp     Hero_Y            ; 5 (DEC and CMP)
+	beq     .doDrawHero_E2_c        ; 2/3 ; should be bcs
+	lda     #0              ; 2
+	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+.doDrawHero_E2_c:
+	LDA Hero_Attack
+	STA ENAM1 ;SWORD STUFF   
+
 ;skipDraw
 ; draw Hero sprite:
 	lda     #C_P0_HEIGHT-1     ; 2 
@@ -1219,25 +1257,16 @@ ScanLoop_E2_a ;changed lines above in enemy 1 put sta grp1 there
 	lda     (Hero_Ptr),y      ; 5
 
 	sta Graphics_Buffer_2
-
-; draw Hero Sword:
-	lda     #C_P0_HEIGHT-4     ; 2 -5 to position near hand
-	cmp     Hero_Y            ; 5 (DEC and CMP)
-	beq     .doDrawHero_E2_c        ; 2/3 ; should be bcs
-	lda     #0              ; 2
-	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E2_c:
-	LDA Hero_Attack
-	STA ENAM1	;SWORD STUFF   
-
 	lda E2_XPos 
+
+
 	sec 
         STA WSYNC                                                ;3 cycles =
 EndScanLoop_E2_a
 ;------------------------------------------------
 	
 ScanLoop_E2_b
-
+	stx	GRP1
 .Div15_E2_a   
 	sbc #15      ; 2         
 	bcs .Div15_E2_a   ; 3(2)
@@ -1251,23 +1280,17 @@ ScanLoop_E2_b
 	STA CXCLR	;reset the collision detection for next time
 	
 	DEY
-;	lda	Graphics_Buffer_2
+	lda	Graphics_Buffer_2
+	sta	GRP1
+	ldx 	Graphics_Buffer
         STA WSYNC                                                ;3 cycles =
 	STA HMOVE
 EndScanLoop_E2_b 
 
 ScanLoop_E2_c 
 	
-; draw Hero Sword:
-	lda     #C_P0_HEIGHT-4     ; 2 
-	cmp     Hero_Y            ; 3 
-	beq     .doDrawHero_E2_d        ; 
-	lda     #0              ; 2
-	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
-.doDrawHero_E2_d:
-	LDA Hero_Attack
-	STA ENAM1	;SWORD STUFF   
-; draw Hero Sword:
+	STx ENAM1	;SWORD STUFF ;3  
+	sta GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
 
 ;skipDraw
 ; draw enemy sprite 0:
@@ -1279,6 +1302,7 @@ ScanLoop_E2_c
 .doDraw_E2_b:
 	lda     (E2_Ptr),y      ; 5
 	sta 	GRP0 
+
 ;skipDraw
 ; draw Hero sprite:
 	lda     #C_P0_HEIGHT-1     ; 2 
@@ -1289,9 +1313,21 @@ ScanLoop_E2_c
 .doDrawHero_E2_e:
 	lda     (Hero_Ptr),y      ; 5
 
-	sta	GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
+	sta	Graphics_Buffer
+
+; draw Hero Sword:
+	lda     #C_P0_HEIGHT-4     ; 2 
+	cmp     Hero_Y            ; 3 
+	beq     .doDrawHero_E2_d        ; 
+	ldx     #0              ; 2
+	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
+.doDrawHero_E2_d:
+	LDx Hero_Attack
+; draw Hero Sword:
+	lda	Graphics_Buffer
+
         DEY             ;count down number of scan lines          2 cycles
-	CPY #Enemy_Row_E2-#1
+	CPY #Enemy_Row_E2-#1 ;3
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E2_c                                             ;2 cycles =
 EndScanLoop_E2_c
@@ -1303,7 +1339,7 @@ ScanLoop_E3_a
 	sta	GRP1 ;3 this is here to get rid of offset probelm because 2 skipdraws take 36 cycles
 	lda	Graphics_Buffer ;3
 	sta	GRP0	
-	
+	stx	ENAM1
 
 
 ;skipDraw
