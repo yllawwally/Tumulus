@@ -13,13 +13,15 @@
 ;messed up mountains again
 ;a dot rolls accross the ground where monsters were, which hits player sometimes. 
 ;Killing baddies is causing screen to get extra lines 
-;overeyes count down starts too soon
+;using sword is causing screen to get exra lines
+;pits don't decrement
 ;--------------------------------------------------------------
 ;add a variable every x monsters then boss, with smaller monsters defined by a formula
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
 ;level 1 : 20, level 2 : 25, level 3 : 30, level 4 : 35, level 5 40, 155 monsters in whole game.  
 ;function input, baddine number, level, output delay, and baddie
+;Max baddie types per level 6+level*2
 ;--------------------------------------------------------------
 ;5 different level masters
 ;NAGA, can summon snakes
@@ -62,6 +64,7 @@ Enemy_Row_E4		= 85   ;109
 Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
+Min_Eye_Trigger		= 6
 ;Variables ------
 
 
@@ -315,6 +318,7 @@ RESSURECT
 	bne NotYet
 
 TOOLARGE
+
 	ldx Baddie_Num
 
 	LDA NEXTBADDIETYPE,x
@@ -322,12 +326,29 @@ TOOLARGE
 	BNE DONTLOOP
 	LDX #0
 	STA Baddie_Num
-	LDA NEXTBADDIETYPE,x
-	
-	
-
 DONTLOOP
-	ldy NEXTBADDIELEVEL,x
+
+;Lane choice increments with baddie_num,and then use switch to mess with it.
+;	lax Baddie_Num
+;	and #%00000111
+;	tay
+;	lda Switch,y
+;	tay
+
+
+	LDA NEXTBADDIETYPE,x
+	LSR
+	LSR
+	LSR
+	LSR
+	LSR
+	AND #%00000111
+	TAY
+
+
+
+	LDA NEXTBADDIETYPE,x
+	AND #%00011111 
 	STA E0_Type,y
 	CMP #0
 	beq TREE
@@ -355,7 +376,16 @@ NOTHORSE
 	sta Baddie_Duration+1
 	sta Direction
 
-	lda NEXTBADDIE,x
+	lda Baddie_Num
+	EOR #$FF
+	AND #%00001111
+;	ADC #20
+	ASL
+	ASL
+	ASL
+	ADC #1
+	
+	
 	sta Baddie_Duration
 
 	CLC
@@ -486,13 +516,8 @@ NOLOSEHORSE
 ;Eneamy Movement---------------------------------------------------
 
 MOVELEFT
-	LDA #Multiplexer-1,x
-	AND Enemy_Life
-	BEQ PAUSED	
-	LDA #Multiplexer-1,x
-	AND Direction
-	BNE FORWARD
-	DEC E0_XPos-1,x
+	LDA Pause
+	BNE dontmovepit
 	LDA #0
 	cmp Pit0_XPos-1,x
 	beq dontmovepit
@@ -502,6 +527,15 @@ MOVELEFT
 notonhorsepit
 	DEC #Pit0_XPos-1,x
 dontmovepit
+
+	LDA #Multiplexer-1,x
+	AND Enemy_Life
+	BEQ PAUSED	
+	LDA #Multiplexer-1,x
+	AND Direction
+	BNE FORWARD
+	DEC E0_XPos-1,x
+
 	LDA onhorse
 	cmp #1
 	bcc DONEMOVE
@@ -509,7 +543,7 @@ dontmovepit
 	JMP DONEMOVE
 FORWARD	
 	LDA #E0_Type-1,x
-	CMP #7
+	CMP #Min_Eye_Trigger
 	BCC DONEMOVE
 	INC E0_XPos-1,x
 	LDA onhorse
@@ -519,7 +553,7 @@ FORWARD
 DONEMOVE
 
 	LDA #E0_Type-1,x
-	CMP #7
+	CMP #Min_Eye_Trigger
 	BCC DONTCHANGER
 	LDA E0_XPos-1,x
 	CMP #Enemy_Pause_Left
@@ -632,8 +666,8 @@ NoCollisionP0
 	lda E0_Type-1,x
 	cmp #1 ;Not hurt by horse
 	Beq notsmacked
-	cmp #7
-	bcs nosnakepause
+	cmp #Min_Eye_Trigger
+	bcc nosnakepause
 	JMP notsnake
 RedMandrakeMan
 	SEC
@@ -657,7 +691,7 @@ mandrake
 
 nosnakepause
 	lda #$FF
-	sta Pause
+	;sta Pause
 notsnake
 
 	lda Multiplexer-1,x
@@ -1098,10 +1132,9 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 	LDA MOV_STAT
 	CMP #1
 	BCS MLEFT
-	LDA #0
 	JMP MRIGHT
 MLEFT	
-	LDA #%01000000 ;Atari only looks at 4 most significant bits in 2's compliment, this is the distance from player
+	LDA #%00110000 ;Atari only looks at 4 most significant bits in 2's compliment, this is the distance from player
 MRIGHT	STA HMM1
 
 	STA CXCLR	;reset the collision detection for next time
@@ -1129,15 +1162,29 @@ NOBIGEYES2
 
 	lda MOV_STAT
 	cmp #1
-	LDA #%00100000 
-	bcs onhorseknife
+	bcs HORSEKNIFELEFT
+
 	lda onhorse
 	cmp #1
-	LDA #%11100000 
+	LDA #%11100000 ; on horse value facing right
 	bcs onhorseknife
-	LDA #0
+	LDA #%00000000 ;not on horse value facing right
 onhorseknife
 	STA HMM1
+
+	JMP NOTONHORSEKNIFE
+HORSEKNIFELEFT
+
+	lda onhorse
+	cmp #1
+	LDA #%00100000 
+	bcs onhorseknife2
+	LDA #%00110000 
+onhorseknife2
+	STA HMM1
+
+
+NOTONHORSEKNIFE
 ;DEX
 	LDA #$44
 	STA COLUP0
@@ -2198,7 +2245,7 @@ LINEF
 
 
 
-;	LDA #$FF
+	LDA #$FF
 	STA COLUPF
 
 	STA WSYNC
@@ -2213,6 +2260,43 @@ LINEF
 
 
             ORG $F8C0 
+
+MainPlayerGraphics7
+        .byte #%00000000;$0E
+        .byte #%01110000;$0E
+        .byte #%00111000;$0E
+        .byte #%00110010;$0E
+        .byte #%01111100;$0E
+        .byte #%10010000;$0E
+        .byte #%00101000;$32
+        .byte #%00111000;$0E
+MainPlayerGraphics7b
+        .byte #%00000000;$0E
+        .byte #%00011100;$0E
+        .byte #%00111000;$0E
+        .byte #%10110000;$0E
+        .byte #%01111100;$0E
+        .byte #%00010010;$0E
+        .byte #%00101000;$32
+        .byte #%00111000;$0E
+MainPlayerGraphics6
+        .byte #%00000110;$90
+        .byte #%00110100;$AA
+        .byte #%00010100;$98
+        .byte #%00011000;$76
+        .byte #%00011000;$78
+        .byte #%00011100;$74
+        .byte #%00110010;$1A
+        .byte #%00111001;$74
+MainPlayerGraphics6b
+        .byte #%00110000;$90
+        .byte #%00100110;$AA
+        .byte #%00010100;$98
+        .byte #%01011000;$76
+        .byte #%00111100;$78
+        .byte #%00011010;$74
+        .byte #%00110001;$1A
+        .byte #%00111000;$74
 
 SwordSongc ;10 bytes each section
 	.byte #0
@@ -2236,59 +2320,32 @@ SwordSongf ;10 bytes each section
 	.byte #70
 	.byte #90
 
-NEXTBADDIETYPE
-     .byte #0
-     .byte #1
-     .byte #2
-     .byte #3
-     .byte #4
-     .byte #3
-     .byte #4
-     .byte #7
-     .byte #8
-     .byte #9
-     .byte #10
-     .byte #11
-     .byte #12
-     .byte #13
-     .byte #1
-     .byte #2
-     .byte #3
-     .byte #4
-     .byte #8
-     .byte #9
-     .byte #7
-     .byte #8
-     .byte #9
-     .byte #10
+NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
+     .byte #%00000111
+     .byte #%00100001
+     .byte #%01000010
+     .byte #%01100011
+     .byte #%10000100
+     .byte #%10100011
+     .byte #%11000100
+     .byte #%11100100
+     .byte #%00001000
+     .byte #%00101001
+     .byte #%01001010
+     .byte #%01101011
+     .byte #%10001100
+     .byte #%10101101
+     .byte #%11000001
+     .byte #%11100010
+     .byte #%00000011
+     .byte #%00100100
+     .byte #%01001000
+     .byte #%01101001
+     .byte #%10000111
+     .byte #%10101000
+     .byte #%11001001
+     .byte #%11001010
      .byte #255 ;This is to reset to beginning
-
-NEXTBADDIE ;Wait time till next baddie shows up
-     .byte #166
-     .byte #172
-     .byte #172
-     .byte #170
-     .byte #170
-     .byte #178
-     .byte #170
-     .byte #174
-     .byte #178
-     .byte #174
-     .byte #128
-     .byte #174
-     .byte #128
-     .byte #174
-     .byte #125
-     .byte #125
-     .byte #125
-     .byte #175
-     .byte #225
-     .byte #225
-     .byte #175
-     .byte #175
-     .byte #175
-     .byte #255
-	
 
 
 
@@ -2314,11 +2371,12 @@ SwordAttack
 	inc swordduration
 	lda swordduration
 	lsr
+	lsr
 	sta PF_TEMP
 	lda Hero_YPosFromBot
 	clc
 	sbc #C_P1_HEIGHT - 10
-	clc
+	sec
 	sbc PF_TEMP
 	jmp DoneWithSwordAttack
 NoSwordAttack2
@@ -2474,6 +2532,8 @@ PonyGraphics
         .byte #%00011100;$C2
         .byte #%00000000;$C0
         .byte #%00000000;$D0
+
+
 
 SwordSongv ;10 bytes each section
 	.byte #0
@@ -3119,110 +3179,6 @@ MainPlayerGraphics1
 	.byte #%00111000
 	.byte #%00111000
 
-NEXTBADDIELEVEL
-     .byte #0 ;1
-     .byte #1 ;2
-     .byte #2 ;3
-     .byte #3 ;4
-     .byte #6 ;5
-     .byte #7 ;6
-     .byte #6 ;7
-     .byte #7 ;8
-     .byte #6 ;9
-     .byte #7 ;10
-     .byte #6 ;11
-     .byte #7 ;12
-     .byte #6 ;13
-     .byte #7 ;14
-     .byte #6 ;15
-     .byte #7 ;16
-     .byte #0 ;17
-     .byte #1 ;18
-     .byte #2 ;19
-     .byte #3 ;20
-     .byte #4 ;21
-     .byte #5 ;22
-     .byte #6 ;23
-     .byte #7 ;24
-     .byte #0 ;25
-     .byte #1 ;26
-     .byte #2 ;27
-     .byte #3 ;28
-     .byte #4 ;29
-     .byte #5 ;30
-     .byte #6 ;31
-     .byte #7 ;32
-     .byte #0 ;33
-     .byte #1 ;34
-     .byte #2 ;35
-     .byte #3 ;36
-     .byte #4 ;37
-     .byte #5 ;38
-     .byte #6 ;39
-     .byte #7 ;40
-     .byte #0 ;41
-     .byte #1 ;42
-     .byte #2 ;43
-     .byte #3 ;44
-     .byte #4 ;45
-     .byte #5 ;46
-     .byte #6 ;47
-     .byte #7 ;48
-     .byte #0 ;49
-     .byte #1 ;50
-     .byte #2 ;51
-     .byte #3 ;52
-     .byte #4 ;53
-     .byte #5 ;54
-     .byte #6 ;55
-     .byte #7 ;56
-     .byte #0 ;57
-     .byte #1 ;58
-     .byte #2 ;59
-     .byte #3 ;60
-     .byte #4 ;61
-     .byte #5 ;62
-     .byte #6 ;63
-     .byte #7 ;64
-     .byte #0 ;65
-     .byte #1 ;66
-     .byte #2 ;67
-     .byte #3 ;68
-     .byte #4 ;69
-     .byte #5 ;70
-     .byte #6 ;71
-     .byte #7 ;72
-     .byte #0 ;73
-     .byte #1 ;74
-     .byte #2 ;75
-     .byte #3 ;76
-     .byte #4 ;77
-     .byte #5 ;78
-     .byte #6 ;79
-     .byte #7 ;80
-     .byte #0 ;81
-     .byte #1 ;82
-     .byte #2 ;83
-     .byte #3 ;84
-     .byte #4 ;85
-     .byte #5 ;86
-     .byte #6 ;87
-     .byte #7 ;88
-     .byte #0 ;89
-     .byte #1 ;90
-     .byte #2 ;91
-     .byte #3 ;92
-     .byte #4 ;93
-     .byte #5 ;94
-     .byte #6 ;95
-     .byte #7 ;96
-     .byte #0 ;97
-     .byte #1 ;98
-     .byte #2 ;99
-     .byte #3 ;100
-
-
-
 
 	org #$FCC0 ;HeroGraphicsColor + #256
 
@@ -3425,8 +3381,6 @@ GraphicsTableLow
 
      .byte #<MainPlayerGraphics5
 
-     .byte #<MainPlayerGraphics8
-
      .byte #<MainPlayerGraphics7
 
      .byte #<MainPlayerGraphics6
@@ -3455,8 +3409,6 @@ GraphicsTableHigh
      .byte #>MainPlayerGraphics5
 
      .byte #>MainPlayerGraphics5
-
-     .byte #>MainPlayerGraphics8
 
      .byte #>MainPlayerGraphics7
 
@@ -3487,8 +3439,6 @@ GraphicsColorTableLow
      .byte #<EnemyGraphicsColor9
 
      .byte #<EnemyGraphicsColor9b
-
-     .byte #<EnemyGraphicsColor7
 
      .byte #<EnemyGraphicsColor7
 
@@ -3540,7 +3490,24 @@ GraphicsColorTableHigh
      .byte #>EnemyHitColor
 
 
+Switch
+	.byte #3
+	.byte #5
+	.byte #7
+	.byte #2
+	.byte #1
+	.byte #0
+	.byte #4
+	.byte #6
 
+	.byte #11
+	.byte #9
+	.byte #13
+	.byte #10
+	.byte #12
+	.byte #8
+	.byte #14
+	.byte #15
 
 
 	org #$FDC0 ;HeroGraphicsColor + #512
@@ -3555,46 +3522,6 @@ TreeGraphicsColor
 	.byte #$C2
 	.byte #$C2
 	.byte #$C2
-
-
-
-
-MainPlayerGraphics7
-        .byte #%00000000;$0E
-        .byte #%01110000;$0E
-        .byte #%00111000;$0E
-        .byte #%00110010;$0E
-        .byte #%01111100;$0E
-        .byte #%10010000;$0E
-        .byte #%00101000;$32
-        .byte #%00111000;$0E
-MainPlayerGraphics7b
-        .byte #%00000000;$0E
-        .byte #%00011100;$0E
-        .byte #%00111000;$0E
-        .byte #%10110000;$0E
-        .byte #%01111100;$0E
-        .byte #%00010010;$0E
-        .byte #%00101000;$32
-        .byte #%00111000;$0E
-MainPlayerGraphics6
-        .byte #%00000110;$90
-        .byte #%00110100;$AA
-        .byte #%00010100;$98
-        .byte #%00011000;$76
-        .byte #%00011000;$78
-        .byte #%00011100;$74
-        .byte #%00110010;$1A
-        .byte #%00111001;$74
-MainPlayerGraphics6b
-        .byte #%00110000;$90
-        .byte #%00100110;$AA
-        .byte #%00010100;$98
-        .byte #%01011000;$76
-        .byte #%00111100;$78
-        .byte #%00011010;$74
-        .byte #%00110001;$1A
-        .byte #%00111000;$74
 
 
 
@@ -3679,7 +3606,7 @@ EnemyGraphicsColor6
         .byte #$C4;
         .byte #$30;
 
-EnemyGraphicsColor7
+EnemyGraphicsColor7 ;Ghost with Red Eyes
         .byte #$0E;
         .byte #$0E;
         .byte #$0E;
@@ -3689,7 +3616,8 @@ EnemyGraphicsColor7
         .byte #$32;
         .byte #$0E;
 
-EnemyGraphicsColor8
+
+EnemyGraphicsColor8 ;Mandrake Plant
         .byte #$C2;
         .byte #$C2;
         .byte #$C2;
@@ -3699,7 +3627,7 @@ EnemyGraphicsColor8
         .byte #$40;
         .byte #$40;
 
-EnemyGraphicsColor8b
+EnemyGraphicsColor8b ;Mandrake Plant
         .byte #$C2;
         .byte #$C2;
         .byte #$C2;
@@ -3709,7 +3637,7 @@ EnemyGraphicsColor8b
         .byte #$80;
         .byte #$80;
 
-EnemyGraphicsColor9
+EnemyGraphicsColor9 ;Mandrake Man
         .byte #$10;
         .byte #$10;
         .byte #$12;
@@ -3719,7 +3647,7 @@ EnemyGraphicsColor9
         .byte #$C0;
         .byte #$C0;
 
-EnemyGraphicsColor9b
+EnemyGraphicsColor9b ;Mandrake Man
         .byte #$10;
         .byte #$10;
         .byte #$12;
