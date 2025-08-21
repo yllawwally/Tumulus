@@ -4,7 +4,7 @@
 ;or start all zero and shift in the bits
 ;maybe make random mountains, look at last 2 bits of five and random next?
 ;enemys still using skip draw, can remove some calculations from top now.
-;scanlines jitter when bottom eneamies are gone
+;Add Score HHH  XX  SSSSS
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -130,6 +130,9 @@ PF_TWIST_TEMP		ds 1	; playfield buffer for flipping PF2
 
 SavedStackPointer	ds 1
 
+Score			ds 1	;player Score
+
+ScoreTemp		ds 6	;temp for score lines
 	seg code
 	org $F000
 
@@ -144,6 +147,7 @@ Start
 	STA PICS
 	STX HMP0	;set the move for player 0, not the missile like last time...
 	STX HMP1	;set the move for player 0, not the missile like last time...
+	STA Score
 	
 ClearMem 
 	STA 0,X		
@@ -153,8 +157,6 @@ ClearMem
 	LDA #$00   ;start with a black background
 	STA COLUBK	
 
-;	LDA #$1C   ;lets go for bright yellow, the traditional color for happyfaces
-;	STA COLUP0
 ;Setting some variables...
 	LDA #Enemy_Row_0-#10 
 	STA E0_YPosFromBot
@@ -1249,7 +1251,7 @@ MRIGHT	STA HMM1
 ;skipDraw
 
 	
-	dec E0_Y
+;	dec E0_Y
 
 	STA CXCLR   ;3
 
@@ -2247,6 +2249,8 @@ EndScanLoop_E4_c
 ;        STA WSYNC   
 ;-------------------------Enemy number E4 End---------------------------
 
+	LDA #$B0   ;start with a black background
+	STA COLUBK
 
 
 ;php sword stuff
@@ -2256,10 +2260,11 @@ EndScanLoop_E4_c
   txs
 ; php sword stuff
 
-
-
-
 	STA WSYNC  	
+
+
+
+
 	STA VBLANK 	
 	LDY #30	;number of overscan lines	
 
