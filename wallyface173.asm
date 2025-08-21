@@ -2411,7 +2411,7 @@ NOQUAKE2
 
 
 	LDA #0
-	STA PF0
+;	STA PF0 ;This is outside of player range, so don't need to modify it
 	STA PF1
 	STA PF2
 	
@@ -2657,7 +2657,7 @@ LINEF
 ;	LDA #$FF
 ;	STA COLUPF
 
-;	STA WSYNC
+	STA WSYNC ;Can't rid of this, causes bouncing
 rand_8
 	LDA	RNG		; get seed
 	BNE Not_Zero
@@ -2671,7 +2671,6 @@ no_eor
 	STA	RNG		; save number as next seed
 
 	
-
 
  ;EnemyGraphicsColorPtr_E2
 
@@ -3694,29 +3693,29 @@ HeroGraphics1
 ;(Section of don't damage players, but will scare away horse)
 ;0,00000,Blank 
 ;1,00001,Horse
-;2,00010,Mandrake Red Plant
-;3,00011,Mandrake Blue Plant
-;4,00100,Mandrake Red Man
-;5,00101,Mandrake Blue Man
-;6,00110,Treasure Chest
-;7,00111,Weapon Upgrade???
-;8,01000, Tree
+;2,00010,Mandrake Red Plant ; Looks Good	
+;3,00011,Mandrake Blue Plant; Looks Good
+;4,00100,Mandrake Red Man   ; Looks Good
+;5,00101,Mandrake Blue Man  ; Looks Good
+;6,00110,Treasure Chest     ;Needs different pallet
+;7,00111,Weapon Upgrade??? ;Doesn't Exist
+;8,01000, Tree		; Looks Good	
 ;(Section of monsters that can exit the screen)
-;9,01001,Large Pit
-;10,01010,Small Pit
-;11,01011,Snake
-;12,01100,Bat 
-;13,01101,Rat 
-;14,01110,Homonoculus 
-;15,01111,Goblin
+;9,01001,Large Pit	;Doesn't Exist
+;10,01010,Small Pit     ; Looks Good
+;11,01011,Snake   	; Looks Good
+;12,01100,Bat 		; Looks Good
+;13,01101,Rat 		; Looks Like a frog
+;14,01110,Homonoculus   ; Looks Good
+;15,01111,Goblin	; Looks Good
 ;(Section of monsters that must be defeated)
-;16,10000,RedCap ;Palette swap of Goblin???
-;17,10001,Orc
-;18,10010,Ghost
-;19,10011,Snake Man
-;20,10100,Boggart Fighter
-;21,10101,Brownie
-;22,10110,Satyr ;Need to add it
+;16,10000,RedCap ;Palette swap of Goblin??? ; Looks Good
+;17,10001,Orc			;Needs a larger sprite
+;18,10010,Ghost			; Looks Good
+;19,10011,Snake Man		;Needs to have different color than snake
+;20,10100,Boggart Fighter       ;Graphics need to be inverted
+;21,10101,Brownie		;Looks identical to goblin
+;22,10110,Satyr ;Need to add it ; Looks Good
 ;23,10111,Mummy A
 ;24,11000,Mummy B
 ;25,11001,Dragon A
@@ -3730,30 +3729,31 @@ HeroGraphics1
 
 
 NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
-     .byte #%00001000
-     .byte #%00101100 
+;     .byte #%111  
+     .byte #%10101110
+     .byte #%10101110
      .byte #%10011001 ;mummy arms
      .byte #%10111010 ;mummy legs
      .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
-     .byte #%01100001
-     .byte #%11000011 
-     .byte #%11001010
-     .byte #%00001011
-     .byte #%00101110
-     .byte #%01010000
-     .byte #%01110001
-     .byte #%10010010
-     .byte #%10110011
-     .byte #%11000010
-     .byte #%11000010
-     .byte #%00000010
-     .byte #%00100010
-     .byte #%01001100
-     .byte #%01101011
-     .byte #%10001111
+     .byte #%01110110
+     .byte #%10110110
+     .byte #%11010110
+     .byte #%01101111
      .byte #%10101011
+     .byte #%11000101
+     .byte #%01100110
+     .byte #%10101111
+     .byte #%11010011
+     .byte #%01101101
+     .byte #%10101010
      .byte #%11001011
-     .byte #%11001110
+     .byte #%11101100
+     .byte #%01101101
+     .byte #%10101110
+     .byte #%11001111
+     .byte #%01110000
+     .byte #%10110001
+     .byte #%11010010
      .byte #255 ;This is to reset to beginning
 
 EnemyLife
@@ -4185,7 +4185,7 @@ GraphicsTableLow
 
      .byte #<BoggartGraphics ;20
 
-     .byte #<BrownieGraphics ;21
+     .byte #<SatyrGraphics ;21
 
      .byte #<SatyrGraphics ;22
 
@@ -4252,7 +4252,7 @@ GraphicsTableHigh
 
      .byte #>BoggartGraphics ;20
 
-     .byte #>BrownieGraphics ;21
+     .byte #>SatyrGraphics ;21
 
      .byte #>SatyrGraphics ;22
 
@@ -4293,7 +4293,7 @@ GraphicsColorTableLow
 
      .byte #<GhostColor ;7
 
-     .byte #<TreeGraphicsColor ;8
+     .byte #<BatColor ;8
 
      .byte #<WarriorColor ;9
 
@@ -4303,15 +4303,15 @@ GraphicsColorTableLow
 
      .byte #<BatColor ;12
 
-     .byte #<RatColor ;13
+     .byte #<TreeGraphicsColor ;13
 
-     .byte #<WarriorColor ;14
+     .byte #<BatColor ;14
 
-     .byte #<SnakeColor ;15 This is where mummy color is pulling from was 6
+     .byte #<TreeGraphicsColor ;15 
 
-     .byte #<SnakeColorb ;16
+     .byte #<MandrakeColorRed ;16
 
-     .byte #<EnemyFireColor ;17
+     .byte #<SnakeColor ;17
 
      .byte #<GhostColor ;18
 
