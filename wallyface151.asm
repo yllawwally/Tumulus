@@ -29,8 +29,10 @@
 ;1 line of player is discolored
 ;snakes don't damage player
 ;tree doesn't damage player
-;Mummy can split in half
+;Dragon need fire to change between red and green
 ;weird player graphic corruption, when touching mummy
+;make dragon not move
+;make dragon fire move
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -324,7 +326,7 @@ ClearMem
 	LDA #%00010000 ;set playfield to not reflected
 	STA CTRLPF
 	sta duration
-	LDA MummyColor
+	LDA EnemyGraphicsColor6b
 	STA Pit_Color
 
 	LDA #%11111000	;The last 3 bits control number and size of players
@@ -2448,24 +2450,24 @@ no_eor
 
 
 	    ORG $F890
-Mummy0b .byte #%00001110;$0E
-        .byte #%01111110;$0C
-        .byte #%00001110;$0E
-        .byte #%00001110;$0C
-        .byte #%00000100;$0E
-        .byte #%00011100;$0C
-        .byte #%00001100;$0E
-        .byte #%00011100;$0C
+Mummy0a .byte #%00000100;$0C ;now a dragon head
+        .byte #%00001111;$0E
+        .byte #%00001101;$0C
+        .byte #%00001101;$0E
+        .byte #%00001111;$0C
+        .byte #%01111111;$0E
+        .byte #%01100111;$0C
+        .byte #%01100111;$0E
 
 
-Mummy1b .byte #%00001110;$0E
-        .byte #%00001110;$0C
-        .byte #%01111110;$0E
-        .byte #%00001110;$0C
-        .byte #%00000100;$0E
-        .byte #%00011100;$0C
-        .byte #%00001100;$0E
-        .byte #%00011100;$0C
+Mummy1a .byte #%00000100;$0C ;now a dragon head
+        .byte #%00001111;$0E
+        .byte #%00001101;$0C
+        .byte #%00001101;$0E
+        .byte #%00001111;$0C
+        .byte #%01111111;$0E
+        .byte #%01100111;$0C
+        .byte #%01100111;$0E
 
             ORG $F8C0 
 
@@ -3329,24 +3331,24 @@ HeroGraphicsColor3
      .byte #$08
 
 
-Mummy0a
-        .byte #%00000110;$0E
-        .byte #%00000010;$0C
-        .byte #%00110010;$0E
-        .byte #%00011110;$0C
-        .byte #%00001110;$0E
-        .byte #%00000110;$0C
-        .byte #%00000110;$0E
-	.byte #%00001110;$0C
-Mummy1a
-        .byte #%00001100;$0E
-        .byte #%00001110;$0C
-        .byte #%00000110;$0E
-        .byte #%00000110;$0C
-        .byte #%00000110;$0E
-        .byte #%00000110;$0C
-        .byte #%00000110;$0E
-        .byte #%00001110;$0C
+Mummy0b .byte #%01100111;$0E ;now a dragon head
+        .byte #%01100111;$0C
+        .byte #%01111111;$0E
+        .byte #%00001111;$0C
+        .byte #%00001101;$0E
+        .byte #%00001101;$0C
+        .byte #%00001111;$0E
+        .byte #%00000100;$0C
+
+Mummy1b .byte #%01100111;$0E ;now a dragon head
+        .byte #%01100111;$0C
+        .byte #%01111111;$0E
+        .byte #%00001111;$0C
+        .byte #%00001101;$0E
+        .byte #%00001101;$0C
+        .byte #%00001111;$0E
+        .byte #%00000100;$0C
+
 
 HeroGraphics0
         .byte #%00000000;$22
@@ -3868,9 +3870,9 @@ GraphicsColorTableLow
 
      .byte #<EnemyGraphicsColor5 ;15 blue
 
-     .byte #<MummyColor ;16
+     .byte #<EnemyGraphicsColor6 ;16
 
-     .byte #<MummyColor ;17
+     .byte #<EnemyGraphicsColor6b ;17
 
      .byte #<EnemyFireColor ;18
 
@@ -4109,15 +4111,16 @@ EnemyFireColor
         .byte #$02
 
 
-MummyColor
-        .byte #$0E;
-        .byte #$0C;
-        .byte #$0E;
-        .byte #$0C;
-        .byte #$0E;
-        .byte #$0C;
-        .byte #$0E;
-        .byte #$0C;
+EnemyGraphicsColor6b
+        .byte #$30;
+        .byte #$C4;
+        .byte #$D2;
+        .byte #$C4;
+        .byte #$C2;
+        .byte #$D2;
+        .byte #$D2;
+        .byte #$D2;
+
 
 
 
