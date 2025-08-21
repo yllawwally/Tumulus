@@ -1,9 +1,8 @@
 ;--------------------------------------------------------------
-;top rolls incorrectly
+;mountain range moves backwards
 ;make two sets of top data. First set is just the first screen
 ;the second set is where you grab a bit at a time to shift in.
 ;or start all zero and shift in the bits
-;attempt to add color to player character
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -12,13 +11,13 @@
 
 ; Constants ------
 C_P0_HEIGHT 		= 8	;height of sprite
-C_P1_HEIGHT 		= 16	;height of hero sprite
+C_P1_HEIGHT 		= 22	;height of hero sprite
 C_KERNAL_HEIGHT 	= 186	;height of kernal/actually the largest line on the screen
 Far_Left		= 20
 Far_Right		= 120
 Far_Right_Hero		= 148
-Far_Up_Hero		= 190 - C_P1_HEIGHT
-Far_Down_Hero		= 12
+Far_Up_Hero		= 182
+Far_Down_Hero		= 8+C_P1_HEIGHT
 Enemy_Far_Left		= 1
 Enemy_Row_0		= 185
 Enemy_Row_E0		= 160
@@ -28,7 +27,7 @@ Enemy_Row_E3		= 35
 Enemy_Row_E4		= 2
 HERO_SPEED_VER		= 1
 HERO_SPEED_HOR		= 1
-Screen_Rate		= 20	;How fast screen is scrolling in X-Axis
+Screen_Rate		= 200	;How fast screen is scrolling in X-Axis
 
 ;Variables ------
 
@@ -197,6 +196,44 @@ ClearMem
 	LDA #%00000000	; set to not move
 	STA HMM1	; of HMM1 sets it to moving
 
+	LDA PFData0		; 4 cycles
+	STA PF0_L1 ;B
+	LDA PFData1		; 4 cycles
+	STA PF1_L1 ;B
+	LDA PFData2		; 4 cycles
+	STA PF2_L1 ;C
+	LDA PFData3		; 4 cycles
+	STA PF3_L1 ;d
+	LDA PFData4		; 4 cycles
+	STA PF4_L1 ;E
+	LDA PFData5		; 4 cycles
+	STA PF5_L1 ;F
+
+	LDA PFData0,1		; 4 cycles
+	STA PF0_L2 ;B
+	LDA PFData1,1		; 4 cycles
+	STA PF1_L2 ;B
+	LDA PFData2,1		; 4 cycles
+	STA PF2_L2 ;C
+	LDA PFData3,1		; 4 cycles
+	STA PF3_L2 ;d
+	LDA PFData4,1		; 4 cycles
+	STA PF4_L2 ;E
+	LDA PFData5,1		; 4 cycles
+	STA PF5_L2 ;F
+
+	LDA PFData0,2		; 4 cycles
+	STA PF0_L3 ;B
+	LDA PFData1,2		; 4 cycles
+	STA PF1_L3 ;B
+	LDA PFData2,2		; 4 cycles
+	STA PF2_L3 ;C
+	LDA PFData3,2		; 4 cycles
+	STA PF3_L3 ;d
+	LDA PFData4,2		; 4 cycles
+	STA PF4_L3 ;E
+	LDA PFData5,2		; 4 cycles
+	STA PF5_L3 ;F
 
 
 ;VSYNC time
@@ -286,7 +323,6 @@ SkipMoveUp
 	LDA #%00000001
 	STA MOV_STAT
 SkipMoveLeft
-
 	LDA #%10000000	;Right?
 	BIT SWCHA 
 	BNE SkipMoveRight
@@ -315,7 +351,7 @@ SkipMoveRight
 	bmi NoSwordAttack ;(button not pressed)
 SwordAttack
 	lda 	Hero_YPosFromBot
-	sbc	#$4
+	sbc	#12
 	jmp DoneWithSwordAttack
 NoSwordAttack
 	lda #0
@@ -507,7 +543,7 @@ alive5
 	bne RCP_1
 	lda #<HeroGraphics0 	;low byte of ptr is graphic
 	CLC	;clear carry
-	ADC #10
+	ADC #C_P1_HEIGHT
 	sta Hero_Ptr		;(high byte already set)
 	JMP RCP_2
 RCP_1
@@ -796,79 +832,96 @@ notalive1
 	STA Pos
 			
 
-	LDA PFData0,X		; 4 cycles
-	STA PF0_L1 ;B
-	LDA PFData1,X		; 4 cycles
-	STA PF1_L1 ;B
-	LDA PFData2,X		; 4 cycles
-	STA PF2_L1 ;C
-	LDA PFData3,X		; 4 cycles
-	STA PF3_L1 ;d
-	LDA PFData4,X		; 4 cycles
-	STA PF4_L1 ;E
-	LDA PFData5,X		; 4 cycles
-	STA PF5_L1 ;F
-
 
 ;while shift > 0 do
 ;load shift into Y
 	LDY Pos
 	
-ROTATE1
-	ROL PF5_L1
-	ROL PF4_L1
-	ROL PF3_L1
-	ROL PF2_L1
-	ROL PF1_L1
-	ROL PF0_L1
-	DEY
-	BNE ROTATE1 
 
-	LDY #4
+
+
+;Left Scrolling Demo Start
+;               LDX #04
+;Scroll          
+;               LSR #PF2_L1-1,X   ; Scroll Line X-1 (= 3-0)
+;               ROL #PF1_L1-1,X
+;               ROR #PF0_L1-1,X
+;               LDA #PF0_L1-1,X
+;               AND #%00001000
+;               BEQ Scroll_1   
+;               LDA #PF2_L1-1,X            
+;               ORA #%10000000      
+;               STA #PF2_L1-1,X
+;Scroll_1               
+;               DEX
+;               BNE Scroll
+;
+;Scroll_End   
+;Left Scrolling Demo End
+
+
 
 	LDA PF5_L1
-	STA PF_TEMP
+	ROL 
+
+ROTATE1
+	ROL PF0_L1
+	ROR PF1_L1 ;reversed
+	ROL PF2_L1 ;4 bit reversed
+	LDA #%00001000
+	AND PF2_L1
+	CMP #0
+	CLC
+	BEQ R1JMP
+	SEC
+R1JMP	ROL PF3_L1
+	ROR PF4_L1 ;reversed
+	ROL PF5_L1 ;4 bit reversed
+
+;---------------------------------------
+	LDA PF0_L2
+	ROR 
+	ROR
+	ROR
+	ROR
 
 ROTATE2
-	ROR PF_TEMP
-	ROR PF1_L1
-	ROR PF2_L1
-	ROR PF3_L1
-	ROR PF4_L1
-	ROR PF5_L1
-	DEY
-	BNE ROTATE2
+	ROR PF5_L2
+	ROL PF4_L2 ;reversed
+	ROR PF3_L2 ;4 bit reversed
+	LDA #%00001000
+	AND PF3_L2
+	CMP #0
+	CLC
+	BEQ R2JMP
+	SEC
+R2JMP	ROR PF2_L2
+	ROL PF1_L2 ;reversed
+	ROR PF0_L2 ;4 bit reversed
 
-	LDA PF3_L1
-	STA PF_TEMP
+;----------------------------------------
 
-	LDY #4
-ROTATE3	
-	ROR PF_TEMP
-	ROR PF4_L1
-	ROR PF5_L1
-	DEY
-	BNE ROTATE3
 
-	LDY #7
-LOOPMEM1
-	ROL PF1_L1
-	ROR PF_TEMP
-	DEY
-	BNE LOOPMEM1
+	LDA PF0_L3
+	ROR 
+	ROR
+	ROR
+	ROR
 
-	LDA PF_TEMP
-	STA PF1_L1
+ROTATE3
+	ROR PF5_L3
+	ROL PF4_L3 ;reversed
+	ROR PF3_L3 ;4 bit reversed
+	LDA #%00001000
+	AND PF3_L3
+	CMP #0
+	CLC
+	BEQ R3JMP
+	SEC
+R3JMP	ROR PF2_L3
+	ROL PF1_L3 ;reversed
+	ROR PF0_L3 ;4 bit reversed
 
-	LDY #7
-LOOPMEM2
-	ROL PF4_L1
-	ROR PF_TEMP
-	DEY
-	BNE LOOPMEM2
-
-	LDA PF_TEMP
-	STA PF4_L1
 
 	LDA %00000001
 	STA VDELP0
@@ -912,14 +965,9 @@ PreScanLoop
 	STA PF2			; 3 cycles
 	NOP
 	NOP
-
 	NOP
 	NOP
 	NOP
-	NOP
-	NOP
-	NOP
-
 	LDA PF3_L1		; 4 cycles 
 	STA PF0			; 3 cycles
 	LDA PF4_L1		; 4 cycles
@@ -940,9 +988,6 @@ PreScanLoop
 	STA PF1			; 3 cycles
 	LDA PF2_L2		; 4 cycles
 	STA PF2			; 3 cycles
-	NOP
-	NOP
-	NOP
 	NOP
 	NOP
 	NOP
@@ -972,9 +1017,6 @@ PreScanLoop
 	NOP
 	NOP
 	NOP
-	NOP
-	NOP
-	NOP
 	LDA PF3_L3		; 4 cycles
 	STA PF0			; 3 cycles
 	LDA PF4_L3		; 4 cycles
@@ -994,9 +1036,6 @@ ScanLoops ;start of kernal +++++++++++++++++++++++ for skyline
 	STA PF1			; 3 cycles
 	LDA PF2_L4		; 4 cycles
 	STA PF2			; 3 cycles
-	NOP
-	NOP
-	NOP
 	NOP
 	NOP
 	NOP
@@ -3717,7 +3756,7 @@ OverScanWait
 ; for a RESP0,x write
 ;ROM is located from F000 to FFFF
 
-            ORG $FF00
+            ORG $FEB0 ;was FD80
 fineAdjustBegin
 
             DC.B %01110000 ; Left 7
@@ -3739,7 +3778,7 @@ fineAdjustBegin
 fineAdjustTable EQU fineAdjustBegin - %11110001 ; NOTE: %11110001 = -15
 
 
-	org $FF50
+	org $FEC0
 
 
 
@@ -3792,45 +3831,71 @@ MainPlayerGraphics1
 	.byte #%00111000
 
 HeroGraphics0
-  
-
-  .byte 	 %01000010 ;armour
-  .byte 	 %11100111 ;armour
-  .byte 	 %11111111 ;armour
-  .byte 	 %01111110 ;armour
-  .byte 	 %01100110 ;armour
-  .byte 	 %00111100 ;armour
-  .byte 	 %01100110 ;armour
-  .byte 	 %00111100 ;armour
-
-  .byte 	 %00111110 ;face
-  .byte 	 %01111110 ;face
-  .byte 	 %10010011 ;face
-  .byte 	 %01001001 ;face
-  .byte 	 %11111111 ;face
-  .byte 	 %01110110 ;face
-  .byte 	 %00001100 ;face
-  .byte 	 %00111100 ;face
+     .byte     	 %00110000
+     .byte     	 %00010001
+     .byte     	 %00010011
+     .byte     	 %00011110
+     .byte     	 %00001100
+     .byte     	 %00001110
+     .byte     	 %00001110
+     .byte     	 %10001100
 
 
+     .byte     	 %00111100
+     .byte     	 %01100110
+     .byte     	 %01111110
+     .byte     	 %11111111
+     .byte     	 %11100111
+     .byte     	 %01000010
+	
+     .byte     	 %00011000
+     .byte     	 %00100100
+     .byte     	 %00111110
+     .byte     	 %01111110
+     .byte     	 %00100100
+     .byte     	 %00010010
+     .byte     	 %01111110
+     .byte     	 %01111111
 
-  .byte 	 %01000010 ;armour
-  .byte 	 %11100111 ;armour
-  .byte 	 %11111111 ;armour
-  .byte 	 %01111110 ;armour
-  .byte 	 %01100110 ;armour
-  .byte 	 %00111100 ;armour
-  .byte 	 %01100110 ;armour
-  .byte 	 %00111100 ;armour
 
-  .byte 	 %00111110 ;face
-  .byte 	 %01111110 ;face
-  .byte 	 %10010011 ;face
-  .byte 	 %01001001 ;face
-  .byte 	 %11111111 ;face
-  .byte 	 %01110110 ;face
-  .byte 	 %00001100 ;face
-  .byte 	 %00111100 ;face
+
+
+
+     .byte     	 %00001011
+     .byte     	 %00001001
+     .byte     	 %00010011
+     .byte     	 %00011110
+     .byte     	 %00001100
+     .byte     	 %00001110
+     .byte     	 %00001110
+     .byte     	 %10001100
+
+
+
+     .byte     	 %00111100
+     .byte     	 %01100110
+     .byte     	 %01111110
+     .byte     	 %11111111
+     .byte     	 %11100111
+     .byte     	 %01000010
+	
+     .byte     	 %00011000
+     .byte     	 %00100100
+     .byte     	 %00111110
+     .byte     	 %01111110
+     .byte     	 %00100100
+     .byte     	 %00010010
+     .byte     	 %01111110
+     .byte     	 %01111111
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3879,102 +3944,38 @@ MainPlayerGraphics3
 
 
 	
-;PFData0 
-;        .byte #%11011111
-;        .byte #%10001111
-;        .byte #%10001111
-;        .byte #%00001111 
-;
-;PFData1
-;        .byte #%11111111
-;        .byte #%11111111
-;        .byte #%00111011
-;        .byte #%00010001
-;
-;PFData2
-;        .byte #%11100111
-;        .byte #%11100111
-;        .byte #%11000011
-;        .byte #%00000000
-;
-;PFData3
-;        .byte #%11111111
-;        .byte #%10111011
-;        .byte #%10011001
-;        .byte #%00000000 
-;PFData4 
-;        .byte #%11111111
-;        .byte #%11101111
-;        .byte #%11000111
-;        .byte #%10000011
-;
-;PFData5
-;        .byte #%11100111
-;        .byte #%11000011
-;        .byte #%10000001
-;        .byte #%00000000
-        
-;PFData6
-;        .byte #%11111111
-;        .byte #%11111111
-;        .byte #%10111011
-;        .byte #%00010001
 
-PFData0
-	.byte #%00000001
-	.byte #%00000001
-	.byte #%00000001
-	.byte #%00000001
-	.byte #%00000001
-	.byte #%00000001
-
+PFData0 
+        .byte #%00000011
+        .byte #%00000111
+        .byte #%00001111 
 
 PFData1
-	.byte #%00000011
-	.byte #%00000011
-	.byte #%00000011
-	.byte #%00000011
-	.byte #%00000011
-	.byte #%00000011
-
+        .byte #%11111111
+        .byte #%00111011
+        .byte #%00010001
 
 PFData2
-	.byte #%00000111
-	.byte #%00000111
-	.byte #%00000111
-	.byte #%00000111
-	.byte #%00000111
+        .byte #%11100111
+        .byte #%11000011
+        .byte #%00000000
 
-
-	
 PFData3
-	.byte #%00001111
-	.byte #%00001111
-	.byte #%00001111
-	.byte #%00001111
-	.byte #%00001111
-	.byte #%00001111
-	.byte #%00001111
+        .byte #%10111011
+        .byte #%10011001
+        .byte #%00000000 
 
-
-PFData4
-	.byte #%00011111
-	.byte #%00011111
-	.byte #%00011111
-	.byte #%00011111
-	.byte #%00011111
-	.byte #%00011111
-	.byte #%00011111
-
+PFData4 
+        .byte #%11101111
+        .byte #%11000111
+        .byte #%10000011
 
 PFData5
-	.byte #%00111111
-	.byte #%00111111
-	.byte #%00111111
-	.byte #%00111111
-	.byte #%00111111
-	.byte #%00111111
-	.byte #%00111111
+        .byte #%11000011
+        .byte #%10000001
+        .byte #%00000000
+        
+
 
 EnemyGraphicsColor
 	.byte $40
@@ -3987,22 +3988,34 @@ EnemyGraphicsColor
 	.byte $80
 
 HeroGraphicsColor
-  .byte 	 $FC ;armour
-  .byte 	 $FA ;armour
-  .byte 	 $FA ;armour
-  .byte 	 $F8 ;armour
-  .byte 	 $FE ;armour
-  .byte 	 $FE ;armour
-  .byte 	 $FC ;armour
-  .byte 	 $F6 ;armour
-  .byte 	 $FE ;face
-  .byte 	 $3E ;face
-  .byte 	 $3E ;face
-  .byte 	 $EC ;face
-  .byte 	 $3E ;face
-  .byte 	 $3E ;face
-  .byte 	 $3E ;face
-  .byte 	 $3E ;face
+
+     .byte     	 $FC
+     .byte     	 $FA
+     .byte     	 $FA
+     .byte     	 $F8
+     .byte     	 $FE
+     .byte     	 $FE
+     .byte     	 $FC
+     .byte     	 $F6
+
+
+     .byte     	 $FA
+     .byte     	 $F8
+     .byte     	 $FE
+     .byte     	 $FE
+     .byte     	 $FC
+     .byte     	 $F6
+	
+     .byte     	 $4E
+     .byte     	 $4E
+     .byte     	 $4E
+     .byte     	 $4E
+     .byte     	 $98
+     .byte     	 $4E
+     .byte     	 $4E
+     .byte     	 $3E
+
+
 
 
 
