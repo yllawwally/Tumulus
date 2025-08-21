@@ -29,9 +29,7 @@
 ;1 line of player is discolored
 ;make dragon not move
 ;make dragon fire move
-;Skyline is messed up, when monsters on screen, need to adjust color palette
 ;Rat is miscolored
-;Multi-Sprite bad guy has one line that slide, this is because it's reinitialzing the hor position
 ;Touching an enemy causes one less line, will this cause TV distortion?
 ;if you use potion on enemy too far right, they will stop and you can't continue
 
@@ -40,13 +38,10 @@
 
 
 ;FIXED
-;sometimes killing the guy on 6, also killed the guy on the first lane
-;This was related to the linking of bosses, it incorectly listed lane 6 and another lane as linked.
-;tree doesn't damage player
-;This was because I had accidently replaced the eye trigger with the damage list
-;Potion once again destroys creatures
-;Touching an enemy causes an extra line
-;moved monsters order around so that the proper ones damage player
+;Skyline is messed up, when monsters on screen, need to adjust color palette
+;Just top of skyline color is changed, now it cycles with overeyes
+;Multi-Sprite bad guy has one line that slide, this is because it's reinitialzing the hor position
+
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -1078,8 +1073,10 @@ AdjustTableForColor
 	
 	LDY #4 ; was 191 	
 ;----------lots of time
+	LDA Overeyes
+	BNE SETCOLOR ;//This is to change syline color when overeyes is on
 	LDA #$70
-	STA COLUPF
+SETCOLOR	STA COLUPF
 
 
 TESTPOINTF
@@ -1225,6 +1222,8 @@ TESTPOINTG
 NOEyesYet	
 	LDY #4
 NOBIGEYES
+
+
 	sta GRP0
 
 
@@ -1325,7 +1324,7 @@ MRIGHT	STA HMM1
 
 	CMP Pause
 	BCS NOBIGEYES2
-	LDY #8
+	LDY #4 ;was 8//this controls if the skyline will shift color
 NOBIGEYES2
 
 	LDA #$72
@@ -1370,7 +1369,7 @@ NOTONHORSEKNIFE
 	STA VDELBL
 	LDX #0
 
-	LDA PFCOLOR-1,Y		; 4 cycles
+	LDA PFCOLOR-1,Y		; 4 cycles //Is this needed?
 
 
 	STA WSYNC
@@ -1679,13 +1678,12 @@ new_E1_line2     STA WSYNC                ;not enough time
 
 	cpy Hero_Sword_Pos  ;3
 
-new_E1_line3     STA WSYNC                                   
-;----------added section----------------------------------------
 
 
-;------------------------------------------------------------
+
+;//This section was moved, so I have time later to fix the sliding line in the boss
+
 	stx	GRP1	;3
-	sta 	COLUP1 ;3
 
 ;sword php style
 	php			;3
@@ -1693,6 +1691,16 @@ new_E1_line3     STA WSYNC
   	txs                    ;2 Set the top of the stack to ENAM1+1
 ;sword php style 
 ;skipDraw
+
+
+
+new_E1_line3     STA WSYNC                                   
+;----------added section----------------------------------------
+
+
+;------------------------------------------------------------
+	sta 	COLUP1 ;3
+
 
 ;---removed enemy display character
 
@@ -1727,13 +1735,32 @@ new_E1_line3     STA WSYNC
 
 
 	
-	lda  Graphics_Buffer_2
 	cpy Hero_Sword_Pos  ;3
 
 	stx COLUP1
  	php	;2
 	DEY
-;Need to jump to Endline2 if in the middle of linked monster	
+;Need to jump to Endline2 if in the middle of linked monster
+	
+	lda Link
+	BEQ NotBoss
+	CPY #Enemy_Row_E4
+	BCS NotBoss
+
+	lda  Graphics_Buffer_2
+	STA WSYNC
+
+	sta GRP1
+
+
+
+
+	STA WSYNC
+
+	JMP AfterEndLine2
+
+NotBoss	lda  Graphics_Buffer_2
+
 EndLine1   STA WSYNC  
 ;------------------------------------------------+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .600: SUBROUTINE
@@ -2556,25 +2583,6 @@ no_eor
 	STA WSYNC
 
 	JMP CalcScore
-
-DragonGraphicsb .byte #%00000100;$0C ;now a dragon head
-        .byte #%00001111;$0E
-        .byte #%00001101;$0C
-        .byte #%00001101;$0E
-        .byte #%00001111;$0C
-        .byte #%01111111;$0E
-        .byte #%01100111;$0C
-        .byte #%01100111;$0E
-
-
-DragonGraphics1b .byte #%00000100;$0C ;now a dragon head
-        .byte #%00001111;$0E
-        .byte #%00001101;$0C
-        .byte #%00001101;$0E
-        .byte #%00001111;$0C
-        .byte #%01111111;$0E
-        .byte #%01100111;$0C
-        .byte #%01100111;$0E
 
 
 EnemyLife
@@ -3751,6 +3759,25 @@ Level_Color ;One level per monster
 		.byte #$F4
 
 ;You have 41 bytes here. But it will be needed at add more monsters, for nextbaddie.
+DragonGraphicsb .byte #%00000100;$0C ;now a dragon head
+        .byte #%00001111;$0E
+        .byte #%00001101;$0C
+        .byte #%00001101;$0E
+        .byte #%00001111;$0C
+        .byte #%01111111;$0E
+        .byte #%01100111;$0C
+        .byte #%01100111;$0E
+
+
+DragonGraphics1b .byte #%00000100;$0C ;now a dragon head
+        .byte #%00001111;$0E
+        .byte #%00001101;$0C
+        .byte #%00001101;$0E
+        .byte #%00001111;$0C
+        .byte #%01111111;$0E
+        .byte #%01100111;$0C
+        .byte #%01100111;$0E
+
 
 	org #$FCC0 ;HeroGraphicsColor + #256
 
@@ -4753,12 +4780,12 @@ PFCOLOR
 	.byte #$5D
 	.byte #$4A
 	.byte #$3A
-	.byte #$FF
-	.byte #$FF
+	.byte #$F
+	.byte #$F
 
 PFCOLORB
-	.byte #$70
-	.byte #$72
+	.byte #$74
+	.byte #$76
 	.byte #$74
 	.byte #$76
 
