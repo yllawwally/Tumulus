@@ -574,18 +574,6 @@ ENDSLICES
 ;	STA HMOVE
 
 	
-rand_8
-	LDA	RNG		; get seed
-	BNE Not_Zero
-	LDA ROLLING_COUNTER
-Not_Zero
-	ASL			; shift byte
-	BCC	no_eor		; branch if no carry
-
-	EOR	#$CF		; else EOR with $CF
-no_eor
-	STA	RNG		; save number as next seed
-
 
 
 
@@ -655,6 +643,11 @@ ExtraDead
 	AND Enemy_Life
 	STA Enemy_Life
 	LDA E0_Type-1,x
+	BEQ ITSZERO
+
+	CMP #6
+	BEQ RedMandrakeMan
+	BCS NoCollisionP0
 
 	CMP #3
 	BEQ RedMandrakePlant
@@ -662,12 +655,12 @@ ExtraDead
 	BEQ BlueMandrakePlant
 	CMP #5
 	BEQ BlueMandrakeMan
-	CMP #6
-	BEQ RedMandrakeMan
+
 
 	CMP #1
 	BNE NoCollisionP0
 
+ITSZERO
 	LDA #24
 	sta onhorse
 
@@ -748,7 +741,7 @@ notsmacked
 NoCollision	
 	tya
 	ldy #0
-	ldx #0
+;	ldx #0 ;we know x is 0, otherwise wouldn't be here
 NotInvincable
 	cmp #0
 	beq NOSCORE
@@ -2134,6 +2127,9 @@ EndScanLoop_E0_cz
 ALWAYSQUAKE
 	STA WSYNC
 	STA WSYNC
+
+
+
 	
 NOQUAKE2
 
@@ -2364,12 +2360,26 @@ LINEF
 	STA COLUPF
 
 	STA WSYNC
+
+rand_8
+	LDA	RNG		; get seed
+	BNE Not_Zero
+	LDA ROLLING_COUNTER
+Not_Zero
+	ASL			; shift byte
+	BCC	no_eor		; branch if no carry
+
+	EOR	#$CF		; else EOR with $CF
+no_eor
+	STA	RNG		; save number as next seed
+
+	
 	STA WSYNC
 
  ;EnemyGraphicsColorPtr_E2
-
 	LDY #5
 	STA WSYNC
+
 
 	JMP CalcScore
 
@@ -3794,6 +3804,38 @@ GraphicsColorTableHigh
      .byte #>TreeGraphicsColor
 
 
+EnemyLife
+	.byte #$01
+	.byte #$02
+	.byte #$03
+	.byte #$04
+	.byte #$05
+	.byte #$06
+	.byte #$07
+	.byte #$08
+	.byte #$09
+	.byte #$0A
+	.byte #$0B
+	.byte #$0C
+	.byte #$0D
+	.byte #$0E
+	.byte #$0F
+	.byte #$01
+	.byte #$02
+	.byte #$03
+	.byte #$04
+	.byte #$05
+	.byte #$06
+	.byte #$07
+	.byte #$08
+	.byte #$09
+	.byte #$0A
+	.byte #$0B
+	.byte #$0C
+	.byte #$0D
+	.byte #$0E
+	.byte #$0F
+
 
 
 	org #$FDC0 ;HeroGraphicsColor + #512
@@ -4000,24 +4042,9 @@ DONTLOOP
 	LDA NEXTBADDIETYPE,x
 	AND #%00011111 
 	STA E0_Type,y
-	CMP #0
-	beq TREE
-	CMP #1
-	beq HORSE 
-	ASL 
+	LDA EnemyLife
 	STA E0_Health,y
-	JMP NOTHORSE	
-TREE
-	LDA #120
-	STA E0_Health,y
-	JMP NOTHORSE
 
-HORSE
-	LDA #1
-	STA E0_Health,y
-	JMP NOTHORSE
-
-NOTHORSE
 
 	lda #Far_Right-1
 	sta E0_XPos,y
@@ -4048,7 +4075,7 @@ NotYet
 
 
 Level_Color
-		.byte #$C2
+		.byte #$B0
 		.byte #$C0
 		.byte #$D4
 		.byte #$D2
