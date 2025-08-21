@@ -35,6 +35,7 @@
 ;Skyline is messed up, when monsters on screen, need to adjust color palette
 ;fire potion doesn't kill only brings them down to zero(artificially say they are hit to kill?)
 ;Using potion sometimes messes up creature, perhaps only on last lane
+;Rat is miscolored
 
 ;FIXED
 
@@ -142,8 +143,8 @@ Enemy_Row_E7		= 23   ;35
 Min_Eye_Trigger		= 15   ;was 8
 Min_Damage		= 8    ;was 8
 LVL1BOSS			= 27
-LVL2BOSS			= 23 ;14 ;This is somehow causing the rolling
-LVL3BOSS			= 25
+LVL2BOSS			= 25 ;14 ;This is somehow causing the rolling
+LVL3BOSS			= 26
 LVL4BOSS			= 28
 LVL5BOSS			= 30
 Mummy_Num		= LVL2BOSS
@@ -2530,7 +2531,7 @@ no_eor
 	JMP CalcScore
 
 
-Mummy0a .byte #%00000100;$0C ;now a dragon head
+DragonGraphicsb .byte #%00000100;$0C ;now a dragon head
         .byte #%00001111;$0E
         .byte #%00001101;$0C
         .byte #%00001101;$0E
@@ -2540,7 +2541,7 @@ Mummy0a .byte #%00000100;$0C ;now a dragon head
         .byte #%01100111;$0E
 
 
-Mummy1a .byte #%00000100;$0C ;now a dragon head
+DragonGraphics1b .byte #%00000100;$0C ;now a dragon head
         .byte #%00001111;$0E
         .byte #%00001101;$0C
         .byte #%00001101;$0E
@@ -2645,7 +2646,27 @@ WillOWispGraphics
 	.byte #%00111000
 	.byte #%00000000
 
+BrownieaGraphics
 
+	.byte #%00000000
+	.byte #%00010100
+	.byte #%00010100
+	.byte #%00111100
+	.byte #%01111110
+	.byte #%00010000
+	.byte #%00111000
+	.byte #%00111000
+
+
+
+	.byte #%00000000
+	.byte #%00100010
+	.byte #%00100100
+	.byte #%00111100
+	.byte #%01111110
+	.byte #%00010000
+	.byte #%00111000
+	.byte #%00111000
 
 BADDIEVALUE 
      .byte #0 ;;0,Tree
@@ -2676,10 +2697,10 @@ BADDIEVALUE
      .byte #5 ;;25,Dragon A
      .byte #5 ;;26,Dragon B
      .byte #6 ;;27,Will O Wisp
-     .byte #7 ;;28,Monster 4a
-     .byte #7 ;;29,Monster 4b
-     .byte #8 ;;30,Monster 5a
-     .byte #8 ;;31,Monster 5b
+;     .byte #7 ;;28,Monster 4a
+ ;    .byte #7 ;;29,Monster 4b
+;     .byte #8 ;;30,Monster 5a
+ ;    .byte #8 ;;31,Monster 5b
 
 
 
@@ -3454,7 +3475,7 @@ HeroGraphicsColor3
      .byte #$08
 
 
-Mummy0b .byte #%01100111;$0E ;now a dragon head
+DragonGraphicsa .byte #%01100111;$0E ;now a dragon head
         .byte #%01100111;$0C
         .byte #%01111111;$0E
         .byte #%00001111;$0C
@@ -3463,7 +3484,7 @@ Mummy0b .byte #%01100111;$0E ;now a dragon head
         .byte #%00001111;$0E
         .byte #%00000100;$0C
 
-Mummy1b .byte #%01100111;$0E ;now a dragon head
+DragonGraphics1a .byte #%01100111;$0E ;now a dragon head
         .byte #%01100111;$0C
         .byte #%01111111;$0E
         .byte #%00001111;$0C
@@ -3471,6 +3492,7 @@ Mummy1b .byte #%01100111;$0E ;now a dragon head
         .byte #%00001101;$0C
         .byte #%00001111;$0E
         .byte #%00000100;$0C
+
 
 
 
@@ -3535,50 +3557,6 @@ HeroGraphics1
 
 
 
-RedCapGraphics
-GoblinGraphics
-
-	.byte #%00000000
-	.byte #%00010100
-	.byte #%00010100
-	.byte #%00011000
-	.byte #%01111110
-	.byte #%00010000
-	.byte #%00111000
-	.byte #%00111000
-
-
-	.byte #%00000000
-	.byte #%00100110
-	.byte #%00101100
-	.byte #%00011000
-	.byte #%01111110
-	.byte #%00010000
-	.byte #%00111000
-	.byte #%00111000
-
-
-BrownieGraphics
-
-	.byte #%00000000
-	.byte #%00010100
-	.byte #%00010100
-	.byte #%00111100
-	.byte #%01111110
-	.byte #%00010000
-	.byte #%00111000
-	.byte #%00111000
-
-
-
-	.byte #%00000000
-	.byte #%00100010
-	.byte #%00100100
-	.byte #%00111100
-	.byte #%01111110
-	.byte #%00010000
-	.byte #%00111000
-	.byte #%00111000
 
 
 
@@ -3623,8 +3601,8 @@ BrownieGraphics
 NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%00001011
      .byte #%00101100 
-     .byte #%10001111 ;mummy arms
-     .byte #%10110000 ;mummy legs
+     .byte #%10011001 ;mummy arms
+     .byte #%10111010 ;mummy legs
      .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
      .byte #%01100010
      .byte #%11000011 
@@ -3826,10 +3804,6 @@ SnakeManGraphics ;Snakeman
 
 
 
-
-
-
-
 LEFTAUD     
      .byte     #%10000100
      .byte     #%10000100
@@ -4005,9 +3979,9 @@ GraphicsTableLow
 
      .byte #<Mummy0a ;24
 
-     .byte #<DragonGraphicsb ;25
+     .byte #<DragonGraphicsa ;25
 
-     .byte #<DragonGraphicsa ;26
+     .byte #<DragonGraphicsb ;26
 
      .byte #<WillOWispGraphics ;27
 
@@ -4072,9 +4046,9 @@ GraphicsTableHigh
 
      .byte #>Mummy0a ;24
 
-     .byte #>DragonGraphicsb ;25
+     .byte #>DragonGraphicsa ;25
 
-     .byte #>DragonGraphicsa ;26
+     .byte #>DragonGraphicsb ;26
 
      .byte #>WillOWispGraphics ;27
 
@@ -4115,7 +4089,7 @@ GraphicsColorTableLow
 
      .byte #<BatColor ;12
 
-     .byte #<EnemyGraphicsColor0 ;13
+     .byte #<RatColor ;13
 
      .byte #<WarriorColor ;14
 
@@ -4143,7 +4117,7 @@ GraphicsColorTableLow
 
      .byte #<TreeGraphicsColor ;26
 
-     .byte #<TreeGraphicsColor ;27
+     .byte #<BlueBallColor ;27
 
      .byte #<TreeGraphicsColor ;28
 
@@ -4158,15 +4132,7 @@ GraphicsColorTableHigh
      .byte #>TreeGraphicsColor
 
 
-Mask
-	.byte #%11111110
-	.byte #%11111101
-	.byte #%11111011
-	.byte #%11110111
-	.byte #%11101111
-	.byte #%11011111
-	.byte #%10111111
-	.byte #%01111111
+
 
 	org #$FDC0 ;HeroGraphicsColor + #512
 
@@ -4193,7 +4159,7 @@ PonyGraphicsColor
 	.byte #$00
 	.byte #$00
 
-EnemyGraphicsColor0
+RatColor
 	.byte #$8A
 	.byte #$8A
 	.byte #$74
@@ -4204,7 +4170,6 @@ EnemyGraphicsColor0
 	.byte #$80
 
 WarriorColor
-EnemyGraphicsColor3
 	.byte #$40
 	.byte #$40
 	.byte #$40
@@ -4214,46 +4179,6 @@ EnemyGraphicsColor3
 	.byte #$80
 	.byte #$80
 
-EnemyGraphicsColor2
-	.byte #$C0
-	.byte #$C2
-	.byte #$C4
-	.byte #$C6
-	.byte #$C8
-	.byte #$CA
-	.byte #$80
-	.byte #$80
-
-;EnemyGraphicsColor3
-;	.byte #$40
-;	.byte #$40
-;	.byte #$40
-;	.byte #$20
-;	.byte #$3E
-;	.byte #$3E
-;	.byte #$80
-;	.byte #$80
-
-
-EnemyGraphicsColor4
-        .byte #$C0;
-        .byte #$C0;
-        .byte #$D0;
-        .byte #$C2;
-        .byte #$D2;
-        .byte #$D2;
-        .byte #$C2;
-        .byte #$22;
-
-EnemyGraphicsColor5
-        .byte #$80;
-        .byte #$80;
-        .byte #$82;
-        .byte #$84;
-        .byte #$84;
-        .byte #$82;
-        .byte #$80;
-        .byte #$80;
 
 SnakeColor
         .byte #$D2;
@@ -4275,6 +4200,17 @@ GhostColor ;Ghost with Red Eyes
         .byte #$0E;
         .byte #$32;
         .byte #$0E;
+
+BlueBallColor ;Will o wisp
+        .byte #$90;
+        .byte #$92;
+        .byte #$92;
+        .byte #$94;
+        .byte #$92;
+        .byte #$96;
+        .byte #$98;
+        .byte #$98;
+
 
 
 MandrakeColorRed ;Mandrake Plant
@@ -4308,7 +4244,7 @@ BatColor ;Bat Color Gray and Black
         .byte #$04;
         .byte #$04;
 
-ChestColor ;Mandrake Man
+ChestColor ;
         .byte #$10;
         .byte #$10;
         .byte #$12;
@@ -4350,7 +4286,15 @@ SnakeColorb
         .byte #$D2;
 
 
-
+Mask
+	.byte #%11111110
+	.byte #%11111101
+	.byte #%11111011
+	.byte #%11110111
+	.byte #%11101111
+	.byte #%11011111
+	.byte #%10111111
+	.byte #%01111111
 
 
 SLICE0
@@ -4446,6 +4390,32 @@ NotYet
 
 	JMP ENDSLICES
 
+RedCapGraphics
+GoblinGraphics
+BrownieGraphics
+	.byte #%00000000
+	.byte #%00010100
+	.byte #%00010100
+	.byte #%00011000
+	.byte #%01111110
+	.byte #%00010000
+	.byte #%00111000
+	.byte #%00111000
+
+
+	.byte #%00000000
+	.byte #%00100110
+	.byte #%00101100
+	.byte #%00011000
+	.byte #%01111110
+	.byte #%00010000
+	.byte #%00111000
+	.byte #%00111000
+
+
+
+
+
 
 
 	
@@ -4522,9 +4492,9 @@ UpgradeGraphics
 MinotaurGraphicsa
 VampGraphicsb
 VampGraphicsa
-DragonGraphicsa
 MinotaurGraphicsb
-DragonGraphicsb
+Mummy0b
+Mummy0a
 
 NUM0
 
