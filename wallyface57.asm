@@ -1,7 +1,7 @@
 ;--------------------------------------------------------------
 ;top rolls incorrectly
 ;attempting to shift enemies into using vdel
-;attempting to add color to player character
+;attempting to add color to player character messed up at hmoves
 ;--------------------------------------------------------------
 
 	processor 6502
@@ -77,6 +77,9 @@ HeroGraphicsColorPtr	ds 2
 Graphics_Buffer		ds 1	;buffer for graphics
 Graphics_Buffer_2	ds 1	;buffer for graphics
 Graphics_Buffer_3	ds 1	;buffer for graphics
+
+Color_Buffer		ds 1	;buffer for graphics
+Color_Buffer_2		ds 1	;buffer for graphics
 
 MOV_STAT		ds 1 	;direction player is moving
 
@@ -785,7 +788,7 @@ LOOPMEM2
 
 	LDA $00
 	STA VDELP0
-	STA VDELP1
+;	STA VDELP1
 	
 ;setup php ball trick
 
@@ -1003,7 +1006,7 @@ MRIGHT	STA HMM1
 	STA WSYNC
 	STA HMOVE ;3
 	lda #0
-	sta Graphics_Buffer
+	sta GRP0
 ;	STA HMCLR
 	STA WSYNC
 ;start of kernal +++++++++++++++++++++++ for player 0 positioning
@@ -1030,8 +1033,7 @@ MRIGHT	STA HMM1
 
 ScanLoop_E0_c 
 	stx	GRP1	
-	lda 	Graphics_Buffer
-	sta     GRP0 ; This allows us to do the calculation early, but must move dey to before routine
+	sta     COLUP1
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
@@ -1049,8 +1051,7 @@ ScanLoop_E0_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E0_b:
 	lda     (E0_Ptr),y      ; 5
-	sta 	Graphics_Buffer
-
+	sta 	GRP0
 
 
 ;skipDraw
@@ -1064,7 +1065,6 @@ ScanLoop_E0_c
 	lda     (Hero_Ptr),y      ; 5
 	tax
 	lda     (HeroGraphicsColorPtr),y      ; 5
-	sta COLUP1
 
         DEY             ;count down number of scan lines          2 cycles
 
@@ -1080,6 +1080,7 @@ EndScanLoop_E0_c
 
 ;-------------------------Enemy number E1 Start---------------------------
 ;NOT A LOOP
+	sta COLUP1
 	stx GRP1
 ;sword php style
 	cpy Hero_Sword_Pos
@@ -1099,6 +1100,8 @@ EndScanLoop_E0_c
 .doDrawHero_E1_a:
 	lda     (Hero_Ptr),y      ; 5
 	tax
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta COLUP1
         DEY             ;count down number of scan lines          2 cycles = 
 
 
@@ -1113,13 +1116,14 @@ EndScanLoop_E0_c
 .doDrawHero_E1_b:
 	lda     (Hero_Ptr),y      ; 5
 	sta Graphics_Buffer_2
+	lda     (HeroGraphicsColorPtr),y      ; 5
+	sta 	Color_Buffer_2
 
 	LDA CXM1P
 	STA E0_Hit  ;this line must refer to previous enemy
 	STA CXCLR
 
 	lda E1_XPos
-
 ;sword php style
 	cpy Hero_Sword_Pos
 	stx GRP1
@@ -1147,13 +1151,13 @@ EndScanLoop_E0_c
 	STA HMOVE
 ;This is not a loop, this is a one time set position for the eneamy E1
 
-	lda 	Graphics_Buffer_2 
-
+	ldx 	Graphics_Buffer_2 
+	lda 	Color_Buffer_2
 
 ScanLoop_E1_c 
-	sta	GRP1	;3
-;	lda	Graphics_Buffer
-;	sta	GRP0	; 3
+	stx	GRP1	;3
+	sta 	COLUP1  ;3
+
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
@@ -1162,6 +1166,7 @@ ScanLoop_E1_c
   	txs                    ;2 Set the top of the stack to ENAM1+1
 ;sword php style 
 ;skipDraw
+
 ; draw player sprite 0:
 	lda     #C_P0_HEIGHT-1     ; 2
 	dcp     E1_Y            ; 5 (DEC and CMP)
@@ -1171,11 +1176,6 @@ ScanLoop_E1_c
 .doDraw_E1_b:
 	lda     (E1_Ptr),y      ; 5
 	sta 	GRP0
-;	sta 	Graphics_Buffer
-
-
-	
-
 
 ;skipDraw
 ; draw Hero sprite:
@@ -1189,19 +1189,22 @@ ScanLoop_E1_c
 ;This allows us to do the calculation early, but must move dey to before routine
 	tax
 	lda     (HeroGraphicsColorPtr),y      ; 5
-	sta COLUP1
-	txa
+
+
+
         DEY             ;2 count down number of scan lines          2 cycles
 	
 
 	CPY #Enemy_Row_E1-#1 ;3
+
         STA WSYNC                                                ;3 cycles =
         BCS ScanLoop_E1_c                                             ;2 cycles =
 EndScanLoop_E1_c
 ;-------------------------Enemy number E1 End---------------------------
 ;-------------------------Enemy number E2 Start---------------------------
 ;NOT A LOOP
-	sta GRP1
+	sta COLUP1
+	stx GRP1
 ;sword php style
 	cpy Hero_Sword_Pos
 	php
@@ -1272,8 +1275,8 @@ EndScanLoop_E1_c
 
 ScanLoop_E2_c 
 	sta	GRP1	;3
-;	lda	Graphics_Buffer
-;	sta	GRP0	; 3
+	lda	Graphics_Buffer
+	sta	GRP0	; 3
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
@@ -1292,8 +1295,8 @@ ScanLoop_E2_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E2_b:
 	lda     (E2_Ptr),y      ; 5
-	sta 	GRP0
-;	sta 	Graphics_Buffer
+;	sta 	GRP0
+	sta 	Graphics_Buffer
 
 
 ;skipDraw
@@ -1392,8 +1395,8 @@ EndScanLoop_E2_c
 
 ScanLoop_E3_c 
 	sta	GRP1	;3
-;	lda	Graphics_Buffer
-;	sta	GRP0	; 3
+	lda	Graphics_Buffer
+	sta	GRP0	; 3
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
@@ -1412,8 +1415,8 @@ ScanLoop_E3_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E3_b:
 	lda     (E3_Ptr),y      ; 5
-	sta 	GRP0
-;	sta 	Graphics_Buffer
+;	sta 	GRP0
+	sta 	Graphics_Buffer
 
 
 ;skipDraw
@@ -1516,8 +1519,8 @@ EndScanLoop_E3_c
 
 ScanLoop_E4_c 
 	sta	GRP1	;3
-;	lda	Graphics_Buffer
-;	sta	GRP0	; 3
+	lda	Graphics_Buffer
+	sta	GRP0	; 3
 
 ;sword php style
 	cpy Hero_Sword_Pos  ;3
@@ -1536,8 +1539,8 @@ ScanLoop_E4_c
 	.byte   $2c             ;-1 (BIT ABS to skip next 2 bytes)(kinda like a jump)
 .doDraw_E4_b:
 	lda     (E4_Ptr),y      ; 5
-	sta 	GRP0
-;	sta 	Graphics_Buffer
+;	sta 	GRP0
+	sta 	Graphics_Buffer
 
 
 ;skipDraw
