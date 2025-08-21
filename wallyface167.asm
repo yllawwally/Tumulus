@@ -41,7 +41,7 @@
 ;Skyline is messed up, when monsters on screen, need to adjust color palette
 ;Just top of skyline color is changed, now it cycles with overeyes
 ;Multi-Sprite bad guy has one line that slide, this is because it's reinitialzing the hor position
-
+;Roman number 6 was was showing instead of 4, for potion when player had 4 potions.
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -2511,23 +2511,23 @@ LINEE
 ;	ldx #$F0 ;too big
 
 	LDA NUM0_,y
-	SAX EnemyGraphicsColorPtr_E2
+	STA EnemyGraphicsColorPtr_E2
 	
+	INY
+	LDA NUM0_,y
+	STA EnemyGraphicsColorPtr_E3
 
-	LDA NUM1_,y
-	SAX EnemyGraphicsColorPtr_E3
+	INY
+	LDA NUM0_,y
+	STA EnemyGraphicsColorPtr_E4
 
-
-	LDA NUM2_,y
-	SAX EnemyGraphicsColorPtr_E4
-
-
-	LDA NUM3_,y
-	SAX EnemyGraphicsColorPtr_E5
+	INY
+	LDA NUM0_,y
+	STA EnemyGraphicsColorPtr_E5
 	
-
-	LDA NUM4_,y
-	SAX EnemyGraphicsColorPtr_E6
+	INY
+	LDA NUM0_,y
+	STA EnemyGraphicsColorPtr_E6
 LINEF
 ;	STA WSYNC  
 
@@ -2763,13 +2763,16 @@ horseknife
 	asl
 	asl
 	asl
-	cmp #%0110000
-	bne nobonus	
-	lda #%11000000 ;This was 10000000 trying to make potion last longer
+;	cmp #%0110000
+;	bne nobonus	
+;	lda #%11100000 ;This was 10000000 trying to make potion last longer
 nobonus
 	ora Potion
 	sta Potion
+	lda RNG
+	BMI DONTDECPOISION
 	dec Potion
+DONTDECPOISION
 	lda #$FF ;Enemy_Life
 	sta Other_Hit
 	jmp NoPotion
@@ -3055,8 +3058,8 @@ ARNUM3
 ARNUM4
  .byte #%01111110;
  .byte #%00100100;
- .byte #%00101010;
- .byte #%00101010;
+ .byte #%01010100;
+ .byte #%01010100;
  .byte #%01111110;
 	.byte #$FF
 	.byte #$FF
