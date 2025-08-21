@@ -26,7 +26,7 @@
 ;Can I remove duration, and calculate based on is it a boss, then use rand+level for duration???
 ;need to pause when starting, and also stop when dead
 ;reduce max potions, so that you can increase timer length, 
-;can I make it so pits and trees don't change color when hit?
+
 
 
 ;BUGS
@@ -36,18 +36,20 @@
 ;Rat is miscolored
 ;Touching an enemy causes one less line, will this cause TV distortion?
 ;if you use potion on enemy too far right, they will stop and you can't continue
-;sometimes number of potions doesn't decrease, when they are used
-;Screen no longer shakes, with overeyes
-;need to make pit 10, not change direction when hit
+;Pits need to appear when eyes overhead
 
 ;IMPROVED
 ;when you hit a monster on lane 3, the screen flickers for a moment
 
 
 ;FIXED
-;Potion was damaging the player
-;Touching Boss causes an extra line
-;You cannot get more than 5 potions
+;can I make it so pits and trees don't change color when hit?
+;need to make pit 10, not change direction when hit
+;Screen no longer shakes, with overeyes
+;sometimes number of potions doesn't decrease, when they are used
+;I actually had a line dontdecpoison, what the hell was I thinking
+
+;earthquakes
 
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
@@ -426,8 +428,6 @@ MORECALCSRET
 
 
 
-
-
 	LDA #0
 	STA VSYNC 	
 
@@ -669,6 +669,8 @@ NoCoPo
 	CMP #8
 	BEQ Type4
 
+	CMP #10
+	BEQ Type4
 
 ;	CMP #LVL2BOSS+1 ;this is probably what's needed to stop bottom
 ;	BEQ dontpause   ;half of monster from going a different direction
@@ -1238,12 +1240,43 @@ TESTPOINTG
 	sta Player_Hit
 ;	sta New_Hit
 
-	CMP Pause
-	BCS NOBIGEYES
+;	CMP Pause
+;	BCS NOBIGEYES
 	LDA Overeyes
 	CMP #Min_Eye_Quake
 	LDA #0
 	BCC NOEyesYet
+
+	;This is a good place to generate holes for the earthquakes
+	
+
+	LDA RNG
+	CMP #127
+	BCS NOTCREATED 
+;	CMP #Far_Right
+;	BCS NOTCREATED
+	AND #%00000111
+	tax
+	LDA E0_Type-1,x
+	CMP #$11
+	BCS NOTCREATED
+;	LDA Multiplexer-1,x
+;	AND Enemy_Life
+;	BNE NOTCREATED
+	LDA Multiplexer-1,x
+	ORA Enemy_Life
+	STA Enemy_Life
+	LDA RNG
+	ADC #10
+	AND #%01100000
+	STA #E0_XPos-1,x	 
+	LDA #10
+	STA #E0_Type-1,x	 
+	STA #E0_Health-1,x
+NOTCREATED
+
+
+
 	LDA #Min_Eye_Quake
 	STA Overeyes
 	LDA #$FF
@@ -1254,6 +1287,9 @@ NOBIGEYES
 
 
 	sta GRP0
+
+
+;There is time here
 
 
 
@@ -2439,19 +2475,19 @@ LINEB
 
 	
 
-;	INY
+
 	LDA NUM0+1,y
 	SAX E6_Ptr
 
-;	iny
+
 	LDA NUM0+2,y
 	SAX E7_Ptr
 
-;	iny
+
 	LDA NUM0+3,y
 	SAX E0_Ptr2
 	
-;	iny
+
 	LDA NUM0+4,y
 	SAX E1_Ptr2
 
@@ -2490,13 +2526,12 @@ LINED
 
 
 
-;	INY
 	LDA NUM0+3,y
 	AND #$F0
 	ORA E0_Ptr2
 	STA E0_Ptr2
 
-;	INY
+
 	LDA NUM0+4,y
 	AND #$F0
 	ORA E1_Ptr2
@@ -2538,24 +2573,24 @@ LINEE
 	ASL
 	ASL
 	TAY
-;	ldx #$F0 ;too big
+
 
 	LDA NUM0_,y
 	STA EnemyGraphicsColorPtr_E2
 	
-;	INY
+
 	LDA NUM0_+1,y
 	STA EnemyGraphicsColorPtr_E3
 
-;	INY
+
 	LDA NUM0_+2,y
 	STA EnemyGraphicsColorPtr_E4
 
-;	INY
+
 	LDA NUM0_+3,y
 	STA EnemyGraphicsColorPtr_E5
 	
-;	INY
+
 	LDA NUM0_+4,y
 	STA EnemyGraphicsColorPtr_E6
 LINEF
@@ -2571,20 +2606,20 @@ LINEF
 	LDA ARNUM0,y
 	STA E2_Ptr2
 
-	INY
-	LDA ARNUM0,y
+;	INY
+	LDA ARNUM0+1,y
 	STA E3_Ptr2
 
-	INY
-	LDA ARNUM0,y
+;	INY
+	LDA ARNUM0+2,y
 	STA E4_Ptr2
 
-	INY
-	LDA ARNUM0,y
+;	INY
+	LDA ARNUM0+3,y
 	STA E5_Ptr2
 
-	INY
-	LDA ARNUM0,y
+;	INY
+	LDA ARNUM0+4,y
 	STA E6_Ptr2
 
 
@@ -2609,45 +2644,14 @@ no_eor
 	STA WSYNC
 
  ;EnemyGraphicsColorPtr_E2
+
 	LDY #5
 	STA WSYNC
+
 
 	JMP CalcScore
 
 
-EnemyLife
-     .byte #100 ;;0,Empty
-     .byte #1 ;;1,Horse
-     .byte #1 ;;2,Mandrake Red Plant
-     .byte #1 ;;3,Mandrake Blue Plant
-     .byte #1 ;;4,Mandrake Red Man
-     .byte #1 ;;5,Mandrake Blue Man
-     .byte #1 ;;6,Treasure Chest
-     .byte #1 ;;7,
-     .byte #100 ;;8,Tree
-     .byte #100 ;;9,Large Pit
-     .byte #100 ;;10,Small Pit
-     .byte #1 ;;11,Snake
-     .byte #1 ;;12,Bat ;Need to add it
-     .byte #1 ;;13,Rat ;Need to add it
-     .byte #2 ;;14,Homonoculus
-     .byte #4 ;;15,Goblin ;Need to add it
-     .byte #5 ;;16,RedCap ;Need to add it
-     .byte #7 ;;17,Orc ;Need to add it
-     .byte #1 ;;18,Ghost
-     .byte #1 ;;19,Snake Man
-     .byte #1 ;;20,Boggart Fighter
-     .byte #1 ;;21,Brownie
-     .byte #1 ;;22,Satyr
-     .byte #5 ;;23,Mummy A
-     .byte #5 ;;24,Mummy B
-     .byte #5 ;;25,Dragon A
-     .byte #5 ;;26,Dragon B
-     .byte #3 ;;27,Will O Wisp
-;     .byte #6 ;;28,Vampire a ;Need to add it
- ;    .byte #6 ;;29,Vampire b ;Need to add it
-;     .byte #7 ;;30,Minotaur a;Need to add it
-;     .byte #7 ;;31,Minotaur b;Need to add it might not need this value since it's a copy of monster ;30
 
 
             ORG $F8C0 
@@ -2776,8 +2780,8 @@ horseknife
 nobonus
 	ora Potion
 	sta Potion
-	lda RNG
-	BMI DONTDECPOISION
+;	lda RNG
+;	BMI DONTDECPOISION
 	dec Potion
 DONTDECPOISION
 	lda #$FF ;Enemy_Life
@@ -2903,7 +2907,32 @@ HeroDown
 
 
 
-
+NEXTBADDIEDUR
+	.byte #$0
+	.byte #$10
+	.byte #$FA
+	.byte #$10
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
+	.byte #$200
 
             ORG $F9C0 
 
@@ -3306,7 +3335,6 @@ CalcScore
 
 
 
-
 	NOP
 	NOP
 
@@ -3685,33 +3713,42 @@ NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
      .byte #%11001110
      .byte #255 ;This is to reset to beginning
 
+EnemyLife
+     .byte #100 ;;0,Empty
+     .byte #1 ;;1,Horse
+     .byte #1 ;;2,Mandrake Red Plant
+     .byte #1 ;;3,Mandrake Blue Plant
+     .byte #1 ;;4,Mandrake Red Man
+     .byte #1 ;;5,Mandrake Blue Man
+     .byte #1 ;;6,Treasure Chest
+     .byte #1 ;;7,
+     .byte #100 ;;8,Tree
+     .byte #100 ;;9,Large Pit
+     .byte #100 ;;10,Small Pit
+     .byte #1 ;;11,Snake
+     .byte #1 ;;12,Bat ;Need to add it
+     .byte #1 ;;13,Rat ;Need to add it
+     .byte #2 ;;14,Homonoculus
+     .byte #4 ;;15,Goblin ;Need to add it
+     .byte #5 ;;16,RedCap ;Need to add it
+     .byte #7 ;;17,Orc ;Need to add it
+     .byte #1 ;;18,Ghost
+     .byte #1 ;;19,Snake Man
+     .byte #1 ;;20,Boggart Fighter
+     .byte #1 ;;21,Brownie
+     .byte #1 ;;22,Satyr
+     .byte #5 ;;23,Mummy A
+     .byte #5 ;;24,Mummy B
+     .byte #5 ;;25,Dragon A
+     .byte #5 ;;26,Dragon B
+     .byte #3 ;;27,Will O Wisp
+;     .byte #6 ;;28,Vampire a ;Need to add it
+ ;    .byte #6 ;;29,Vampire b ;Need to add it
+;     .byte #7 ;;30,Minotaur a;Need to add it
+;     .byte #7 ;;31,Minotaur b;Need to add it might not need this value since it's a copy of monster ;30
 
-NEXTBADDIEDUR
-	.byte #$0
-	.byte #$10
-	.byte #$FA
-	.byte #$10
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
-	.byte #$200
+
+
 
 
 
@@ -3728,16 +3765,16 @@ NOMAKEEYES
 	JMP MOVESET1
 NOMOVESET
 
-	LDA Overeyes
-	CMP #Min_Eye_Quake
-	BCC NOPITCREATION
-	LDA RNG
-	CMP #120
-	BCS NOPITCREATION
-	CMP #Far_Right
-	BCS NOPITCREATION
-	AND #%00000111
-	tax
+;	LDA Overeyes
+;	CMP #Min_Eye_Quake
+;	BCC NOPITCREATION
+;	LDA RNG
+;	CMP #120
+;	BCS NOPITCREATION
+;	CMP #Far_Right
+;	BCS NOPITCREATION
+;	AND #%00000111
+;	tax
 ;	LDA RNG
 ;	ADC #10
 ;	AND #%01111111
