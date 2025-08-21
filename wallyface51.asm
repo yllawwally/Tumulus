@@ -1095,8 +1095,10 @@ EndScanLoopHero ;end of kernal +++++++++++++++++ for Hero positioning
 	LDA #0
 	JMP MRIGHT
 MLEFT	
-
-	LDA #%01110000 ;Atari only looks at 4 most significant bits in 2's compliment
+	LDA #%00101000	;The last 3 bits control number and size of players
+			;the second 2 bits control missle size
+	STA NUSIZ1
+	LDA #%01100000 ;Atari only looks at 4 most significant bits in 2's compliment
 MRIGHT	STA HMM1
 
 
