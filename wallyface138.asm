@@ -3,17 +3,15 @@
 ;One can shoot down, one accross, and one up. That way fireballs don't overlap
 ;Maybe player magic that destroys all monster and leaves holes in ground. Beams that kill only if hit enemy
 ;player has corruption on far right
-;need to add way to change playfield colors, for enemy special attack, and top eye enemy attack
+;need to add way to change playfield colors, for enemy special attack, and top eye enemy attack 
 ;certain pallettes don't work on lanes 6 and 7, The colors for monster types (3,4,5,6,7)
 ;Boss portion really needs a way for monster to travel whole screen.
 ;make players as large pits, that can't be jumped by horse, need low num to ignore the attack move
-;player monster collisions add a line
-;color is not delayed by vdel
 ;top line of baddie is wrong because it needs to be loaded in prior line, but not the color
-;player minor corruption far right, corruption is more severe on horse
-;can I make pit color selectable, to make giant ogre, out of several pieces
-;moving on horse to the right wioth sword out, causes extra line
-;endline1 doesn't have dey till later, which causes player knife to be off position.
+;make giant ogre, out of several pieces
+;endline1 doesn't have dey till later, which causes player knife to be off position, only on far far right
+;Potion Magic isn't clearing properly
+;may be problems with too many points at once
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
@@ -22,11 +20,13 @@
 ;--------------------------------------------------------------
 ;5 different level masters
 ;NAGA, can summon snakes
+;Gargoyle
 ;Griffon
-;Vampire, summon undead???, drain life
+;Vampire, summon undead???, drain life, resurrect helpers in same spot they died, bats
 ;Saytr, summon goats
 ;Giant, can create craters that move accross screen
-;Dragon, breath fire
+;Mummy
+;Dragon, breath fire, uses the moving pit in mouth, change color when spit at player
 ;Minotaur
 ;Sirens, control player
 ;Gorgon, causes player death if on same level facing her
@@ -44,7 +44,7 @@ C_P1_HEIGHT 		= 12	;height of hero sprite
 C_KERNAL_HEIGHT 	= 182	;height of kernal/actually the largest line on the screen ;was 186
 Far_Left		= 8
 Far_Right		= 140
-Far_Right_Hero		= 128
+Far_Right_Hero		= 134
 Far_Up_Hero		= 180
 Far_Down_Hero		= 21+C_P1_HEIGHT
 Enemy_Far_Left		= 4
@@ -224,6 +224,7 @@ Baddie_Num		ds 1	;current baddie displayed
 
 Potion			ds 1	;Potions player currently has
 RNG			ds 1
+Pit_Color		ds 1
 	seg code
 	org $F000
 
@@ -255,6 +256,7 @@ ClearMem
 	LDA #%11111111
 	STA Enemy_Life
 	STA Player_Health
+	STA Pit_Color
 
 	LDA #%00010000 ;set playfield to not reflected
 	STA CTRLPF
@@ -978,6 +980,13 @@ notalive1b
 	sbc DistFromBottom-1,y	;integer part of distance from bottom
 	sta E0_Ptr-1,y	;2 byte
 
+
+	lda Potion
+	cmp #4
+	bcc AdjustTableForColorHitTest
+	LDA #<EnemyFireColor
+	JMP AdjustTableForColor
+AdjustTableForColorHitTest
 	lda Multiplexer-1,y
 	and Other_Hit
 	cmp #1
@@ -1585,8 +1594,7 @@ new_E1_line3     STA WSYNC
 	sta Graphics_Buffer
 
 
-
-	NOP 
+	DEY
 
 
 	lda  Graphics_Buffer_2
@@ -1611,6 +1619,7 @@ EndLine1   STA WSYNC
 	sta RESP0 
 
 
+	INY
 
 ;sword php style	
 EndLine2        STA WSYNC                                                ;3 cycles =
@@ -1791,37 +1800,26 @@ Hit_Baddie
 	
 	lda 	#$0      ;2
 	sta 	GRP0    ;3
-	sta 	COLUP0
+
+
+
 
 	lda     (HeroGraphicsColorPtr),y      ; 5
+
+
 	dey
-
-
-
-;sword php style
-
-
-	NOP
-	NOP
-	NOP
-
-
-
 	cpy Hero_Sword_Pos  ;3
-	php			;3
-
-
-
-
-
-
+	sta 	COLUP1 ;3
 EndLine5 	sta WSYNC
 
 ;---------------------line for setting up pits-----------------------------------------
+;sword php style
 
-	sta 	COLUP1 ;3
+	php	
 	stx	GRP1	;3
 
+	lda	Pit_Color
+	sta 	COLUP0
 
 	pla
 
@@ -1864,9 +1862,7 @@ midline6
 	lda  Graphics_Buffer_2
 
 
-	NOP
-	NOP
-	NOP
+
 
 
 
@@ -2324,6 +2320,7 @@ LINEF
 ;	STA WSYNC  
 
 	LDA Potion
+	AND #$0F
 	ASL
 	ASL
 	ASL
@@ -2425,32 +2422,7 @@ SwordSongf ;10 bytes each section
 	.byte #70
 	.byte #90
 
-NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
-     .byte #%00000111
-     .byte #%00100001
-     .byte #%01000010
-     .byte #%01100011
-     .byte #%10000100
-     .byte #%10100011
-     .byte #%11000100
-     .byte #%11100100
-     .byte #%00001000
-     .byte #%00101001
-     .byte #%01001010
-     .byte #%01101011
-     .byte #%10001100
-     .byte #%10101101
-     .byte #%11000001
-     .byte #%11100010
-     .byte #%00000011
-     .byte #%00100100
-     .byte #%01001000
-     .byte #%01101001
-     .byte #%10000111
-     .byte #%10101000
-     .byte #%11001001
-     .byte #%11001010
-     .byte #255 ;This is to reset to beginning
+
 
 
 BADDIEVALUE 
@@ -2479,8 +2451,37 @@ MORECALCS
 	lda #8
 	sta swordduration
 horseknife
-	
 
+
+	lda Potion
+	beq NoPotion
+	cmp #4
+	bcs OverPotion	
+
+	ldx INPT5
+	bmi NoPotion
+	asl
+	asl
+	asl
+	asl
+	cmp #%00110000
+	bne nobonus	
+	lda #%01000000
+nobonus
+	ora Potion
+	sta Potion
+	dec Potion
+	lda #$FF
+	sta Other_Hit
+	jmp NoPotion
+OverPotion
+	sec 
+	sbc #%00010000
+	sta Potion
+	lda #$FF
+	sta Other_Hit
+
+NoPotion
 	;check Hero Sword Attack
 	ldx INPT4
 	bmi NoSwordAttack2 ;(button not pressed)
@@ -2507,6 +2508,7 @@ NoSwordAttack
 	lda #200
 DoneWithSwordAttack
 	sta Hero_Sword_Pos
+
 
 
 
@@ -3306,6 +3308,33 @@ MainPlayerGraphics1
 	.byte #%00111000
 
 
+NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
+     .byte #%00000111
+     .byte #%00100001
+     .byte #%01000010
+     .byte #%01100011
+     .byte #%10000100
+     .byte #%10100011
+     .byte #%11000100
+     .byte #%11100100
+     .byte #%00001000
+     .byte #%00101001
+     .byte #%01001010
+     .byte #%01101011
+     .byte #%10001100
+     .byte #%10101101
+     .byte #%11000001
+     .byte #%11100010
+     .byte #%00000011
+     .byte #%00100100
+     .byte #%01001000
+     .byte #%01101001
+     .byte #%10000111
+     .byte #%10101000
+     .byte #%11001001
+     .byte #%11001010
+     .byte #255 ;This is to reset to beginning
+
 	org #$FCC0 ;HeroGraphicsColor + #256
 
 
@@ -3582,6 +3611,8 @@ GraphicsColorTableLow
 
      .byte #<EnemyHitColor
 
+     .byte #<EnemyFireColor
+
 GraphicsColorTableHigh
      .byte #>TreeGraphicsColor
 
@@ -3614,6 +3645,8 @@ GraphicsColorTableHigh
      .byte #>EnemyGraphicsColor0
 
      .byte #>EnemyHitColor
+
+     .byte #>EnemyFireColor
 
 
 Switch
@@ -3793,7 +3826,15 @@ EnemyHitColor
         .byte #$08;
         .byte #$08;
 
-
+EnemyFireColor
+        .byte #$02
+        .byte #$40
+        .byte #$1D
+        .byte #$42
+        .byte #$1D
+        .byte #$44
+        .byte #$50
+        .byte #$02
 
 
 
