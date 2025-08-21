@@ -10,11 +10,6 @@
 ;EndLin4b is where the color is bad for the arm now
 
 
-;Non distributed future
-;make players as large pits, that can't be jumped by horse
-
-;146 is last version without mummy
-
 ;a monster who shares the background color with head, so head is only seen when hit.
 
 ;FUTURE FEATURES
@@ -31,16 +26,17 @@
 ;BUGS
 ;1 line of player is discolored
 ;snakes don't damage player
-;tree doesn't damage player, did I want to tree to hurt player or only chase snake away.
-;ghost doesn't stay on screen
+;tree doesn't damage player
 ;make dragon not move
 ;make dragon fire move
 ;bottom part of boss changes direction when hit.
 ;Sometimes when you kill a monster, the screen flickers for a moment.When I lose horse? Or maybe only on that lane
-;Seems like everything on lane one is harder to kill
 ;Skyline is messed up, when monsters on screen, need to adjust color palette
 
 ;FIXED
+
+
+
 ;--------------------------------------------------------------
 ;Hard Coded max monsters 32, 1 for large pit, 1 for small pit, 5 for bosses. horse, tree. 23 possible basic baddies
 ;add treasure chest?
@@ -142,7 +138,7 @@ Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
 Min_Eye_Trigger		= 8;was 8
 LVL1BOSS			= 27
-LVL2BOSS			= 23
+LVL2BOSS			= 14
 LVL3BOSS			= 25
 LVL4BOSS			= 28
 LVL5BOSS			= 30
@@ -2434,7 +2430,7 @@ KILLLINKS
 
 	STA #Pit1_XPos,y
 	STA Link
-	STA Enemy_Life
+	STA Enemy_Life ;Kills all life on screen, only bosses and related monsters should be on screen
 
 LINEE
 ;	STA WSYNC  
@@ -2636,7 +2632,6 @@ WillOWispGraphics
 	.byte #%01111100
 	.byte #%00111000
 	.byte #%00000000
-
 
 
 
@@ -3960,11 +3955,11 @@ GraphicsTableLow
 
      .byte #<MandrakeManGraphics ;5
 
-     .byte #<TreeGraphics ;6
+     .byte #<ChestGraphics ;6
 
-     .byte #<TreeGraphics ;7
+     .byte #<ChestGraphics ;7
 
-     .byte #<TreeGraphics ;8
+     .byte #<ChestGraphics ;8
 
      .byte #<TreeGraphics ;9
 
@@ -4027,11 +4022,11 @@ GraphicsTableHigh
 
      .byte #>MandrakeManGraphics ;5
 
-     .byte #>TreeGraphics ;6
+     .byte #>ChestGraphics ;6
 
-     .byte #>TreeGraphics ;7
+     .byte #>ChestGraphics ;7
 
-     .byte #>TreeGraphics ;8
+     .byte #>ChestGraphics ;8
 
      .byte #>TreeGraphics ;9
 
@@ -4483,6 +4478,28 @@ SatyrGraphicsB
         .byte #%01010000;--
         .byte #%00111000;--
         .byte #%00101000;--
+
+
+ChestGraphics
+	.byte #%00000000
+	.byte #%00000000
+	.byte #%11111111
+	.byte #%11111111
+	.byte #%11111111
+	.byte #%01111110
+	.byte #%00111100
+	.byte #%00000000
+
+	.byte #%00000000
+	.byte #%00000000
+	.byte #%11111111
+	.byte #%11111111
+	.byte #%11111111
+	.byte #%01111110
+	.byte #%00111100
+	.byte #%00000000
+
+
 NUM0
 
         .byte #%11101110;
