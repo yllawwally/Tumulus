@@ -1,0 +1,591 @@
+--- Symbol List (sorted by symbol)
+                         0000                  
+0.100                    f417                  
+0.Div15Hero              f403              (R )
+0.doDrawHero_E0_eb21ZZ   f5a4              (R )
+0.doDrawHero_E0_eb22ZZ   f5b4              (R )
+0.doDrawHero_E1_ebr      f544              (R )
+0.doDrawHero_E1_ebrt     f566              (R )
+0.doDrawHero_E1_ebrt3    f58a              (R )
+0.FREE_BYTES             0000                  
+1.600                    f5d5                  
+1.608                    f61c                  
+1.Div15_E2_a             f5da              (R )
+1.doDrawHero_E0_eb21a    f692              (R )
+1.doDrawHero_E0_eb21az   f674              (R )
+1.doDrawHero_E0_eb22a    f6a2              (R )
+1.doDrawHero_E0_ebz      f749              (R )
+1.doDrawHero_E1_eb21     f71c              (R )
+1.doDrawHero_E2_e        f60c              (R )
+1.doDrawHero_E2_eb       f6fe              (R )
+1.doDrawHero_E2_eb8      f636              (R )
+1.doDrawHero_E2_en       f6d4              (R )
+AddingPit                fe77              (R )
+AdjustTableForColor      f34c              (R )
+AdjustTableForColorHitTest f337              (R )
+AfterEndLine2            f5ea              (R )
+alive1b                  f311              (R )
+ALWAYSQUAKE              f766              (R )
+ARNUM0                   fa0f              (R )
+ARNUM1                   fa17                  
+ARNUM2                   fa1f                  
+ARNUM3                   fa27                  
+ARNUM4                   fa2f                  
+ARNUM5                   fa37                  
+AUDC0                    0015              (R )
+AUDC1                    0016              (R )
+AUDF0                    0017              (R )
+AUDF1                    0018              (R )
+AUDV0                    0019              (R )
+AUDV1                    001a              (R )
+Baddie_Duration          00fb              (R )
+Baddie_Num               00fc              (R )
+BADDIEVALUE3             fc70                  
+BatColor                 fe08              (R )
+BatGraphics              f9f0              (R )
+BatGraphicsb             f9f8                  
+BellyColor               fa98              (R )
+BITMASK                  fff4                  
+BlankGraphics            fc70              (R )
+BlueBallColor            fdf0              (R )
+BlueMandrakeMan          f216              (R )
+BlueMandrakePlant        f226              (R )
+BoggartGraphics          f8d0              (R )
+BoggartGraphicsb         f8d8                  
+BOSS1                    f1da              (R )
+BrownieaGraphics         f8f7                  
+BrownieGraphics          fe98              (R )
+C_KERNAL_HEIGHT          00b6              (R )
+C_P0_HEIGHT              0008              (R )
+C_P1_HEIGHT              000c              (R )
+CalcScore                fae8              (R )
+Check_Pos                fb37              (R )
+ChestColor               fe10              (R )
+ChestGraphics            fee0              (R )
+ClearMem                 f007              (R )
+Collision                f143              (R )
+collisionplayermissle    f64e                  
+COLUBK                   0009              (R )
+COLUP0                   0006              (R )
+COLUP1                   0007              (R )
+COLUPF                   0008              (R )
+CTRLPF                   000a              (R )
+CXBLPF                   0006                  
+CXCLR                    002c              (R )
+CXM0FB                   0004                  
+CXM0P                    0000                  
+CXM1FB                   0005                  
+CXM1P                    0001              (R )
+CXP0FB                   0002                  
+CXP1FB                   0003              (R )
+CXPPMM                   0007              (R )
+Did_Not_Hit_Pit          f279              (R )
+Direction                0094              (R )
+DistFromBottom           fa3c              (R )
+DONEMOVE                 f0e8              (R )
+DoneWithSwordAttack      f955              (R )
+donjump                  f90e              (R )
+donjump2                 f4af              (R )
+Dont_Reset               fb6d              (R )
+DONTCHANGEDIR            f114              (R )
+DONTCHANGEL              f100              (R )
+DONTCHANGER              f10b              (R )
+DONTDECPOISION           f932                  
+DONTLOOP                 fe44                  
+DONTLOOP2                fe8f              (R )
+DontmovePit              fb53                  
+dontpause                f198              (R )
+DragonGraphicsa          fbe5              (R )
+DragonGraphicsb          fc60              (R )
+Draw_Enemy_E2            f61c              (R )
+duration                 00f3              (R )
+E0_Health                00b0              (R )
+E0_Ptr                   0083              (R )
+E0_Ptr2                  008b              (R )
+E0_Type                  00a9              (R )
+E0_XPos                  00a1              (R )
+E1_Health                00b1              (R )
+E1_Ptr                   0084              (R )
+E1_Ptr2                  008c              (R )
+E1_Type                  00aa                  
+E1_XPos                  00a2                  
+E2_Health                00b2                  
+E2_Ptr                   0085              (R )
+E2_Ptr2                  008d              (R )
+E2_Type                  00ab                  
+E2_XPos                  00a3                  
+E3_Health                00b3                  
+E3_Ptr                   0086              (R )
+E3_Ptr2                  008e              (R )
+E3_Type                  00ac                  
+E3_XPos                  00a4                  
+E4_Health                00b4                  
+E4_Ptr                   0087              (R )
+E4_Ptr2                  008f              (R )
+E4_Type                  00ad                  
+E4_XPos                  00a5                  
+E5_Health                00b5                  
+E5_Ptr                   0088              (R )
+E5_Ptr2                  0090              (R )
+E5_Type                  00ae                  
+E5_XPos                  00a6                  
+E6_Health                00b6                  
+E6_Ptr                   0089              (R )
+E6_Ptr2                  0091              (R )
+E6_Type                  00af                  
+E6_XPos                  00a7                  
+E7_Ptr                   008a              (R )
+ENABL                    001f                  
+ENAM0                    001d              (R )
+ENAM1                    001e                  
+end_Line                 f730              (R )
+ENDHORSEMULT             f2cd              (R )
+EndLin4b                 f643                  
+EndLine1                 f5d3                  
+EndLine10                f730                  
+EndLine2                 f5e6                  
+EndLine3                 f61c                  
+EndLine4                 f643              (R )
+EndLine5                 f685                  
+Endline6                 f6ad                  
+EndLine7                 f6b9                  
+EndLine8                 f6db                  
+EndLine9                 f705                  
+EndScanLoop_E0_cz        f754                  
+EndScanLoop_E2_c         f709                  
+EndScanLoopHero          f417                  
+ENDSLICES                f117              (R )
+Enemies_Alive            f2d5              (R )
+Enemy_Far_Left           0004              (R )
+Enemy_Life               00d1              (R )
+Enemy_Number_EX_End      f732                  
+Enemy_Pause_Left         0006              (R )
+Enemy_Row_0              00b9              (R )
+Enemy_Row_Data           ff97              (R )
+Enemy_Row_E0             00a5              (R )
+Enemy_Row_E1             0091              (R )
+Enemy_Row_E2             007d              (R )
+Enemy_Row_E3             0069              (R )
+Enemy_Row_E4             0055              (R )
+Enemy_Row_E5             0041              (R )
+Enemy_Row_E6             002d              (R )
+Enemy_Row_E7             0017              (R )
+EnemyFireColor           fe20              (R )
+EnemyGraphicsColorPtr_E0 0096              (R )
+EnemyGraphicsColorPtr_E1 0097                  
+EnemyGraphicsColorPtr_E2 0098              (R )
+EnemyGraphicsColorPtr_E3 0099              (R )
+EnemyGraphicsColorPtr_E4 009a              (R )
+EnemyGraphicsColorPtr_E5 009b              (R )
+EnemyGraphicsColorPtr_E6 009c              (R )
+EnemyHitColor            fe18              (R )
+ExtraDead                f1a4              (R )
+Far_Down_Hero            0032              (R )
+Far_Left                 0008              (R )
+Far_Right                008c              (R )
+Far_Right_Hero           006e              (R )
+Far_Up_Hero              00b4              (R )
+fineAdjustBegin          fa00              (R )
+fineAdjustTable          f90f                  
+Finish_Screen            f732                  
+FORWARD                  f0da              (R )
+GhostColor               fde8              (R )
+GhostGraphics            f8c0              (R )
+GhostGraphicsb           f8c8                  
+GotMusic                 f3ba              (R )
+Graphics_Buffer          00cf              (R )
+Graphics_Buffer_2        00d0              (R )
+GraphicsColorTableHigh   fdb5              (R )
+GraphicsColorTableLow    fd95              (R )
+GraphicsTableHigh        fd75              (R )
+GraphicsTableLow         fd55              (R )
+Grapple                  00cd              (R )
+GRP0                     001b              (R )
+GRP1                     001c              (R )
+Hero_Ptr                 00c5              (R )
+HERO_SPEED_HOR           0001              (R )
+HERO_SPEED_VER           0001              (R )
+Hero_Sword_Pos           00c7              (R )
+Hero_XPos                00c2              (R )
+Hero_Y                   00c4              (R )
+Hero_YPosFromBot         00c0              (R )
+HeroDown                 f9a7              (R )
+HeroGraphics0            fbf5              (R )
+HeroGraphics1            fc0d                  
+HeroGraphics2            fad0              (R )
+HeroGraphicsColor        fbc1              (R )
+HeroGraphicsColor2       fbcd                  
+HeroGraphicsColor3       fbd9                  
+HeroGraphicsColorPtr     00c8              (R )
+HeroLeft                 f979              (R )
+HeroRight                f997                  
+HeroUp                   f99f              (R )
+Hit_Baddie               f66b              (R )
+Hit_Pit                  f277              (R )
+HITSCORE                 f13c              (R )
+HMBL                     0024                  
+HMCLR                    002b              (R )
+HMM0                     0022                  
+HMM1                     0023              (R )
+HMOVE                    002a              (R )
+HMP0                     0020              (R )
+HMP1                     0021              (R )
+HomonoculusGraphics      fce0              (R )
+horseknife               f916              (R )
+HORSEKNIFELEFT           f458              (R )
+HORSENOTLOST             fc57              (R )
+INPT0                    0008                  
+INPT1                    0009                  
+INPT2                    000a                  
+INPT3                    000b                  
+INPT4                    000c              (R )
+INPT5                    000d              (R )
+INTIM                    0284              (R )
+ITSZERO                  f1cd              (R )
+KEEPPAUSE                f267              (R )
+KILLLINKS                f847              (R )
+LEFTAUD                  fd00              (R )
+LeftSound                f385              (R )
+Level                    00cc              (R )
+Level_Color              fc5a              (R )
+LINEA                    f79e                  
+LINEB                    f7e0                  
+LINEC                    f7f4                  
+LINED                    f819                  
+LINEE                    f850              (R )
+LINEF                    f871                  
+Link                     00ce              (R )
+LinkZero                 f281              (R )
+loadbellycolor           f41b                  
+LOADPFDATA               f024              (R )
+LVL1BOSS                 001b              (R )
+LVL2BOSS                 0019              (R )
+LVL3BOSS                 001a                  
+LVL4BOSS                 001c                  
+LVL5BOSS                 001e                  
+macro.h                  0000 ????         (R )
+MainLoop                 f045              (R )
+MainLoopStart            f045                  
+mandrake                 f228              (R )
+MandrakeColorBlue        fe00              (R )
+MandrakeColorRed         fdf8              (R )
+MandrakeManGraphics      fac0              (R )
+MandrakeManGraphicsb     fac8                  
+MandrakePlantGraphics    f9c0              (R )
+MandrakePlantGraphicsb   f9c8                  
+Mask                     fe30              (R )
+MidLine5a                f67c              (R )
+midline6                 f699                  
+MidSectionColorPtr       009f              (R )
+Min_Damage               0009              (R )
+Min_Eye_Quake            003c              (R )
+Min_Eye_Trigger          000f              (R )
+MinotaurGraphicsa        fef0              (R )
+MinotaurGraphicsb        fef0              (R )
+MLEFT                    f42f              (R )
+MORECALCS                f907              (R )
+MORECALCSRET             f04c              (R )
+MOV_STAT                 00cb              (R )
+MOVELEFT                 f0c1              (R )
+MOVESECTION              fc25                  
+MOVESET1                 f114              (R )
+MRIGHT                   f431              (R )
+MTNRANGE2                f475              (R )
+Multi_Temp               00ec              (R )
+Multiplexer              fab5              (R )
+Mummy0a                  fef0              (R )
+Mummy0b                  fef0              (R )
+Mummy_Num                0019              (R )
+musicData                00f4              (R )
+new_E1_line1             f548                  
+new_E1_line2             f56b                  
+new_E1_line3             f597                  
+New_E2_Start             f4ff              (R )
+New_Hit                  00f9              (R )
+NEXTBADDIEDUR            fc70                  
+NEXTBADDIETYPE           fc70                  
+no_eor                   f89f              (R )
+No_Hit_the_Baddie        f65b              (R )
+No_Hit_the_Baddie3       fb26              (R )
+No_Hit_the_Pit           f603              (R )
+No_Hit_the_Pit2          fb31              (R )
+NO_PIT                   f6f2              (R )
+NOBIGEYES                f3f5                  
+nobonus                  f92c                  
+NoCollision              f247              (R )
+NoCollisionP0            f1d1              (R )
+NOCOLLISIONPF            f6b5                  
+NOCOLLISIONPF2           f66b                  
+NoCollJMP                f14d              (R )
+NoCoPo                   f157              (R )
+NOEyesYet                f3f3              (R )
+NOHITTING                f616              (R )
+NOLOSEHORSE              fc4f              (R )
+NOMAKEEYES               fc2b              (R )
+NOMOVESET                fc34                  
+NOPFHIT                  f129              (R )
+NOPITCREATION            fc47              (R )
+NOPITTHISLEVEL           f528              (R )
+NoPotion                 f936              (R )
+NOQUAKE                  f4ed              (R )
+NOQUAKE2                 f76a              (R )
+NOQUAKE4                 f4fb              (R )
+NOSCORE                  f25f              (R )
+nosnakepause             f238              (R )
+noswinging               f2a5              (R )
+NoSwordAttack            f953              (R )
+NoSwordAttack2           f94f              (R )
+NoSwordSound             f385              (R )
+not_on_horse             f279                  
+Not_Zero                 f89a              (R )
+NotAdjusted              f349              (R )
+notalive1b               f322              (R )
+NotBellyColor            faac              (R )
+NotBoss                  f5d1              (R )
+NotBossLevel             f141              (R )
+NOTCREATED               f3f1              (R )
+NotHitPf                 f661              (R )
+NotInvincable            f24a                  
+NOTMUMMY                 fe6e              (R )
+NOTONHORSEKNIFE          f464              (R )
+NotOutsideBOSSRange      f1f5              (R )
+NotPit                   fe65              (R )
+notsmacked               f241              (R )
+notsnake                 f238                  
+NotYet                   fe95              (R )
+NotZeroLane              f1fb              (R )
+NS0                      f085              (R )
+NS1                      f08c              (R )
+NS2                      f093              (R )
+NS3                      f09a              (R )
+NS4                      f0a1              (R )
+NS5                      f0a4                  
+NS6                      f0a4                  
+NS7                      f0a4                  
+NUM0                     fef0              (R )
+NUM0_                    ff40              (R )
+NUM1                     fef8                  
+NUM1_                    ff48                  
+NUM2                     ff00                  
+NUM2_                    ff50                  
+NUM3                     ff08                  
+NUM3_                    ff58                  
+NUM4                     ff10                  
+NUM4_                    ff60                  
+NUM5                     ff18                  
+NUM5_                    ff68                  
+NUM6                     ff20                  
+NUM6_                    ff70                  
+NUM7                     ff28                  
+NUM7_                    ff78                  
+NUM8                     ff30                  
+NUM8_                    ff80                  
+NUM9                     ff38                  
+NUM9_                    ff88                  
+NUSIZ0                   0004              (R )
+NUSIZ1                   0005              (R )
+Offset                   00be              (R )
+onhorse                  00f5              (R )
+onhorseknife             f453              (R )
+onhorseknife2            f462              (R )
+OrcGraphics              f9d0              (R )
+OrcGraphicsb             f9d8                  
+Other_Hit                00f8              (R )
+Overeyes                 0095              (R )
+Overeyes_Reset           fb9d              (R )
+OverPotion               f936              (R )
+OverPotionB              f0bc              (R )
+OverScanWait             faa4              (R )
+P0left                   fb51              (R )
+P0Right                  fb41              (R )
+Pause                    00d2              (R )
+PAUSED                   f10b              (R )
+PAUSED2                  fb53                  
+PF0                      000d              (R )
+PF0_L1                   00d3              (R )
+PF0_L2                   00d4              (R )
+PF0_L3                   00d5              (R )
+PF0_L4                   00d6                  
+PF1                      000e              (R )
+PF1_L1                   00d7              (R )
+PF1_L2                   00d8              (R )
+PF1_L3                   00d9              (R )
+PF1_L4                   00da                  
+PF2                      000f              (R )
+PF2_L1                   00db              (R )
+PF2_L2                   00dc              (R )
+PF2_L3                   00dd              (R )
+PF2_L4                   00de                  
+PF3_L1                   00df              (R )
+PF3_L2                   00e0              (R )
+PF3_L3                   00e1              (R )
+PF3_L4                   00e2                  
+PF4_L1                   00e3              (R )
+PF4_L2                   00e4              (R )
+PF4_L3                   00e5              (R )
+PF4_L4                   00e6                  
+PF5_L1                   00e7              (R )
+PF5_L2                   00e8              (R )
+PF5_L3                   00e9              (R )
+PF5_L4                   00ea                  
+PF_TEMP                  00eb              (R )
+PFCOLOR                  ff8d              (R )
+PFCOLORB                 ff93              (R )
+PFData0                  fef5              (R )
+PFData1                  fefd              (R )
+PFData2                  ff05              (R )
+PFData3                  ff0d              (R )
+PFData4                  ff15              (R )
+PFData5                  ff1d              (R )
+PICS                     0080              (R )
+PICSET                   f072              (R )
+PICSET2                  f074              (R )
+PICSET3                  f076              (R )
+PICSET4                  f067                  
+Pit0_XPos                00b7              (R )
+Pit1_XPos                00b8                  
+Pit2_XPos                00b9                  
+Pit3_XPos                00ba                  
+Pit4_XPos                00bb                  
+Pit5_XPos                00bc                  
+Pit6_XPos                00bd                  
+Pit_Color2               00ff                  
+PITCOLLISION             f5f9                  
+PitGraphics              f8e8              (R )
+PitGraphics_canIgetRidOf f8e0                  
+pitposition              f6af                  
+Player_Health            00ca              (R )
+Player_Hit               00fa              (R )
+PonyGraphics             f9e0              (R )
+PonyGraphicsColor        fdc8              (R )
+Potion                   00fd              (R )
+PotionUsedButton         f929              (R )
+PreOverScanWait          faa4              (R )
+PreScanLoop              f400                  
+R1AJMP                   fa55              (R )
+R1JMP                    fa63              (R )
+R2AJMP                   fa71              (R )
+R2JMP                    fa7f              (R )
+R3AJMP                   fa8d              (R )
+R3JMP                    fa9b              (R )
+rand_8                   f894                  
+RatColor                 fdd0                  
+RatGraphics              fec0              (R )
+RCP_1                    f2ad              (R )
+RCP_2                    f2b6              (R )
+RCROLLOVER               f05f              (R )
+RedMandrakeMan           f210              (R )
+RedMandrakePlant         f221              (R )
+REFP0                    000b                  
+REFP1                    000c              (R )
+RESBL                    0014                  
+resetto0                 fe4e              (R )
+resetx                   f3c5              (R )
+RESM0                    0012                  
+RESM1                    0013              (R )
+RESMP0                   0028                  
+RESMP1                   0029                  
+RESP0                    0010              (R )
+RESP1                    0011              (R )
+RESSURECT                fe3e                  
+RIGHTAUDF                ffa0              (R )
+RNG                      00fe              (R )
+ROLLING_COUNTER          0081              (R )
+ROTATE1                  fa55                  
+ROTATE2                  fa71                  
+ROTATE3                  fa8d                  
+Row_1                    00f0              (R )
+Row_2                    00f1              (R )
+Row_3                    00f2              (R )
+RSYNC                    0003                  
+SatyrGraphics            fed0              (R )
+ScanLoop_E0_cz           f732              (R )
+ScanLoop_E2_c            f6df              (R )
+ScanLoopHero             f400                  
+Score                    00ed              (R )
+Score1                   00ee              (R )
+Score2                   00ef              (R )
+Screen_Rate              0014                  
+SETCOLOR                 f365              (R )
+setuppics                f2fd              (R )
+SFX_Duration             00f7                  
+SHIFTING2                f4f2              (R )
+skipL052                 f3a0                  
+SkipMoveDown             fb81              (R )
+SkipMoveLeft             f97c              (R )
+SkipMoveRight            f997              (R )
+SkipMoveUp               fb95              (R )
+SKIPMTN                  faa1              (R )
+SkipRightSound2          f3b3              (R )
+SLICE0                   fe38              (R )
+SLICE1                   f0bf              (R )
+SLICE2                   fa45              (R )
+SLICE3                   fc25              (R )
+SLICE4                   f0a7              (R )
+SMALLSWORD               f2c8                  
+SnakeColor               fde0              (R )
+SnakeColorb              fe28                  
+SnakeGraphics            fcd0              (R )
+SnakeManGraphics         fcf0              (R )
+STABILIZE                f841              (R )
+Start                    f000              (R )
+STARTHORSEMULT           f2cb              (R )
+SW1                      f28d                  
+SW10                     f2a1                  
+SW2                      f28f                  
+SW3                      f291                  
+SW4                      f293                  
+SW5                      f295                  
+SW6                      f297                  
+SW7                      f299                  
+SW8                      f29e                  
+SW9                      f2a0                  
+SWACNT                   0281                  
+SWBCNT                   0283                  
+SWCHA                    0280              (R )
+SWCHB                    0282              (R )
+swinging                 f29c              (R )
+SwordAttack              f942                  
+swordduration            00f6              (R )
+SwordSongc               ff26              (R )
+SwordSongf               ff27              (R )
+SwordSongv               ff25              (R )
+T1024T                   0297                  
+Temp_Ptr                 0092              (R )
+Temp_XPos                00a8              (R )
+TempGraphicsColor        009d              (R )
+TempPit_XPos             00bf              (R )
+TESTPOINTD               f2b8                  
+TESTPOINTF               f367                  
+TIA_BASE_ADDRESS         0000              (R )
+TIA_BASE_READ_ADDRESS    0000              (R )
+TIA_BASE_WRITE_ADDRESS   0000              (R )
+TIM1T                    0294                  
+TIM64T                   0296              (R )
+TIM8T                    0295                  
+TIMINT                   0285                  
+TOOFARTOMOVE             f991              (R )
+TOOLARGE                 fe44              (R )
+TreeGraphics             fcc0              (R )
+TreeGraphicsColor        fdc0              (R )
+Type2                    f16b              (R )
+Type3                    f177                  
+Type4                    f183              (R )
+Type5                    f18f                  
+VampGraphicsa            fef0              (R )
+VampGraphicsb            fef0              (R )
+VBLANK                   0001              (R )
+vcs.h                    0000 ????         (R )
+VDELBL                   0027              (R )
+VDELP0                   0025              (R )
+VDELP1                   0026                  
+VERSION_MACRO            006d                  
+VERSION_VCS              006a                  
+VSYNC                    0000              (R )
+WaitForVblankEnd         f3f7              (R )
+WarriorColor             fdd8              (R )
+WillOWispGraphics        f8e8              (R )
+WSYNC                    0002              (R )
+WSYNCAMT                 f8a3              (R )
+YESPIT                   f53b              (R )
+--- End of Symbol List.

@@ -21,7 +21,9 @@
 ;add more creatures
 ;make sure points are scored for potion killed baddies
 ;Can I remove duration, and calculate based on is it a boss, then use rand+level for duration???
-
+;Add other ways to cast spells
+; SWCHB.1    Select Button         (0=Pressed)
+; Second controller button
 
 ;dragon lake
 
@@ -35,6 +37,8 @@
 ;reintroduced bug that bounces screen if you hit bad guy, maybe related to timing of collision detection .nop
 ;sometimes monsters wrap around screen
 ;make overeyes only increment if monster on screen > min_damage
+;Touching an enemy sometimes drains all health
+;Eyes don't seem to activate
 
 ;IMPROVED
 ;when you hit a monster on lane 3, the screen flickers for a moment
@@ -48,7 +52,10 @@
 
 ;--------------------------------------------------------------
 ;5 different level masters
+;Need to go to 3.
+;Add end winning screen
 ;Use wide for all bosses?
+;Mummy, Dragon, and Will-o-wisp
 ;NAGA, can summon snakes
 ;Gargoyle, 2 forms flying and still. When still can't be damaged
 ;Griffon
@@ -106,14 +113,14 @@ Enemy_Row_E4		= 85   ;109
 Enemy_Row_E5		= 65   ;109
 Enemy_Row_E6		= 45   ;73
 Enemy_Row_E7		= 23   ;35  
-Min_Eye_Quake		= 220
-Min_Eye_Trigger		= 15   ;
+Min_Eye_Quake		= 60 ; This is the count to start eyequake
+Min_Eye_Trigger		= 15   ;Only creatures greater than this trigger the quake
 Min_Damage		= 9    ;
 LVL1BOSS			= 27
 LVL2BOSS			= 25 ;This is somehow causing the rolling
 LVL3BOSS			= 26
-LVL4BOSS			= 28
-LVL5BOSS			= 30
+LVL4BOSS			= 28 ;This is obsolete, only 2 bosses now
+LVL5BOSS			= 30 ;This is obsolete, only 2 bosses now
 Mummy_Num		= LVL2BOSS
 ;Variables ------
 
@@ -128,10 +135,6 @@ Mummy_Num		= LVL2BOSS
 
 PICS 			ds 1
 ROLLING_COUNTER 	ds 2
-
-
-
-
 
 E0_Ptr 			ds 1	;ptr to current graphic
 E1_Ptr 			ds 1	;ptr to current graphic
@@ -149,7 +152,7 @@ E3_Ptr2 		ds 1	;ptr to current graphic
 E4_Ptr2 		ds 1	;ptr to current graphic
 E5_Ptr2 		ds 1	;ptr to current graphic
 E6_Ptr2 		ds 1	;ptr to current graphic
-;E7_Ptr2 		ds 1	;ptr to current graphic
+
 Temp_Ptr		ds 2	;ptr for temp holding
 Direction		ds 1	;direction character moving
 
@@ -161,7 +164,7 @@ EnemyGraphicsColorPtr_E3	ds 1
 EnemyGraphicsColorPtr_E4	ds 1
 EnemyGraphicsColorPtr_E5	ds 1
 EnemyGraphicsColorPtr_E6	ds 1
-;EnemyGraphicsColorPtr_E7	ds 1
+
 TempGraphicsColor		ds 2
 MidSectionColorPtr		ds 2
 
@@ -172,7 +175,6 @@ E3_XPos 		ds 1	;horizontal position
 E4_XPos 		ds 1	;horizontal position
 E5_XPos 		ds 1	;horizontal position
 E6_XPos 		ds 1	;horizontal position
-;E7_XPos 		ds 1	;horizontal position
 Temp_XPos		ds 1	;temp horizontal position
 
 
@@ -183,7 +185,7 @@ E3_Type			ds 1	;Enemy Type
 E4_Type			ds 1	;Enemy Type
 E5_Type			ds 1	;Enemy Type
 E6_Type			ds 1	;Enemy Type
-;E7_Type			ds 1	;Enemy Type
+
 
 E0_Health		ds 1	;Enemy Life Stat
 E1_Health		ds 1	;Enemy Life Stat
@@ -192,7 +194,7 @@ E3_Health		ds 1	;Enemy Life Stat
 E4_Health		ds 1	;Enemy Life Stat
 E5_Health		ds 1	;Enemy Life Stat
 E6_Health		ds 1	;Enemy Life Stat
-;E7_Health		ds 1	;Enemy Life Stat
+
 
 Pit0_XPos		ds 1	;where pit is currently
 Pit1_XPos		ds 1	;where pit is currently
@@ -201,7 +203,7 @@ Pit3_XPos		ds 1	;where pit is currently
 Pit4_XPos		ds 1	;where pit is currently
 Pit5_XPos		ds 1	;where pit is currently
 Pit6_XPos		ds 1	;where pit is currently
-;Pit7_XPos		ds 1	;where pit is currently
+
 Offset			ds 1
 TempPit_XPos		ds 1	;where next pit is
 
@@ -281,7 +283,7 @@ Baddie_Num		ds 1	;current baddie displayed
 
 Potion			ds 1	;Potions player currently has
 RNG			ds 1
-Pit_Color		ds 1
+Pit_Color2		ds 1
 
 	seg code
 	org $F000
@@ -322,8 +324,8 @@ ClearMem
 	LDA #%00010000 ;set playfield to not reflected
 	STA CTRLPF
 	sta duration
-	LDA SnakeColorb
-	STA Pit_Color
+	;LDA SnakeColorb ;Is this doing anything
+	;STA Pit_Color ;Is this doing anything
 
 	LDA #%11111000	;The last 3 bits control number and size of players
 			;the second 2 bits control missle size
@@ -729,19 +731,19 @@ NotZeroLane
 
 RedMandrakeMan
 	SEC
-	ROR Player_Health
+	ROR Player_Health ;Gain life because killed mandrake
 	jmp notsmacked
 BlueMandrakeMan
 	LDA Potion
 	CMP #5
 	BCS notsmacked
-	INC Potion
+	INC Potion ;Get a potion because kill Blue Mandrake
 	jmp notsmacked
 RedMandrakePlant
-	lda #4
+	lda #4 ;convert plant to critter
 	jmp mandrake
 BlueMandrakePlant
-	lda #5
+	lda #5 ;Convert plant to critter
 mandrake
 	sta E0_Type-1,x
 	LDA Multiplexer-1,x
@@ -915,7 +917,7 @@ Enemies_Alive
 	;we also need to adjust the graphic pointer for skipDraw
 	;it equals what it WOULD be at 'normally' - it's position
 	;from bottom plus sprite height - 1.
-	;(note this requires that the 'normal' starting point for
+	;note this requires that the 'normal' starting point for
 	;the graphics be at least align 256 + kernalheight ,
 	;or else this subtraction could result in a 'negative'
 	; (page boundary crossing) value
@@ -1143,7 +1145,7 @@ resetx
 
 
 
-;-----------------------------Overyeys Pit Creation	
+;-----------------------------Overeys Pit Creation	
 
 ;	LDA Pause
 ;	BCS NOBIGEYES
@@ -1152,11 +1154,11 @@ resetx
 	LDA #0
 	BCC NOEyesYet
 
-	LDA RNG
-	CMP #127
+	LDA RNG ;Create a monster if over 127?
+	CMP #127 ;is it over 127
 	BCS NOTCREATED 
 
-	AND #%00000111
+	AND #%00000111 ;making it a 0 to 31 number based on RNG
 	tax
 	LDA E0_Type-1,x
 	CMP #$11
@@ -1165,12 +1167,13 @@ resetx
 	LDA Multiplexer-1,x
 	ORA Enemy_Life
 	STA Enemy_Life
-	LDA RNG
+	LDA RNG				;Is this the next monster we are loading?
 	ADC #10
 	AND #%01100000
 	STA #E0_XPos-1,x	 
-	LDA #10
-	STA #E0_Type-1,x	 
+	LDA #10 ;Small Pit
+
+	STA #E0_Type-1,x	 ;list of monsters BADDIEVALUE3, or MonsterList, this is probably loading the monster
 	STA #E0_Health-1,x
 NOTCREATED
 
@@ -1447,7 +1450,7 @@ New_E2_Start
 ;skipDraw
 
 
-;--------------need to setup all enemy variables--------------------------------------------------
+;--------------need to setup skyline--------------------------------------------------
 
 
 
@@ -1483,7 +1486,7 @@ NOPITTHISLEVEL
 
 
 YESPIT
-;--------------need to setup all enemy variables--------------------
+;--------------need to setup skyline--------------------
 
 
 ;skipDraw
@@ -2576,7 +2579,7 @@ BoggartGraphicsb
         .byte #%01001100;$02
         .byte #%10011100;--
 
-PitGraphics
+PitGraphics_canIgetRidOf
 	.byte #%00000000
 	.byte #%00111000
 	.byte #%01111100
@@ -2586,6 +2589,7 @@ PitGraphics
 	.byte #%00000000
 	.byte #%00000000
 
+PitGraphics
 WillOWispGraphics
 	.byte #%00000000
 	.byte #%00111000
@@ -2653,9 +2657,34 @@ horseknife
 	cmp #%00001000
 	bcs OverPotion	
 
+;	LDA  SWCHB              ; Start/Reset button....
+;	LSR                     ; Shove bit 0 into carry flag,
+;	LSR						; second bit is for select button
+;	BEQ  PotionUsedButton   ; and if it's pushed...
+;was bcs
+
+    LDA    SWCHB               ;Get console switches.                                                     ;4    
+    AND    #$02                ;Check select switch                                              ;2    
+    BEQ    PotionUsedButton    ;Branch if Select.
+
+
+;DATA BIT SWITCH
+;D7 PI Difficulty
+;D6 PO Difficulty
+;D5 Not used.
+;D4 Not used.
+;D3 Color - B/W
+;D2 Not used.
+;Dl SELECT
+;DO RESET
+
+
+
+	;Need something for second genesis button
 
 	ldx INPT5
 	bmi NoPotion
+PotionUsedButton
 ;	asl
 ;	asl
 	asl
@@ -3482,7 +3511,7 @@ HeroGraphics1
         .byte #%00110000;$0E
         .byte #%00100000;$0E
         .byte #%00110000;$22
-
+;MonsterList
 ;(Section of don't damage players, but will scare away horse)
 ;0,00000,Blank 
 ;1,00001,Horse		    ; Looks Good
@@ -3509,15 +3538,12 @@ HeroGraphics1
 ;20,10100,Boggart Fighter       ;Graphics need to be inverted
 ;21,10101,Brownie		;Looks identical to goblin
 ;22,10110,Satyr			; Looks Good
+;(Section of monster that are Bosses, double size bossed require 2 entries)
 ;23,10111,Mummy A
 ;24,11000,Mummy B
 ;25,11001,Dragon A
 ;26,11010,Dragon B
 ;27,11011,Will O Wisp
-;28,11100,Vampire a ;Need to add it
-;29,11101,Vampire b ;Need to add it
-;30,11110,Minotaur a;Need to add it
-;31,11111,Minotaur b;Need to add it
 
 
 
@@ -3596,40 +3622,74 @@ DragonGraphicsb
         .byte #%01100111;$0C
         .byte #%01100111;$0E
 
-BADDIEVALUE3 
-     .byte #0 ;;0,Tree
-     .byte #0 ;;1,Horse
-     .byte #1 ;;2,Mandrake Red Plant
-     .byte #1 ;;3,Mandrake Blue Plant
-     .byte #1 ;;4,Mandrake Red Man
-     .byte #1 ;;5,Mandrake Blue Man
-     .byte #3 ;;6,Treasure Chest
-     .byte #3 ;;7,Weapon Upgrade???
-     .byte #3 ;;8,
-     .byte #0 ;;9,Large Pit
-     .byte #0 ;;10,Small Pit
-     .byte #2 ;;11,Snake
-     .byte #2 ;;12,Bat 
-     .byte #1 ;;13,Rat
-     .byte #1 ;;14,Homonoculus
-     .byte #1 ;;15,Goblin
-     .byte #1 ;;16,RedCap
-     .byte #1 ;;17,Ogre
-     .byte #4 ;;18,Ghost
-     .byte #4 ;;19,Snake Man
-     .byte #4 ;;20,Boggart Fighter
-     .byte #4 ;;21,Brownie
-     .byte #4 ;;22,Satyr
-     .byte #4 ;;23,Mummy A
-     .byte #5 ;;24,Mummy B
-     .byte #5 ;;25,Dragon A
-     .byte #5 ;;26,Dragon B
-     .byte #6 ;;27,Will O Wisp
+
+NEXTBADDIETYPE ;first 3 bits is the lane, last 5 is the type
+;     .byte #%00001000
+;     .byte #%00101100 
+;     .byte #%10011001 ;mummy arms
+;     .byte #%10111010 ;mummy legs
+;     .byte #%10011111;This is mummy middle,pit; pits seems to be broken except in two spots needs to start 1 slot later
+;     .byte #%01100001
+;     .byte #%11000011 
+;     .byte #%11001011
+;     .byte #%00001011
+;     .byte #%00101110
+;     .byte #%01010000
+;     .byte #%01110001
+;     .byte #%10010010
+;     .byte #%10110011
+;     .byte #%11000010
+;     .byte #%11000010
+;     .byte #%00000010
+;     .byte #%00100010
+;     .byte #%01001100
+;     .byte #%01101011
+;     .byte #%10001111
+;     .byte #%10101011
+;     .byte #%11001011
+;     .byte #%11001110
+;     .byte #255 ;This is to reset to beginning
+
+;Maybe constant duration based on level
+NEXTBADDIEDUR
+;	.byte #$0
+;	.byte #$10
+;	.byte #$FA
+;	.byte #$10
+
+BADDIEVALUE3 ;Is this the level data? This doesn't seem to be used anywhere
+;     .byte #0 ;;0,Tree
+;     .byte #0 ;;1,Horse
+;     .byte #1 ;;2,Mandrake Red Plant
+;     .byte #1 ;;3,Mandrake Blue Plant
+;     .byte #1 ;;4,Mandrake Red Man
+;     .byte #1 ;;5,Mandrake Blue Man
+;     .byte #3 ;;6,Treasure Chest
+;     .byte #3 ;;7,Weapon Upgrade???
+;     .byte #3 ;;8,
+;     .byte #0 ;;9,Large Pit
+;     .byte #0 ;;10,Small Pit
+;     .byte #2 ;;11,Snake
+;     .byte #2 ;;12,Bat 
+;     .byte #1 ;;13,Rat
+;     .byte #1 ;;14,Homonoculus
+;     .byte #1 ;;15,Goblin
+;     .byte #1 ;;16,RedCap
+;     .byte #1 ;;17,Ogre
+;     .byte #4 ;;18,Ghost
+;     .byte #4 ;;19,Snake Man
+;     .byte #4 ;;20,Boggart Fighter
+;     .byte #4 ;;21,Brownie
+;     .byte #4 ;;22,Satyr
+;     .byte #4 ;;23,Mummy A
+;     .byte #5 ;;24,Mummy B
+;     .byte #5 ;;25,Dragon A
+;     .byte #5 ;;26,Dragon B
+;     .byte #6 ;;27,Will O Wisp
 ;     .byte #7 ;;28,Monster 4a
  ;    .byte #7 ;;29,Monster 4b
 ;     .byte #8 ;;30,Monster 5a
  ;    .byte #8 ;;31,Monster 5b
-
 
 
 BlankGraphics
@@ -4262,7 +4322,9 @@ resetto0
 
 ;Need to change to not need a badditype for the pit, if baddie > 23, need to autoload 2 part, and belly
 ;	LDA NEXTBADDIETYPE,x
-	LDA Baddie_Num
+	LDA Baddie_Num ;This is loadding the next
+	LDA #05
+	;list of monsters BADDIEVALUE3, or MonsterList, this is probably loading the monster
 	AND #%00011111
 	CMP #%00011111
 	BNE NotPit
@@ -4274,7 +4336,7 @@ resetto0
 	JMP AddingPit
 NotPit
 
-	STA E0_Type,y 
+	STA E0_Type,y ;This is placing enemy into lane
 	CMP #LVL2BOSS
 	BNE NOTMUMMY
 	sty Link
